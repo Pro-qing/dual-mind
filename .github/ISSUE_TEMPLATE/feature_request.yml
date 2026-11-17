@@ -1,0 +1,23 @@
+name: Feature request / 功能建议
+description: Propose a focused improvement / 提出范围明确的改进
+title: '[Feature]: '
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case / 问题或使用场景
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / 预期功能
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and alternatives / 验收标准及备选方案
+  - type: markdown
+    attributes:
+      value: 'UI implementation requires explicit approval of the SVG proposal. 界面实现需先明确通过 SVG 设计审核。'

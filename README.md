@@ -1,21 +1,46 @@
-<div align="center">
-  <strong>English</strong> | <a href="./README.zh.md">简体中文</a>
-</div>
+**English** | [简体中文](./README.zh.md)
 
 # 🧠 DualMind
 
-**Two AI minds are better than one.**  
-DualMind is a VS Code extension that runs two independent AI agents side-by-side—a **Worker** and a **Reviewer**—in an automated feedback loop to generate, critique, and refine your code.
+**Two AI minds are better than one.**
 
----
+DualMind is an AI pair-programming extension project for VS Code. It aims to bring implementation and independent review into the same workspace, helping developers refine changes through a visible feedback cycle.
 
-### ✨ Why DualMind?
-Single-shot LLM responses often miss edge cases or introduce subtle bugs. Inspired by real-world pair programming, DualMind splits the workflow into two specialized roles:
-* **🛠️ The Worker:** Focuses on implementing features, writing clean code, and addressing feedback.
-* **🔍 The Reviewer:** Acts as a strict tech lead—auditing logic, catching edge cases, and rejecting subpar outputs until standards are met.
+## Project status
 
-### 🚀 Key Features
-* **Split-Screen Dual Chat:** Watch both agents think, stream, and debate in real time inside a dedicated VS Code Webview panel.
-* **Automated Iteration Loop:** Configurable max turns (`Worker → Reviewer → Fix → Approved`) with one-click pause/intervene controls.
-* **Flexible Model Pairing:** Mix and match models (e.g., use a fast model as the Worker and a reasoning model as the Reviewer).
-* **Editor Context Integration:** Pull selected code directly into the loop and apply approved changes back to your active file.
+**Early development · UI design pending review**
+
+The capabilities below are planned and have not been implemented yet. The interface concept is awaiting approval before implementation begins.
+
+## Two complementary roles
+
+- **Worker:** Implements the task and revises the code in response to feedback.
+- **Reviewer:** Checks the changes, identifies edge cases, and provides feedback before approval.
+
+The intended collaboration follows **Generate → Review → Revise → Approve**. Developers can guide the process and decide whether to apply the reviewed result.
+
+## Planned capabilities
+
+- **Two conversation columns:** Follow Worker output and Reviewer feedback side by side.
+- **Independent model selection:** Choose a model for each role.
+- **Controlled iteration:** Set round limits, pause or stop a session, and add human feedback.
+- **Editor integration:** Bring selected code into the task and preview changes before applying them.
+
+## Interface concept
+
+![DualMind dark-theme interface concept; design pending review](./docs/design/dual-mind-workbench.png)
+
+A static proposal with illustrative content. [Open the SVG](./docs/design/dual-mind-workbench.svg) · [Design notes](./docs/en/design.md).
+
+## Documentation and contribution
+
+- [Usage guide](./docs/en/usage.md) — Local installation, current behavior, and limitations.
+- [Development guide](./docs/en/development.md) — Environment setup, building, debugging, and testing.
+- [Architecture](./docs/en/architecture.md) — Repository layout and module responsibilities.
+- [Roadmap](./docs/en/roadmap.md) — Milestones and planned features.
+- [Contributing](./CONTRIBUTING.md) — How to participate in the project.
+- [All documentation](./docs/en/README.md) — The full guide and policy index.
+
+## License
+
+License undecided. [Details](./docs/en/licensing.md).

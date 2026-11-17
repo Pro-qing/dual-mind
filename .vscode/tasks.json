@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "npm: build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$tsc"],
+      "command": "npm",
+      "args": ["run", "build"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "linux": {
+        "command": "bash",
+        "args": ["${workspaceFolder}/scripts/run-npm.sh", "run", "build"]
+      },
+      "osx": {
+        "command": "bash",
+        "args": ["${workspaceFolder}/scripts/run-npm.sh", "run", "build"]
+      }
+    }
+  ]
+}

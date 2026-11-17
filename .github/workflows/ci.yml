@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu20:
+    name: Ubuntu 20.04 / VS Code ${{ matrix.vscode }}
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:20.04
+      options: --shm-size=1g
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        vscode: ['1.100.0', 'stable']
+    env:
+      VSCODE_TEST_VERSION: ${{ matrix.vscode }}
+    steps:
+      - name: Assert baseline and bootstrap checkout / 确认基线并准备检出
+        run: |
+          source /etc/os-release
+          test "$ID" = ubuntu
+          test "$VERSION_ID" = 20.04
+          test "$(uname -m)" = x86_64
+          test "$(dpkg --print-architecture)" = amd64
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates git
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Ubuntu 20.04 test dependencies / 安装测试依赖
+        run: bash scripts/install-ubuntu20-test-deps.sh
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Test inside the extension host / 扩展宿主测试
+        run: xvfb-run -a npm test
+      - name: Verify local VSIX packaging / 验证本地打包
+        if: matrix.vscode == 'stable'
+        run: npm run package
+
+  ubuntu24:
+    name: Ubuntu 24.04 / VS Code stable
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      VSCODE_TEST_VERSION: stable
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Ensure a headless display / 准备无桌面显示环境
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth
+      - run: npm ci
+      - run: npm run check
+      - name: Test inside the extension host / 扩展宿主测试
+        run: xvfb-run -a npm test

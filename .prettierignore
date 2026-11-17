@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+release/
+.vscode-test/
+.test-workspace/
+coverage/
+package-lock.json
+*.vsix
+docs/design/*.svg
