@@ -2,22 +2,17 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
-## Unreleased — 0.0.1 local workbench
+## 0.0.1 — Preview 1
 
-- Implement the approved React workbench with workspace drafts, connection settings, native API-key entry, Reviewer presets, and role snapshots.
-- Add persistent English / Simplified Chinese selection, bilingual built-in definitions, and original-language custom content.
-- Add an isolated read-only example preview; model execution, connection tests and code application remain disabled.
-- Preserve all five approved SVG/PNG pairs; add local interaction tests and real Webview validation with screenshots.
+Tag: `v0.0.1-preview.1`. This is the first preview's change record; public availability and the actual publication timestamp are recorded on the [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1). Before publication this entry describes the release candidate.
 
-## Unreleased — 0.0.1 scaffold
+- Implement a React workbench with workspace-scoped task drafts, connection settings, native API-key entry, Reviewer presets, and captured role instructions.
+- Add persistent English / Simplified Chinese selection, independently editable built-in definitions, and original-language custom content.
+- Add an isolated read-only example preview. Real model execution, connection tests, streaming, review loops, and code application remain unavailable.
+- Provide the extension entry, F5 debugging, esbuild host/frontend bundles, nvm-managed Node.js 24, and Ubuntu 20.04+ amd64 validation with VS Code 1.100.0 as the minimum editor.
+- Add environment tests, local store/React tests, real extension-host/UI checks, bilingual documents, contribution templates, and GitHub Actions validation.
+- Preserve all five approved SVG/PNG designs; clearly distinguish illustrated execution states from local-workbench functionality.
+- Adopt MIT with copyright `2026 Pro-qing`, include bundled third-party notices, remove the missing-license packaging bypass, and prepare VSIX/checksum Release assets.
+- Update security documentation for the implemented Webview and credential storage; enable and verify GitHub private vulnerability reporting.
 
-- Add a TypeScript extension entry and **DualMind: Show Status** command.
-- Add nvm/Node.js 24 requirements, esbuild, F5 debugging, checks, and local VSIX packaging.
-- Add environment validation and tests for the Ubuntu 20.04+ amd64 / Node.js 24 baseline.
-- Add an extension-host smoke test and CI for Ubuntu 20.04 containers and native Ubuntu 24.04.
-- Add module placeholders, bilingual guides and contribution templates.
-- Record approval of the base two-column layout and add five SVG/PNG scenes for parallel tasks, API settings, Reviewer presets, task creation, and deletion; the additions await review.
-- Document the fixed Worker, per-task Reviewer snapshots, and independent task messaging as planned behavior; validate all design assets.
-- Keep licensing and Marketplace publisher identity explicitly pending.
-
-No public release, model integration, or React conversation interface is included in this milestone.
+Full scope, installation, limitations, and verification are described in the [release notes](./docs/en/release-notes.md). Marketplace registration and real model collaboration remain future milestones.

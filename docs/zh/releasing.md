@@ -1,31 +1,66 @@
-# 本地打包与发布准备
+# 打包与 GitHub 预览版发布
 
 [English](../en/releasing.md) · [文档索引](./README.md)
 
-## 本地 VSIX
+## 预览版标识
 
-遵循统一的[环境基线](./environment.md)：Ubuntu 20.04+、x86_64/amd64、VS Code 1.100.0+；构建和打包使用 nvm 管理的 Node.js 24。无桌面测试需安装文档所列的 Electron 运行库、Xvfb 和 xauth，并将下方的 `npm test` 替换为 `xvfb-run -a npm test`。
+| 项目         | 值                                       |
+| ------------ | ---------------------------------------- |
+| 扩展版本     | `0.0.1`                                  |
+| Git 标签     | `v0.0.1-preview.1`                       |
+| Release 标题 | `DualMind 0.0.1 Preview 1`               |
+| 发布类型     | GitHub 预发布                            |
+| 附件         | `dual-mind-0.0.1.vsix`、`SHA256SUMS.txt` |
+| 许可         | MIT，版权署名 `2026 Pro-qing`            |
+
+本预览版沿用扩展标识 `dual-mind-dev-placeholder.dual-mind`。`private: true` 防止 npm 发布，不禁止通过 GitHub 分发 VSIX。可用功能和限制见[发布说明](./release-notes.md)。草稿或本地包不代表公开发布，发布后以 GitHub 返回的实际公开时间为准。
+
+## 本地准备与验证
+
+遵循统一[环境基线](./environment.md)：Ubuntu 20.04+ amd64、VS Code 1.100.0+，开发使用 nvm 管理的 Node.js 24。无桌面测试需要 Xvfb／xauth 及文档列出的 Electron 运行库。在仓库根目录执行：
 
 ```bash
 nvm use
 npm ci
 npm run check
-npm test
-npm run package
+VSCODE_TEST_VERSION=1.100.0 npm test
+VSCODE_TEST_VERSION=stable npm test
+DUAL_MIND_RELEASE_REF=v0.0.1-preview.1 npm run package
+(cd release && sha256sum dual-mind-0.0.1.vsix > SHA256SUMS.txt)
+(cd release && sha256sum --check SHA256SUMS.txt)
+```
+
+无桌面环境为每次编辑器测试加上 `xvfb-run -a` 前缀。运行逻辑或界面变更还需执行 `npm run test:ui`，无桌面时使用 `xvfb-run -a npm run test:ui`。
+
+`npm run package` 重新构建扩展及 React 前端后生成 VSIX。`DUAL_MIND_RELEASE_REF` 将打包后 README／更新日志的链接和图片固定到发布标签，避免随默认分支移动；普通本地打包可省略该变量。打包已移除许可证跳过设置。检查包内包含 `LICENSE.txt`、第三方声明、两份原生本地化文件、宿主和前端构建、双语文档及五组 SVG／PNG，并排除开发源码、秘密信息、测试配置、source map 和旧 VSIX。
+
+在独立的 VS Code 用户配置／扩展目录中安装准备好的包，验证工作台打开、语言切换、草稿保存和重载持久化，确认打包资源能脱离开发路径工作。普通本地安装命令为：
+
+```bash
 code --install-extension release/dual-mind-0.0.1.vsix --force
 ```
 
-重载 VS Code 后运行 **DualMind: 打开工作台**／**DualMind: Open Workbench**。此命令可替换同一未发布 `0.0.1` 版本的旧本地构建。检查任务保存和两种语言，状态命令继续保留。打包产物被 Git 忽略。打包通过 `vscode:prepublish` 重新构建，排除开发文件、依赖、测试编辑器、source map 和已有 VSIX；React 构建后的 JavaScript／CSS、原生本地化文件、文档及全部已审核 SVG／PNG 随包保留。
+重载窗口后运行 **DualMind: 打开工作台**。首个本地预览可使用同版本强制更新；后续公开构建应递增扩展版本，不应静默覆盖既有发布附件。
 
-由于许可证待定，打包脚本暂时使用 `skipLicense: true`，只生成本地文件，不进行发布。npm 的 `private` 标记阻止 npm 发布，并不是 Marketplace 发布保护机制。
+## 提交、CI 和 Release 草稿
 
-## 公开分发前
+1. 核对双语文档、功能描述、安全报告渠道、许可元信息及更新日志，保留已审核设计文件。不虚构联系方式，也不在实际发布前写成已发布。
+2. 创建 `chore: prepare v0.0.1 preview release` 提交并推送 `master`。`release/`、依赖、构建产物和验证截图继续被忽略。
+3. 等待该精确提交的 CI 全部通过：Ubuntu 20.04 上的 VS Code 1.100.0 和 stable，以及 Ubuntu 24.04 stable。Ubuntu 20.04 stable 还验证真实 Webview 与打包。
+4. 在仓库 **Releases → Draft a new release** 中，将 `v0.0.1-preview.1` 指向已验证的准备提交，填写上述标题，勾选预发布，不标为 latest。
+5. 填入中英文发布说明，包括环境基线、安装命令、当前限制、提交 SHA、测试编辑器版本和 VSIX SHA-256，上传两个准备好的附件。GitHub 正文使用仓库／标签的绝对链接，因为其相对链接上下文与文档文件不同。
+6. 保存草稿，发布前核对目标／标签、标题、发布标记、完整正文、附件名称／大小／哈希，以及已验证的私密漏洞报告入口。
 
-- 选定许可证，添加完整文本，同步双语文档和元信息，移除打包中的 `skipLicense`。
-- 将 `dual-mind-dev-placeholder` 替换为已验证的 Marketplace publisher，同时更新冒烟测试中的扩展标识。
-- 准备正式图标，检查包内容和依赖许可要求。
-- 配置私密安全报告及联系渠道，替换仓库规范中待补充的内容。
-- 核对 README 功能描述、发布版本、双语更新日志，并在支持的编辑器版本中验证安装包。
-- 实现界面前取得设计认可，对外准确说明实际完成状态。
+也可由已授权账号通过 GitHub API 完成同样的草稿、上传和发布流程。凭据不得写入仓库文件或命令参数。必要 CI 或附件检查未通过时，不公开草稿。
 
-本骨架不配置发布工作流、Marketplace 令牌、GitHub Release 或仓库推送。CI 仅产生临时的本地验证产物。正式发布作为单独的所有者授权操作处理。
+## 公开与下载核验
+
+公开已核对的草稿。将 GitHub 返回的 Release 地址、`published_at` 时间、准备提交、标签及 VSIX 哈希记入发布记录；只有 GitHub 确认发布后才记录正式公开时间。
+
+从已发布 Release 将两个附件重新下载到全新目录，执行 `sha256sum --check SHA256SUMS.txt`，与准备时的摘要比较，再在隔离安装中验证下载的 VSIX。检查工作台打开、语言切换和草稿保存，验证记录保存在被忽略的发布目录中。若验证失败，如实报告发布状态并通过明确的后续版本修复，不报告为验证完成。
+
+网页流程参考 [GitHub 官方说明](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。安装包和校验文件作为 Release 附件，不进入源码记录。
+
+## 后续 Marketplace 上架
+
+Marketplace 分发是后续独立里程碑：注册正式 publisher，统一替换开发身份（包括测试及迁移考虑），准备正式图标和商店介绍，并验证对应版本。当前 MIT 许可和 GitHub 预览不会代为注册 Marketplace publisher。真实模型能力应在实现后再描述。本仓库不包含自动 Marketplace 发布工作流或发布令牌。

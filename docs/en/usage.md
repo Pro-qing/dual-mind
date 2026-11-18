@@ -2,17 +2,24 @@
 
 [简体中文](../zh/usage.md) · [Documentation](./README.md)
 
-## Install and open
+## Download, verify, and install the preview
 
 The supported baseline is **Ubuntu 20.04+, x86_64/amd64, and VS Code 1.100.0+**. Other platforms and ARM64 are not yet validated. A built VSIX does not require a separate Node.js installation. See [Environment](./environment.md).
 
-The project has no public Marketplace release. Build `release/dual-mind-0.0.1.vsix` using the [development](./development.md) and [packaging](./releasing.md) guides. Generated packages are ignored by Git. Install from the repository root:
+Use the [GitHub preview Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) and read the [release notes](./release-notes.md). Before the release is published, the notes are a draft and its attachments are not public. The GitHub Release page is the source of truth for publication and available downloads.
+
+Download `dual-mind-0.0.1.vsix` and `SHA256SUMS.txt` from **Assets** into the same directory. The automatically generated source-code archives are source snapshots, not the VSIX. From the download directory:
 
 ```bash
-code --install-extension release/dual-mind-0.0.1.vsix --force
+sha256sum --check SHA256SUMS.txt
+code --install-extension dual-mind-0.0.1.vsix --force
 ```
 
-`--force` also replaces an older local build with the same unpublished version. Reload the VS Code window after updating. Open the Command Palette and run **DualMind: Open Workbench** (or **DualMind: 打开工作台** with a Chinese editor). The command opens a single editor tab and reuses it on subsequent invocations. **DualMind: Show Status** remains available as a readiness check.
+Continue only when the checksum reports `OK`. Reload VS Code, open the Command Palette, and run **DualMind: Open Workbench** (Chinese editor: **DualMind: 打开工作台**). The command opens a single editor tab and reuses it on subsequent invocations. **DualMind: Show Status** remains a readiness check. You can also select **Extensions: Install from VSIX...** and choose the verified package.
+
+The extension is distributed through GitHub for this preview, with identifier `dual-mind-dev-placeholder.dual-mind`. When updating from an older local `0.0.1` build, `--force` replaces the same-version package. Preserve the existing extension installation while updating to keep its stored drafts/configuration, then reload the window. For later releases, use the version and checksum supplied by that Release; do not substitute the old checksum.
+
+To build from source, follow [Development](./development.md) and [Packaging](./releasing.md). The local artifact is `release/dual-mind-0.0.1.vsix`; it and downloaded verification files are not committed to Git.
 
 ## Local tasks
 

@@ -101,7 +101,7 @@
   },
   "publisher": "dual-mind-dev-placeholder",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/Pro-qing/dual-mind.git"

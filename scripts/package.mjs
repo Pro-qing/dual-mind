@@ -5,7 +5,7 @@ const manifest = JSON.parse(await readFile(new URL('../package.json', import.met
 await mkdir(new URL('../release/', import.meta.url), { recursive: true });
 await createVSIX({
   packagePath: `release/${manifest.name}-${manifest.version}.vsix`,
-  // Local installation only while the repository's license decision is pending.
-  skipLicense: true,
+  // Pin packaged README links to the release tag when preparing public artifacts.
+  githubBranch: process.env.DUAL_MIND_RELEASE_REF,
   dependencies: false,
 });

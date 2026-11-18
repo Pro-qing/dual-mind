@@ -11,4 +11,4 @@ This policy applies to repository issues, pull requests, reviews, and other proj
 
 Maintainers may request edits, remove harmful content, close disruptive discussions, or restrict participation. They should explain moderation decisions when doing so does not expose private information.
 
-**Private conduct-reporting contact: TODO — repository owner to configure before wider participation.** Do not post confidential incident details publicly. GitHub's built-in abuse-reporting tools remain available for platform abuse; they are not a substitute for the pending project contact. No response-time commitment has been established.
+**Private conduct-reporting contact: not configured.** Do not post confidential incident details publicly. GitHub's built-in abuse-reporting tools remain available for platform abuse; they are not a substitute for the pending project contact. The security-reporting channel in [SECURITY](./SECURITY.md) is for vulnerabilities, not confidential conduct incidents. No response-time commitment has been established.

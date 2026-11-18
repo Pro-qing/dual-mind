@@ -2,17 +2,24 @@
 
 [English](../en/usage.md) · [文档索引](./README.md)
 
-## 安装与打开
+## 下载、校验和安装预览版
 
 支持基线为 **Ubuntu 20.04+、x86_64/amd64、VS Code 1.100.0+**。其他平台和 ARM64 暂未验证。使用已构建的 VSIX 无需另行安装 Node.js，详见[环境说明](./environment.md)。
 
-项目尚未在 Marketplace 公开发布。按[开发指南](./development.md)及[打包指南](./releasing.md)生成 `release/dual-mind-0.0.1.vsix`，生成文件被 Git 忽略。在仓库根目录安装：
+进入 [GitHub 预览版 Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1)，先阅读[发布说明](./release-notes.md)。实际发布前，说明为草稿，附件尚未公开；公开状态和可下载文件以 GitHub Release 页面为准。
+
+在 **Assets** 中下载 `dual-mind-0.0.1.vsix` 和 `SHA256SUMS.txt`，放到同一目录。自动生成的源码压缩包是源码快照，不是 VSIX 安装包。在下载目录执行：
 
 ```bash
-code --install-extension release/dual-mind-0.0.1.vsix --force
+sha256sum --check SHA256SUMS.txt
+code --install-extension dual-mind-0.0.1.vsix --force
 ```
 
-`--force` 也用于替换同一个未发布版本的旧本地构建。更新后重载 VS Code 窗口，在命令面板执行 **DualMind: 打开工作台**（英文编辑器为 **DualMind: Open Workbench**）。命令打开一个编辑器标签页，重复执行会定位到已有工作台。**DualMind: 显示状态**／**DualMind: Show Status** 保留为就绪检查。
+校验结果为 `OK`／成功后再安装。重载 VS Code，在命令面板运行 **DualMind: 打开工作台**（英文编辑器为 **DualMind: Open Workbench**）。该命令打开一个标签页，重复执行会定位到已有工作台；**DualMind: 显示状态**／**DualMind: Show Status** 保留为就绪检查。也可通过 **Extensions: Install from VSIX...** 选择已校验安装包。
+
+本预览版通过 GitHub 分发，扩展标识为 `dual-mind-dev-placeholder.dual-mind`。从旧本地 `0.0.1` 更新时，`--force` 会替换同版本包。更新时保留现有扩展安装，以保留其草稿／配置，随后重载窗口。后续版本使用对应 Release 提供的版本和校验文件，不要套用旧校验值。
+
+从源码构建请按[开发指南](./development.md)和[打包指南](./releasing.md)操作。本地包位于 `release/dual-mind-0.0.1.vsix`，安装包及下载验证文件均不进入 Git 记录。
 
 ## 本地任务
 

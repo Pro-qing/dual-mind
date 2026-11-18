@@ -12,6 +12,8 @@ DualMind 是一个面向 VS Code 的 AI 结对编程插件项目，将任务准�
 
 React 工作台支持本地任务草稿、连接设置、Reviewer 预设和中英文切换。模型执行与代码应用仍为规划能力，可选对话预览明确标注为只读示例。
 
+Preview 1：[GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) · [发布说明](./docs/zh/release-notes.md)。公开状态和附件是否可下载，以 Release 页面为准。
+
 ## 两种互补角色
 
 - **Worker（执行者）：** 保持通用执行职责，完成任务并根据反馈修改代码。
@@ -48,4 +50,4 @@ React 工作台支持本地任务草稿、连接设置、Reviewer 预设和中�
 
 ## 许可
 
-许可证待定。[查看详情](./docs/zh/licensing.md)。
+[MIT 许可证](./LICENSE)。[许可及第三方声明](./docs/zh/licensing.md)。

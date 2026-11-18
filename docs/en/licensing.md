@@ -1,9 +1,11 @@
-# License status
+# Licensing
 
 [简体中文](../zh/licensing.md) · [Documentation](./README.md)
 
-The repository owner has not selected a license. There is no `LICENSE` file, and the npm metadata deliberately uses `"license": "UNLICENSED"` and `"private": true`. Public visibility is not a grant of an open-source license.
+DualMind is licensed under the **MIT License**, with the copyright notice `Copyright (c) 2026 Pro-qing`. The authoritative terms are in the complete [LICENSE](../../LICENSE), which is included in the VSIX.
 
-A future licensing decision must update the license text, package metadata, both READMEs, contribution guidance, and this document together. Dependencies retain their own licenses; the root metadata does not replace them. No contributor agreement or copyright transfer is introduced by this scaffold.
+Package metadata uses `"license": "MIT"`. `"private": true` remains an npm publication safeguard; it does not change the license or prevent distributing a VSIX through GitHub Releases. Packaging now checks for the license normally, without a missing-license bypass.
 
-Local VSIX packaging currently uses the packager's missing-license bypass only for development verification. Resolve the license before public distribution, remove that bypass, and complete the [release checklist](./releasing.md).
+Dependencies retain their own copyright and license terms. React, React DOM, and Scheduler are included in the Webview bundle; their complete notice is preserved in [THIRD_PARTY_NOTICES](../../THIRD_PARTY_NOTICES.md), alongside the license comments in the generated JavaScript. Development tooling is excluded from the VSIX.
+
+Contributions follow the repository's MIT license. No separate CLA or copyright transfer is required. See [Contributing](../../CONTRIBUTING.md) and [Packaging and releases](./releasing.md).

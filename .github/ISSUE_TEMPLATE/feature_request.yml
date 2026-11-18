@@ -20,4 +20,4 @@ body:
       label: Acceptance criteria and alternatives / 验收标准及备选方案
   - type: markdown
     attributes:
-      value: 'UI implementation requires explicit approval of the SVG proposal. 界面实现需先明确通过 SVG 设计审核。'
+      value: 'Existing SVG designs are approved. New UI changes should include a design revision for review. 现有 SVG 设计已获认可，新增界面变更应附设计修订供审核。'
