@@ -55,7 +55,7 @@ For **Ubuntu 20.04**, the repository provides an installer for the required shar
 sudo bash scripts/install-ubuntu20-test-deps.sh
 ```
 
-Review the [installer](../../scripts/install-ubuntu20-test-deps.sh) for the exact packages. It includes GTK, NSS/NSPR, ALSA, GBM/DRM, X11, fonts, Xvfb, and xauth. The script checks that it is running on Ubuntu 20.04 before installing packages; package names differ in later Ubuntu releases. In a root CI container, omit `sudo`.
+Review the [installer](../../scripts/install-ubuntu20-test-deps.sh) for the exact packages. It includes GTK, NSS/NSPR, ALSA, GBM/DRM, X11, Latin/CJK fonts, Xvfb, and xauth. The CJK fonts allow Chinese Webview screenshots in a clean CI container. The script checks that it is running on Ubuntu 20.04 before installing packages; package names differ in later Ubuntu releases. In a root CI container, omit `sudo`.
 
 On a newer Ubuntu desktop with VS Code and its dependencies already installed, add the headless display tools if needed:
 
@@ -102,11 +102,11 @@ Environment checking runs before dependency installation, the combined checks, b
 
 ## CI validation matrix
 
-| Execution environment                                | VS Code   | Checks                                                             |
-| ---------------------------------------------------- | --------- | ------------------------------------------------------------------ |
-| `ubuntu:20.04` container on an `ubuntu-24.04` runner | `1.100.0` | Dependency installation, project checks, extension-host smoke test |
-| `ubuntu:20.04` container on an `ubuntu-24.04` runner | `stable`  | The same checks, plus local VSIX packaging                         |
-| Native `ubuntu-24.04` runner                         | `stable`  | Dependency installation, project checks, extension-host smoke test |
+| Execution environment                                | VS Code   | Checks                                                                                    |
+| ---------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------- |
+| `ubuntu:20.04` container on an `ubuntu-24.04` runner | `1.100.0` | Dependency installation, project checks, extension-host smoke test                        |
+| `ubuntu:20.04` container on an `ubuntu-24.04` runner | `stable`  | The same checks, real bilingual Webview interaction/screenshots, and local VSIX packaging |
+| Native `ubuntu-24.04` runner                         | `stable`  | Dependency installation, project checks, extension-host smoke test                        |
 
 The [workflow](../../.github/workflows/ci.yml) uses Bash in the Ubuntu 20.04 container and asserts the actual distribution, version, and amd64 architecture before setup. GitHub [retired its Ubuntu 20.04 hosted runner on April 15, 2025](https://github.com/actions/runner-images/issues/11101), so this job uses a container to preserve the minimum userland baseline. The container shares the host kernel and does not test an Ubuntu 20.04 kernel or a full desktop session.
 

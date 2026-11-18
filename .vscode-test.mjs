@@ -6,5 +6,5 @@ export default defineConfig({
   // Allow slow first-time editor downloads in development and CI.
   download: { timeout: 120000 },
   launchArgs: ['--disable-extensions', '--disable-gpu', '--skip-welcome', '--skip-release-notes'],
-  mocha: { ui: 'tdd', timeout: 10000 },
+  mocha: { ui: 'tdd', timeout: 30000 },
 });

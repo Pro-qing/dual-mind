@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">DualMind — task deletion confirmation proposal</title>
+  <desc id="description">Illustrative confirmation for stopping and deleting one running task while preserving workspace files and other tasks. Variants show direct deletion, stopping, stop failure, and the empty-list new-task entry.</desc>
+  <style>text { font-family: "DejaVu Sans", Arial, sans-serif; } .mono { font-family: "DejaVu Sans Mono", monospace; }</style>
+  <rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22"/>
+  <g id="editor-chrome">
+    <rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b"/>
+    <rect x="0" y="0" width="224" height="40" rx="0" fill="#191c22"/>
+    <rect x="0" y="0" width="224" height="2" rx="0" fill="#7aaaff"/>
+    <rect x="22" y="12" width="14" height="16" rx="3" fill="#2b4161"/>
+    <text x="46" y="26" font-size="13" fill="#e4e8f0" font-weight="400">DualMind</text>
+    <path d="M3 3 L13 13 M13 3 L3 13" transform="translate(196 12)" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="224" y1="39" x2="1440" y2="39" stroke="#2b3039" stroke-width="1"/>
+    <text x="1416" y="25" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">DESIGN ADDITIONS / 05</text>
+  </g>
+  <g id="application-header">
+    <rect x="24" y="64" width="44" height="44" rx="10" fill="#223047"/>
+    <path d="M43 77 L35 86 L43 95 M49 77 L57 86 L49 95" stroke="#a2c4ff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="84" y="85" font-size="24" fill="#e4e8f0" font-weight="600">DualMind</text>
+    <text x="85" y="109" font-size="12" fill="#b1bdce" font-weight="400">Parallel tasks. Independent reviews.</text>
+    <rect x="956" y="76" width="232" height="22" rx="11" fill="#223931"/>
+    <text x="1072.0" y="91" font-size="10" fill="#93dfcd" font-weight="600" text-anchor="middle">2 RUNNING · 1 PAUSED</text>
+    <rect x="1204" y="70" width="212" height="36" rx="5" fill="#252c37" stroke="#394352"/>
+    <path d="M8 1 V3 M8 13 V15 M1 8 H3 M13 8 H15 M3 3 L4.5 4.5 M11.5 11.5 L13 13 M3 13 L4.5 11.5 M11.5 4.5 L13 3 M8 4 A4 4 0 1 1 7.99 4" transform="translate(1216 80.0)" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1240" y="92.5" font-size="12" fill="#e4e8f0" font-weight="400">Settings</text>
+  </g>
+  <text x="24" y="884" font-size="10" fill="#95a4ba" font-weight="400">STATIC SVG · Illustrative content · Base layout approved; additions pending review</text>
+  <text x="1416" y="884" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">React implementation follows design approval</text>
+  <g id="workspace-task-list">
+    <rect x="24" y="138" width="216" height="720" rx="6" fill="#20242c" stroke="#394352"/>
+    <text x="40" y="162" font-size="10" fill="#b1bdce" font-weight="600">WORKSPACE TASKS</text>
+    <path d="M2 2 H14 V14 H2 Z M6 2 V14 M11 6 L9 8 L11 10" transform="translate(208 148)" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="40" y="178" width="184" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+    <path d="M8 2 V14 M2 8 H14" transform="translate(52 187.0)" fill="none" stroke="#eff5ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="76" y="199.5" font-size="12" fill="#eff5ff" font-weight="400">New task</text>
+    <g id="task-1">
+      <rect x="36" y="238" width="192" height="104" rx="5" fill="#22334d" stroke="#557eaf"/>
+      <rect x="36" y="248" width="3" height="84" rx="1" fill="#91bbff"/>
+      <text x="48" y="261" font-size="12" fill="#e4e8f0" font-weight="600">Fix retry</text>
+      <text x="48" y="279" font-size="12" fill="#e4e8f0" font-weight="600">cancellation</text>
+      <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(204 251)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="48" y="288" width="42" height="22" rx="11" fill="#303540"/>
+      <text x="69.0" y="303" font-size="10" fill="#eac58c" font-weight="600" text-anchor="middle">Bug</text>
+      <circle cx="52" cy="325" r="3" fill="#eac58c"/>
+      <text x="62" y="329" font-size="10" fill="#b1bdce" font-weight="400">Reviewing · 2 / 5</text>
+    </g>
+    <g id="task-2">
+      <rect x="36" y="354" width="192" height="104" rx="5" fill="#242a33" stroke="#313b49"/>
+      <text x="48" y="377" font-size="12" fill="#e4e8f0" font-weight="600">Add export action</text>
+      <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(204 367)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="48" y="404" width="64" height="22" rx="11" fill="#303540"/>
+      <text x="80.0" y="419" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">Feature</text>
+      <circle cx="52" cy="441" r="3" fill="#91bbff"/>
+      <text x="62" y="445" font-size="10" fill="#b1bdce" font-weight="400">Working · 1 / 8</text>
+    </g>
+    <g id="task-3">
+      <rect x="36" y="470" width="192" height="104" rx="5" fill="#242a33" stroke="#313b49"/>
+      <text x="48" y="493" font-size="12" fill="#e4e8f0" font-weight="600">Audit settings flow</text>
+      <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(204 483)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="48" y="520" width="60" height="22" rx="11" fill="#303540"/>
+      <text x="78.0" y="535" font-size="10" fill="#93dfcd" font-weight="600" text-anchor="middle">Review</text>
+      <circle cx="52" cy="557" r="3" fill="#93dfcd"/>
+      <text x="62" y="561" font-size="10" fill="#b1bdce" font-weight="400">Paused · 1 / 3</text>
+    </g>
+    <g id="task-4">
+      <rect x="36" y="586" width="192" height="104" rx="5" fill="#242a33" stroke="#313b49"/>
+      <text x="48" y="609" font-size="12" fill="#e4e8f0" font-weight="600">Extract provider</text>
+      <text x="48" y="627" font-size="12" fill="#e4e8f0" font-weight="600">adapter</text>
+      <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(204 599)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="48" y="636" width="68" height="22" rx="11" fill="#303540"/>
+      <text x="82.0" y="651" font-size="10" fill="#c4b3ee" font-weight="600" text-anchor="middle">Refactor</text>
+      <circle cx="52" cy="673" r="3" fill="#c4b3ee"/>
+      <text x="62" y="677" font-size="10" fill="#b1bdce" font-weight="400">Completed · 3 / 5</text>
+    </g>
+    <line x1="40" y1="716" x2="224" y2="716" stroke="#394352" stroke-width="1"/>
+    <text x="40" y="740" font-size="10" fill="#b1bdce" font-weight="400">Tasks run independently.</text>
+    <text x="40" y="762" font-size="11" fill="#95a4ba" font-weight="400">Switch tasks to view their</text>
+    <text x="40" y="779" font-size="11" fill="#95a4ba" font-weight="400">conversations.</text>
+    <text x="40" y="817" font-size="10" fill="#b1bdce" font-weight="400">Workspace: dual-mind</text>
+    <text x="40" y="839" font-size="10" fill="#95a4ba" font-weight="400">4 example tasks</text>
+  </g>
+  <g id="selected-task">
+    <rect x="264" y="138" width="1152" height="130" rx="6" fill="#20242c" stroke="#394352"/>
+    <text x="284" y="162" font-size="10" fill="#95a4ba" font-weight="600">DM-014 · SELECTED TASK</text>
+    <rect x="1180" y="150" width="216" height="22" rx="11" fill="#25364e"/>
+    <text x="1288.0" y="165" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">REVIEWING · 2 / 5</text>
+    <text x="284" y="191" font-size="20" fill="#e4e8f0" font-weight="600">Fix retry cancellation</text>
+    <text x="284" y="216" font-size="13" fill="#b1bdce" font-weight="400">Cancel pending backoff immediately and preserve the final error.</text>
+    <rect x="284" y="236" width="128" height="22" rx="11" fill="#3a3227"/>
+    <text x="348.0" y="251" font-size="10" fill="#eac58c" font-weight="600" text-anchor="middle">Reviewer: Bug</text>
+    <text x="430" y="251" font-size="11" fill="#b1bdce" font-weight="400">Context: src/utils/retry.ts · 42 lines</text>
+    <text x="1396" y="251" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">Illustrative task</text>
+  </g>
+  <g id="selected-task-controls">
+    <rect x="264" y="284" width="100" height="34" rx="5" fill="#242a34" stroke="#343e4d"/>
+    <path d="M4 2 L13 8 L4 14 Z" transform="translate(276 293.0)" fill="none" stroke="#8390a3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="300" y="305.5" font-size="12" fill="#8390a3" font-weight="400">Start</text>
+    <rect x="376" y="284" width="104" height="34" rx="5" fill="#1c2430" stroke="#3b506c"/>
+    <path d="M5 3 V13 M11 3 V13" transform="translate(388 293.0)" fill="none" stroke="#91bbff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="412" y="305.5" font-size="12" fill="#91bbff" font-weight="400">Pause</text>
+    <rect x="492" y="284" width="98" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+    <path d="M3 3 H13 V13 H3 Z" transform="translate(504 293.0)" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="528" y="305.5" font-size="12" fill="#e4e8f0" font-weight="400">Stop</text>
+    <text x="612" y="306" font-size="11" fill="#b1bdce" font-weight="400">Controls affect this task only</text>
+    <text x="1264" y="306" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">Maximum rounds</text>
+    <rect x="1280" y="284" width="66" height="34" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="1313" y="307" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="middle">5</text>
+    <text x="1416" y="306" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">Per task</text>
+  </g>
+  <g id="worker-conversation">
+    <rect x="264" y="336" width="568" height="348" rx="6" fill="#20242c" stroke="#394352"/>
+    <rect x="265" y="337" width="566" height="64" rx="6" fill="#252e3b"/>
+    <rect x="265" y="389" width="566" height="12" rx="0" fill="#252e3b"/>
+    <rect x="280" y="350" width="32" height="32" rx="7" fill="#344864"/>
+    <text x="296" y="372" font-size="16" fill="#91bbff" font-weight="600" text-anchor="middle">W</text>
+    <text x="324" y="365" font-size="17" fill="#e4e8f0" font-weight="600">Worker</text>
+    <text x="324" y="386" font-size="10" fill="#b1bdce" font-weight="400">General implementation · fixed role</text>
+    <circle cx="734" cy="364" r="3" fill="#95a4ba"/>
+    <text x="746" y="368" font-size="10" fill="#b1bdce" font-weight="400">Waiting</text>
+    <rect x="280" y="412" width="536" height="28" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="292" y="431" font-size="11" fill="#b1bdce" font-weight="400">Local gateway / fast-model</text>
+    <path d="M4 7 V5 A4 4 0 0 1 12 5 V7 M3 7 H13 V14 H3 Z M8 10 V12" transform="translate(788 418)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="280" y1="450" x2="816" y2="450" stroke="#394352" stroke-width="1"/>
+    <text x="284" y="473" font-size="10" fill="#91bbff" font-weight="600">ROUND 2 · WORKER OUTPUT</text>
+    <text x="284" y="497" font-size="12" fill="#e4e8f0" font-weight="400">The cancellation path now has an explicit check.</text>
+    <text x="284" y="517" font-size="11" fill="#b1bdce" font-weight="400">Waiting for the Bug Reviewer before the next revision.</text>
+    <rect x="284" y="532" width="528" height="96" rx="5" fill="#171c24" stroke="#313b49"/>
+    <text x="298" y="553" font-size="10" fill="#bcd2f1" font-weight="400" class="mono">for (let attempt = 0; attempt &lt; maxAttempts; attempt++) {</text>
+    <text x="298" y="572" font-size="10" fill="#bcd2f1" font-weight="400" class="mono">  signal?.throwIfAborted();</text>
+    <text x="298" y="591" font-size="10" fill="#bcd2f1" font-weight="400" class="mono">  // Run the operation and preserve the final error.</text>
+    <text x="298" y="610" font-size="10" fill="#bcd2f1" font-weight="400" class="mono">}</text>
+    <circle cx="288" cy="655" r="3" fill="#91bbff"/>
+    <text x="300" y="659" font-size="11" fill="#b1bdce" font-weight="400">Draft ready for review</text>
+    <text x="812" y="659" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">No files changed</text>
+  </g>
+  <g id="reviewer-conversation">
+    <rect x="848" y="336" width="568" height="348" rx="6" fill="#20242c" stroke="#394352"/>
+    <rect x="849" y="337" width="566" height="64" rx="6" fill="#243431"/>
+    <rect x="849" y="389" width="566" height="12" rx="0" fill="#243431"/>
+    <rect x="864" y="350" width="32" height="32" rx="7" fill="#31564e"/>
+    <text x="880" y="372" font-size="16" fill="#93dfcd" font-weight="600" text-anchor="middle">R</text>
+    <text x="908" y="365" font-size="17" fill="#e4e8f0" font-weight="600">Reviewer</text>
+    <text x="908" y="386" font-size="10" fill="#b1bdce" font-weight="400">Bug · Reproduction, root cause, regressions</text>
+    <circle cx="1318" cy="364" r="3" fill="#93dfcd"/>
+    <text x="1330" y="368" font-size="10" fill="#b1bdce" font-weight="400">Reviewing</text>
+    <rect x="864" y="412" width="536" height="28" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="876" y="431" font-size="11" fill="#b1bdce" font-weight="400">Team API / reasoning-model</text>
+    <path d="M4 7 V5 A4 4 0 0 1 12 5 V7 M3 7 H13 V14 H3 Z M8 10 V12" transform="translate(1372 418)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="864" y1="450" x2="1400" y2="450" stroke="#394352" stroke-width="1"/>
+    <text x="868" y="473" font-size="10" fill="#93dfcd" font-weight="600">BUG REVIEW · EXAMPLE FINDINGS</text>
+    <rect x="868" y="487" width="176" height="22" rx="11" fill="#413523"/>
+    <text x="956.0" y="502" font-size="10" fill="#eac58c" font-weight="600" text-anchor="middle">2 checks to address</text>
+    <text x="868" y="535" font-size="12" fill="#e4e8f0" font-weight="600">1. Reproduce the cancellation failure</text>
+    <text x="884" y="556" font-size="11" fill="#b1bdce" font-weight="400">Cover an abort during the backoff delay.</text>
+    <text x="868" y="588" font-size="12" fill="#e4e8f0" font-weight="600">2. Protect the original error</text>
+    <text x="884" y="609" font-size="11" fill="#b1bdce" font-weight="400">Add a regression test for an exhausted retry budget.</text>
+    <line x1="868" y1="630" x2="1396" y2="630" stroke="#394352" stroke-width="1"/>
+    <text x="868" y="659" font-size="11" fill="#b1bdce" font-weight="400">Next: send findings to Worker</text>
+    <text x="1396" y="659" font-size="10" fill="#eac58c" font-weight="400" text-anchor="end">Approval pending</text>
+  </g>
+  <g id="task-feedback-and-result">
+    <rect x="264" y="700" width="1152" height="58" rx="6" fill="#20242c" stroke="#394352"/>
+    <text x="284" y="720" font-size="10" fill="#95a4ba" font-weight="600">FEEDBACK FOR THIS TASK</text>
+    <text x="284" y="742" font-size="12" fill="#b1bdce" font-weight="400">Add a constraint or guide the next revision…</text>
+    <rect x="1230" y="712" width="166" height="34" rx="5" fill="#1c2430" stroke="#3b506c"/>
+    <text x="1313.0" y="733.5" font-size="12" fill="#91bbff" font-weight="400" text-anchor="middle">Send feedback</text>
+    <rect x="264" y="774" width="1152" height="84" rx="6" fill="#20242c" stroke="#394352"/>
+    <circle cx="288" cy="800" r="4" fill="#eac58c"/>
+    <text x="300" y="805" font-size="14" fill="#e4e8f0" font-weight="600">Result awaiting approval</text>
+    <text x="284" y="833" font-size="11" fill="#b1bdce" font-weight="400">Preview this task’s changes and confirm before applying.</text>
+    <rect x="1100" y="799" width="140" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+    <text x="1170.0" y="820.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Preview draft</text>
+    <rect x="1252" y="799" width="144" height="34" rx="5" fill="#242a34" stroke="#343e4d"/>
+    <text x="1324.0" y="820.5" font-size="12" fill="#8390a3" font-weight="400" text-anchor="middle">Apply changes</text>
+  </g>
+  <g id="delete-task-confirmation">
+    <rect x="0" y="40" width="1440" height="832" rx="0" fill="#080c12" opacity="0.86"/>
+    <rect x="336" y="178" width="744" height="540" rx="8" fill="#242832" stroke="#6a505a"/>
+    <rect x="364" y="204" width="40" height="40" rx="9" fill="#52343d"/>
+    <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(376 216)" fill="none" stroke="#efaaaa" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="420" y="232" font-size="23" fill="#e4e8f0" font-weight="600">Delete this task?</text>
+    <text x="364" y="282" font-size="18" fill="#e4e8f0" font-weight="600">Fix retry cancellation</text>
+    <rect x="364" y="300" width="134" height="22" rx="11" fill="#3b3227"/>
+    <text x="431.0" y="315" font-size="10" fill="#eac58c" font-weight="600" text-anchor="middle">Reviewer: Bug</text>
+    <rect x="510" y="300" width="150" height="22" rx="11" fill="#283951"/>
+    <text x="585.0" y="315" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">Running · 2 / 5</text>
+    <text x="364" y="354" font-size="13" fill="#e4e8f0" font-weight="400">Task details and both conversation histories will be removed.</text>
+    <text x="364" y="380" font-size="12" fill="#b1bdce" font-weight="400">Workspace files and other tasks are kept.</text>
+    <rect x="364" y="406" width="688" height="158" rx="6" fill="#1b222c" stroke="#394352"/>
+    <line x1="390" y1="438" x2="390" y2="530" stroke="#53657c" stroke-width="2"/>
+    <circle cx="390" cy="433" r="11" fill="#35465f"/>
+    <text x="390" y="437" font-size="10" fill="#e4e8f0" font-weight="600" text-anchor="middle">1</text>
+    <text x="414" y="436" font-size="12" fill="#e4e8f0" font-weight="600">Stop this task</text>
+    <text x="414" y="454" font-size="11" fill="#b1bdce" font-weight="400">Cancel its current Worker / Reviewer activity.</text>
+    <circle cx="390" cy="481" r="11" fill="#35465f"/>
+    <text x="390" y="485" font-size="10" fill="#e4e8f0" font-weight="600" text-anchor="middle">2</text>
+    <text x="414" y="484" font-size="12" fill="#e4e8f0" font-weight="600">Wait for stop confirmation</text>
+    <text x="414" y="502" font-size="11" fill="#b1bdce" font-weight="400">Keep the task while stopping is in progress.</text>
+    <circle cx="390" cy="529" r="11" fill="#35465f"/>
+    <text x="390" y="533" font-size="10" fill="#e4e8f0" font-weight="600" text-anchor="middle">3</text>
+    <text x="414" y="532" font-size="12" fill="#e4e8f0" font-weight="600">Delete the task record</text>
+    <text x="414" y="550" font-size="11" fill="#b1bdce" font-weight="400">Remove it only after stopping succeeds.</text>
+    <text x="364" y="596" font-size="12" fill="#93dfcd" font-weight="400">The other running task continues independently.</text>
+    <line x1="364" y1="618" x2="1052" y2="618" stroke="#394352" stroke-width="1"/>
+    <rect x="682" y="640" width="112" height="38" rx="5" fill="#252c37" stroke="#394352"/>
+    <text x="738.0" y="663.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Cancel</text>
+    <rect x="810" y="640" width="242" height="38" rx="5" fill="#713c43" stroke="#a6646c"/>
+    <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(822 651.0)" fill="none" stroke="#ffe5e7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="846" y="663.5" font-size="12" fill="#ffe5e7" font-weight="400">Stop and delete</text>
+    <text x="364" y="700" font-size="10" fill="#95a4ba" font-weight="400">This removes the task and its saved conversation history.</text>
+  </g>
+  <g id="empty-workspace-state-example">
+    <rect x="24" y="230" width="276" height="334" rx="6" fill="#1e2733" stroke="#445772"/>
+    <text x="44" y="257" font-size="10" fill="#95a4ba" font-weight="600">AFTER THE LAST TASK · EXAMPLE</text>
+    <line x1="44" y1="274" x2="280" y2="274" stroke="#394352" stroke-width="1"/>
+    <circle cx="162" cy="338" r="28" fill="#2c3f59"/>
+    <path d="M8 2 V14 M2 8 H14" transform="translate(154 330)" fill="none" stroke="#91bbff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="162" y="397" font-size="17" fill="#e4e8f0" font-weight="600" text-anchor="middle">No tasks yet</text>
+    <text x="56" y="426" font-size="11" fill="#b1bdce" font-weight="400">Create a task to pair a Worker with a</text>
+    <text x="56" y="445" font-size="11" fill="#b1bdce" font-weight="400">focused Reviewer.</text>
+    <rect x="56" y="484" width="212" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+    <path d="M8 2 V14 M2 8 H14" transform="translate(68 493.0)" fill="none" stroke="#eff5ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="92" y="505.5" font-size="12" fill="#eff5ff" font-weight="400">New task</text>
+    <text x="162" y="544" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="middle">Empty-list design variant</text>
+  </g>
+  <g id="deletion-state-examples">
+    <rect x="1116" y="230" width="300" height="488" rx="6" fill="#1e2733" stroke="#445772"/>
+    <text x="1136" y="257" font-size="10" fill="#95a4ba" font-weight="600">DELETE STATES · EXAMPLES</text>
+    <text x="1136" y="296" font-size="11" fill="#b1bdce" font-weight="600">Draft / stopped / completed</text>
+    <rect x="1136" y="312" width="260" height="32" rx="5" fill="#713c43" stroke="#a6646c"/>
+    <text x="1266.0" y="332.5" font-size="12" fill="#ffe5e7" font-weight="400" text-anchor="middle">Delete task</text>
+    <text x="1136" y="390" font-size="11" fill="#b1bdce" font-weight="600">Running / paused</text>
+    <text x="1136" y="412" font-size="12" fill="#e4e8f0" font-weight="400">Use “Stop and delete”.</text>
+    <text x="1136" y="458" font-size="11" fill="#b1bdce" font-weight="600">Stopping</text>
+    <rect x="1136" y="474" width="260" height="32" rx="5" fill="#242a34" stroke="#343e4d"/>
+    <text x="1266.0" y="494.5" font-size="12" fill="#8390a3" font-weight="400" text-anchor="middle">Stopping…</text>
+    <text x="1136" y="554" font-size="11" fill="#efaaaa" font-weight="600">Stop failed</text>
+    <text x="1136" y="579" font-size="12" fill="#b1bdce" font-weight="400">Deletion cancelled. The task and its history</text>
+    <text x="1136" y="600" font-size="12" fill="#b1bdce" font-weight="400">are retained.</text>
+    <rect x="1136" y="634" width="260" height="32" rx="5" fill="#252c37" stroke="#394352"/>
+    <text x="1266.0" y="654.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Retry stop</text>
+    <text x="1136" y="696" font-size="10" fill="#95a4ba" font-weight="400">A failure never silently removes a task.</text>
+  </g>
+  <g id="deletion-design-note">
+    <rect x="336" y="752" width="744" height="82" rx="6" fill="#26302e" stroke="#455b52"/>
+    <text x="356" y="779" font-size="12" fill="#93dfcd" font-weight="600">Selection after deletion</text>
+    <text x="356" y="801" font-size="12" fill="#b1bdce" font-weight="400">Select another remaining task. If none remain, show the empty list and New task entry.</text>
+  </g>
+</svg>

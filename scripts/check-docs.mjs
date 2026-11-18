@@ -88,34 +88,75 @@ for (const [english, chinese] of pairs) {
   }
 }
 
-const svg = await readFile(join(root, 'docs/design/dual-mind-workbench.svg'), 'utf8');
-if (
-  !/<svg\b[^>]*viewBox="0 0 1440 900"/.test(svg) ||
-  !/<title\b/.test(svg) ||
-  !/<desc\b/.test(svg)
-) {
-  errors.push('SVG must declare a 1440 × 900 viewBox and accessible title/description.');
-}
-if (/<(?:script|foreignObject|image)\b|\son\w+\s*=|@import|@font-face/i.test(svg)) {
-  errors.push('SVG must contain only static vector elements and editable text.');
-}
-for (const [, target] of svg.matchAll(/(?:href|src)=["']([^"']+)["']/g)) {
-  if (!target.startsWith('#')) {
-    errors.push(`SVG contains an external reference: ${target}`);
+const designDirectory = join(root, 'docs/design');
+const designEntries = (await readdir(designDirectory, { withFileTypes: true }))
+  .filter((entry) => entry.isFile())
+  .map((entry) => entry.name);
+const svgFiles = designEntries.filter((name) => name.endsWith('.svg')).sort();
+const requiredScenes = [
+  'dual-mind-workbench',
+  'dual-mind-api-settings',
+  'dual-mind-reviewer-roles',
+  'dual-mind-new-task',
+  'dual-mind-delete-task',
+];
+for (const scene of requiredScenes) {
+  if (!svgFiles.includes(`${scene}.svg`)) {
+    errors.push(`docs/design/${scene}.svg: missing required design scene`);
   }
 }
-if (/url\(\s*["']?(?!#)[a-z/]/i.test(svg)) {
-  errors.push('SVG contains an external CSS resource.');
+for (const name of designEntries.filter((entry) => entry.endsWith('.png'))) {
+  if (!svgFiles.includes(name.replace(/\.png$/, '.svg'))) {
+    errors.push(`docs/design/${name}: preview has no matching SVG source`);
+  }
 }
 
-const png = await readFile(join(root, 'docs/design/dual-mind-workbench.png'));
-if (
-  png.length < 24 ||
-  !png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ||
-  png.readUInt32BE(16) !== 1440 ||
-  png.readUInt32BE(20) !== 900
-) {
-  errors.push('The README preview must be a 1440 × 900 PNG.');
+for (const name of svgFiles) {
+  const label = `docs/design/${name}`;
+  const svg = await readFile(join(designDirectory, name), 'utf8');
+  const rootTag = svg.match(/<svg\b[^>]*>/)?.[0] || '';
+  if (
+    !/\bviewBox=["']0 0 1440 900["']/.test(rootTag) ||
+    !/\bwidth=["']1440["']/.test(rootTag) ||
+    !/\bheight=["']900["']/.test(rootTag) ||
+    !/<title\b[^>]*>[^<]+<\/title>/.test(svg) ||
+    !/<desc\b[^>]*>[^<]+<\/desc>/.test(svg) ||
+    !/<text\b/.test(svg)
+  ) {
+    errors.push(`${label}: expected a 1440 × 900 SVG with a title, description, and editable text`);
+  }
+  if (
+    /<(?:script|foreignObject|image|animate(?:Motion|Transform)?|set)\b|\son\w+\s*=|@import|@font-face/i.test(
+      svg,
+    )
+  ) {
+    errors.push(`${label}: only static vector elements and editable text are allowed`);
+  }
+  for (const [, target] of svg.matchAll(/\b(?:href|src)\s*=\s*["']([^"']+)["']/g)) {
+    if (!target.startsWith('#')) {
+      errors.push(`${label}: external reference ${target}`);
+    }
+  }
+  for (const [, target] of svg.matchAll(/url\(\s*["']?([^)'"]+)["']?\s*\)/gi)) {
+    if (!target.trim().startsWith('#')) {
+      errors.push(`${label}: external CSS resource ${target.trim()}`);
+    }
+  }
+
+  const preview = name.replace(/\.svg$/, '.png');
+  try {
+    const png = await readFile(join(designDirectory, preview));
+    if (
+      png.length < 24 ||
+      !png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ||
+      png.readUInt32BE(16) !== 1440 ||
+      png.readUInt32BE(20) !== 900
+    ) {
+      errors.push(`docs/design/${preview}: expected a 1440 × 900 PNG preview`);
+    }
+  } catch (error) {
+    errors.push(`docs/design/${preview}: cannot read the matching PNG preview (${error.code})`);
+  }
 }
 
 if (errors.length > 0) {
@@ -123,6 +164,6 @@ if (errors.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    `Checked ${files.length} Markdown files, ${links} local links, ${pairs.length} language pairs, and design assets.`,
+    `Checked ${files.length} Markdown files, ${links} local links, ${pairs.length} language pairs, and ${svgFiles.length} SVG/PNG design pairs.`,
   );
 }

@@ -51,6 +51,9 @@ jobs:
       - run: npm run check
       - name: Test inside the extension host / 扩展宿主测试
         run: xvfb-run -a npm test
+      - name: Verify real bilingual Webview / 验证真实双语界面
+        if: matrix.vscode == 'stable'
+        run: xvfb-run -a npm run test:ui
       - name: Verify local VSIX packaging / 验证本地打包
         if: matrix.vscode == 'stable'
         run: npm run package

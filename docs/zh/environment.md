@@ -55,7 +55,7 @@ CI 通过 `actions/setup-node` 读取同一份 `.nvmrc`，无需单独安装 nvm
 sudo bash scripts/install-ubuntu20-test-deps.sh
 ```
 
-完整包清单见[安装脚本](../../scripts/install-ubuntu20-test-deps.sh)，包含 GTK、NSS/NSPR、ALSA、GBM/DRM、X11、字体、Xvfb 和 xauth。脚本会先确认系统为 Ubuntu 20.04，再安装依赖；后续 Ubuntu 版本的部分包名不同。在以 root 运行的 CI 容器中省略 `sudo`。
+完整包清单见[安装脚本](../../scripts/install-ubuntu20-test-deps.sh)，包含 GTK、NSS/NSPR、ALSA、GBM/DRM、X11、拉丁／中日韩字体、Xvfb 和 xauth。中日韩字体用于在干净的 CI 容器中显示中文 Webview 截图。脚本会先确认系统为 Ubuntu 20.04，再安装依赖；后续 Ubuntu 版本的部分包名不同。在以 root 运行的 CI 容器中省略 `sudo`。
 
 对于已经安装 VS Code 及其依赖的较新 Ubuntu 桌面，按需补齐无桌面显示工具：
 
@@ -102,11 +102,11 @@ node scripts/check-environment.cjs
 
 ## CI 验证组合
 
-| 执行环境                                       | VS Code   | 验证内容                             |
-| ---------------------------------------------- | --------- | ------------------------------------ |
-| `ubuntu-24.04` runner 中的 `ubuntu:20.04` 容器 | `1.100.0` | 依赖安装、工程检查、扩展宿主冒烟测试 |
-| `ubuntu-24.04` runner 中的 `ubuntu:20.04` 容器 | `stable`  | 同上，并验证本地 VSIX 打包           |
-| 原生 `ubuntu-24.04` runner                     | `stable`  | 依赖安装、工程检查、扩展宿主冒烟测试 |
+| 执行环境                                       | VS Code   | 验证内容                                                |
+| ---------------------------------------------- | --------- | ------------------------------------------------------- |
+| `ubuntu-24.04` runner 中的 `ubuntu:20.04` 容器 | `1.100.0` | 依赖安装、工程检查、扩展宿主冒烟测试                    |
+| `ubuntu-24.04` runner 中的 `ubuntu:20.04` 容器 | `stable`  | 同上，并验证真实双语 Webview 交互／截图和本地 VSIX 打包 |
+| 原生 `ubuntu-24.04` runner                     | `stable`  | 依赖安装、工程检查、扩展宿主冒烟测试                    |
 
 [工作流](../../.github/workflows/ci.yml)在 Ubuntu 20.04 容器中显式使用 Bash，并在配置前断言实际发行版、版本和 amd64 架构。GitHub 的 Ubuntu 20.04 托管 runner 已于 [2025 年 4 月 15 日退役](https://github.com/actions/runner-images/issues/11101)，因此使用容器保留最低用户态基线。容器共享宿主内核，此组合不验证 Ubuntu 20.04 内核或完整桌面会话。
 

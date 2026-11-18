@@ -20,4 +20,4 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   libnspr4 libnss3 libpango-1.0-0 libsecret-1-0 \
   libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxdamage1 libxext6 \
   libxfixes3 libxkbcommon0 libxrandr2 libxshmfence1 \
-  fonts-dejavu-core xvfb xauth
+  fonts-dejavu-core fonts-noto-cjk xvfb xauth

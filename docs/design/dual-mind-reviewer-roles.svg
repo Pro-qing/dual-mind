@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">DualMind — Reviewer role settings proposal</title>
+  <desc id="description">Four built-in Reviewer presets: Bug, Feature, Review and Refactor. The Bug instructions are editable, Worker remains fixed, custom roles can be managed and existing tasks retain their role snapshots.</desc>
+  <style>text { font-family: "DejaVu Sans", Arial, sans-serif; } .mono { font-family: "DejaVu Sans Mono", monospace; }</style>
+  <rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22"/>
+  <g id="editor-chrome">
+    <rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b"/>
+    <rect x="0" y="0" width="224" height="40" rx="0" fill="#191c22"/>
+    <rect x="0" y="0" width="224" height="2" rx="0" fill="#7aaaff"/>
+    <rect x="22" y="12" width="14" height="16" rx="3" fill="#2b4161"/>
+    <text x="46" y="26" font-size="13" fill="#e4e8f0" font-weight="400">DualMind</text>
+    <path d="M3 3 L13 13 M13 3 L3 13" transform="translate(196 12)" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="224" y1="39" x2="1440" y2="39" stroke="#2b3039" stroke-width="1"/>
+    <text x="1416" y="25" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">DESIGN ADDITIONS / 03</text>
+  </g>
+  <g id="application-header">
+    <rect x="24" y="64" width="44" height="44" rx="10" fill="#223047"/>
+    <path d="M43 77 L35 86 L43 95 M49 77 L57 86 L49 95" stroke="#a2c4ff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="84" y="85" font-size="24" fill="#e4e8f0" font-weight="600">DualMind / Settings</text>
+    <text x="85" y="109" font-size="12" fill="#b1bdce" font-weight="400">Connections and Reviewer presets for this VS Code user.</text>
+    <rect x="1224" y="72" width="192" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+    <path d="M10 3 L5 8 L10 13" transform="translate(1236 81.0)" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1260" y="93.5" font-size="12" fill="#e4e8f0" font-weight="400">Back to tasks</text>
+  </g>
+  <text x="24" y="884" font-size="10" fill="#95a4ba" font-weight="400">STATIC SVG · Illustrative content · Base layout approved; additions pending review</text>
+  <text x="1416" y="884" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">React implementation follows design approval</text>
+  <g id="settings-navigation">
+    <line x1="24" y1="174" x2="1416" y2="174" stroke="#394352" stroke-width="1"/>
+    <text x="44" y="156" font-size="14" fill="#b1bdce" font-weight="600">API Connections</text>
+    <text x="272" y="156" font-size="14" fill="#91bbff" font-weight="600">Reviewer Roles</text>
+    <rect x="252" y="172" width="208" height="3" rx="0" fill="#91bbff"/>
+    <text x="1416" y="154" font-size="11" fill="#95a4ba" font-weight="400" text-anchor="end">Example configuration · no live connections</text>
+  </g>
+  <rect x="24" y="194" width="260" height="664" rx="6" fill="#20242c" stroke="#394352"/>
+  <rect x="308" y="194" width="1108" height="664" rx="6" fill="#20242c" stroke="#394352"/>
+  <g id="reviewer-role-list">
+    <text x="44" y="222" font-size="11" fill="#b1bdce" font-weight="600">REVIEWER ROLES</text>
+    <rect x="44" y="240" width="220" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+    <path d="M8 2 V14 M2 8 H14" transform="translate(56 249.0)" fill="none" stroke="#eff5ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="261.5" font-size="12" fill="#eff5ff" font-weight="400">New role</text>
+    <rect x="40" y="296" width="228" height="58" rx="5" fill="#22334d" stroke="#557eaf"/>
+    <circle cx="56" cy="316" r="3" fill="#eac58c"/>
+    <text x="68" y="320" font-size="13" fill="#eac58c" font-weight="600">Bug</text>
+    <text x="56" y="341" font-size="10" fill="#b1bdce" font-weight="400">Reproduction &amp; regressions</text>
+    <rect x="40" y="366" width="228" height="58" rx="5" fill="#242a33" stroke="#313b49"/>
+    <circle cx="56" cy="386" r="3" fill="#91bbff"/>
+    <text x="68" y="390" font-size="13" fill="#91bbff" font-weight="600">Feature</text>
+    <text x="56" y="411" font-size="10" fill="#b1bdce" font-weight="400">Acceptance &amp; compatibility</text>
+    <rect x="40" y="436" width="228" height="58" rx="5" fill="#242a33" stroke="#313b49"/>
+    <circle cx="56" cy="456" r="3" fill="#93dfcd"/>
+    <text x="68" y="460" font-size="13" fill="#93dfcd" font-weight="600">Review</text>
+    <text x="56" y="481" font-size="10" fill="#b1bdce" font-weight="400">Correctness &amp; maintainability</text>
+    <rect x="40" y="506" width="228" height="58" rx="5" fill="#242a33" stroke="#313b49"/>
+    <circle cx="56" cy="526" r="3" fill="#c4b3ee"/>
+    <text x="68" y="530" font-size="13" fill="#c4b3ee" font-weight="600">Refactor</text>
+    <text x="56" y="551" font-size="10" fill="#b1bdce" font-weight="400">Behavior &amp; structure</text>
+    <text x="44" y="600" font-size="10" fill="#95a4ba" font-weight="600">CUSTOM</text>
+    <rect x="40" y="616" width="228" height="74" rx="5" fill="#242a33" stroke="#313b49"/>
+    <text x="56" y="642" font-size="12" fill="#e4e8f0" font-weight="600">Security audit</text>
+    <path d="M3 10 L11 2 L14 5 L6 13 L2 14 Z M9 4 L12 7" transform="translate(214 626)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(240 626)" fill="none" stroke="#95a4ba" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="56" y="670" font-size="10" fill="#b1bdce" font-weight="400">Threat boundaries &amp; secrets</text>
+    <line x1="44" y1="738" x2="264" y2="738" stroke="#394352" stroke-width="1"/>
+    <text x="44" y="765" font-size="11" fill="#b1bdce" font-weight="400">Built-in roles can be reset. Custom</text>
+    <text x="44" y="786" font-size="11" fill="#b1bdce" font-weight="400">roles can be edited or deleted.</text>
+    <text x="44" y="835" font-size="10" fill="#95a4ba" font-weight="400">Reviewer presets · user scope</text>
+  </g>
+  <g id="reviewer-role-editor">
+    <text x="332" y="226" font-size="20" fill="#eac58c" font-weight="600">Bug</text>
+    <rect x="390" y="208" width="90" height="22" rx="11" fill="#3a3227"/>
+    <text x="435.0" y="223" font-size="10" fill="#eac58c" font-weight="600" text-anchor="middle">BUILT-IN</text>
+    <text x="332" y="254" font-size="12" fill="#b1bdce" font-weight="400">Review reproduction, root cause and regression risk.</text>
+    <text x="332" y="292" font-size="11" fill="#b1bdce" font-weight="600">ROLE NAME · FIXED FOR BUILT-IN ROLES</text>
+    <rect x="332" y="302" width="352" height="36" rx="5" fill="#232a34" stroke="#394352"/>
+    <text x="344" y="324.5" font-size="12" fill="#95a4ba" font-weight="400">Bug</text>
+    <text x="708" y="292" font-size="11" fill="#b1bdce" font-weight="600">APPLIES TO</text>
+    <rect x="708" y="302" width="352" height="36" rx="5" fill="#232a34" stroke="#394352"/>
+    <text x="720" y="324.5" font-size="12" fill="#95a4ba" font-weight="400">Reviewer only</text>
+    <text x="332" y="370" font-size="11" fill="#b1bdce" font-weight="600">PURPOSE</text>
+    <rect x="332" y="380" width="728" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="344" y="402.5" font-size="12" fill="#e4e8f0" font-weight="400">Check that the reported failure is fixed without regressions.</text>
+    <text x="332" y="452" font-size="11" fill="#b1bdce" font-weight="600">REVIEW INSTRUCTIONS</text>
+    <rect x="332" y="464" width="728" height="226" rx="6" fill="#171c24" stroke="#394352"/>
+    <text x="350" y="491" font-size="13" fill="#e4e8f0" font-weight="400" class="mono">You are the Reviewer for a bug-fix task.</text>
+    <text x="350" y="543" font-size="12" fill="#b1bdce" font-weight="400" class="mono">1. Reproduce the reported failure from the task context.</text>
+    <text x="350" y="569" font-size="12" fill="#b1bdce" font-weight="400" class="mono">2. Check the root cause and the smallest effective fix.</text>
+    <text x="350" y="595" font-size="12" fill="#b1bdce" font-weight="400" class="mono">3. Challenge cancellation, errors and boundary cases.</text>
+    <text x="350" y="621" font-size="12" fill="#b1bdce" font-weight="400" class="mono">4. Require regression coverage for the original failure.</text>
+    <text x="350" y="647" font-size="12" fill="#b1bdce" font-weight="400" class="mono">5. Return actionable findings or explicitly approve.</text>
+    <rect x="332" y="714" width="180" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+    <text x="422.0" y="735.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Restore default</text>
+    <rect x="884" y="714" width="176" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+    <text x="972.0" y="735.5" font-size="12" fill="#eff5ff" font-weight="400" text-anchor="middle">Save instructions</text>
+    <rect x="332" y="772" width="728" height="62" rx="6" fill="#23322f" stroke="#3b5750"/>
+    <text x="350" y="796" font-size="12" fill="#93dfcd" font-weight="600">Changes apply to newly created tasks.</text>
+    <text x="350" y="818" font-size="11" fill="#b1bdce" font-weight="400">Existing tasks keep the role instructions captured when they were created.</text>
+  </g>
+  <g id="fixed-worker-role">
+    <rect x="1084" y="270" width="308" height="138" rx="6" fill="#253042" stroke="#394352"/>
+    <rect x="1104" y="288" width="94" height="22" rx="11" fill="#344864"/>
+    <text x="1151.0" y="303" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">WORKER</text>
+    <text x="1104" y="336" font-size="14" fill="#91bbff" font-weight="600">General implementation</text>
+    <text x="1104" y="360" font-size="11" fill="#b1bdce" font-weight="400">Complete the task and revise from feedback.</text>
+    <text x="1104" y="379" font-size="11" fill="#b1bdce" font-weight="400">This role stays fixed.</text>
+  </g>
+  <g id="role-snapshot-explanation">
+    <rect x="1084" y="428" width="308" height="164" rx="6" fill="#242e34" stroke="#394352"/>
+    <text x="1104" y="452" font-size="10" fill="#95a4ba" font-weight="600">ROLE SNAPSHOT</text>
+    <text x="1104" y="479" font-size="12" fill="#e4e8f0" font-weight="400">Each task keeps its selected Reviewer</text>
+    <text x="1104" y="500" font-size="12" fill="#e4e8f0" font-weight="400">instructions.</text>
+    <text x="1104" y="534" font-size="11" fill="#b1bdce" font-weight="400">Editing or deleting a preset does not rewrite</text>
+    <text x="1104" y="553" font-size="11" fill="#b1bdce" font-weight="400">task history.</text>
+  </g>
+  <g id="custom-role-example">
+    <rect x="1084" y="612" width="308" height="222" rx="6" fill="#1d252e" stroke="#394352"/>
+    <text x="1104" y="636" font-size="10" fill="#95a4ba" font-weight="600">CUSTOM ROLE · EXAMPLE</text>
+    <text x="1104" y="664" font-size="14" fill="#e4e8f0" font-weight="600">Security audit</text>
+    <text x="1104" y="689" font-size="11" fill="#b1bdce" font-weight="400">Purpose: examine trust boundaries and</text>
+    <text x="1104" y="708" font-size="11" fill="#b1bdce" font-weight="400">credential handling.</text>
+    <line x1="1104" y1="733" x2="1372" y2="733" stroke="#394352" stroke-width="1"/>
+    <text x="1104" y="755" font-size="11" fill="#b1bdce" font-weight="400">Edit the name, purpose and review instructions.</text>
+    <rect x="1104" y="787" width="122" height="30" rx="5" fill="#252c37" stroke="#394352"/>
+    <path d="M3 10 L11 2 L14 5 L6 13 L2 14 Z M9 4 L12 7" transform="translate(1116 794.0)" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1140" y="806.5" font-size="12" fill="#e4e8f0" font-weight="400">Edit</text>
+    <rect x="1238" y="787" width="134" height="30" rx="5" fill="#252c37" stroke="#394352"/>
+    <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(1250 794.0)" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1274" y="806.5" font-size="12" fill="#e4e8f0" font-weight="400">Delete</text>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+{
+  "extends": "../../webview/tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "react", "react-dom"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

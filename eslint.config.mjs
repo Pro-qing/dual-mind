@@ -6,14 +6,15 @@ import { defineConfig } from 'eslint/config';
 export default defineConfig([
   { ignores: ['dist/**', 'out/**', 'node_modules/**', '.vscode-test/**', 'release/**'] },
   {
-    files: ['**/*.ts', '**/*.mjs', '**/*.cjs'],
+    files: ['**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs'],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },
     rules: { eqeqeq: 'error', curly: 'error' },
   },
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
     extends: [tseslint.configs.recommended],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }] },
   },
+  { files: ['webview/src/**/*.{ts,tsx}'], languageOptions: { globals: globals.browser } },
 ]);

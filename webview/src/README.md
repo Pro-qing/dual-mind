@@ -1,5 +1,5 @@
-# UI source placeholder / 界面源码占位
+# UI source / 界面源码
 
-Future React components and theme-aware styles belong here. No UI entry point is implemented while design review is pending. See [the Webview notes](../README.md).
+`App.tsx` owns navigation and language changes. `Tasks.tsx` manages drafts and the isolated example preview; `Settings.tsx` edits connection and Reviewer configuration. `bridge.ts` correlates host requests and acknowledgements. Styles follow VS Code theme variables. See [the Webview overview](../README.md).
 
-此处预留 React 组件和适配主题的样式。设计待审核期间不实现界面入口，详见 [Webview 说明](../README.md)。
+`App.tsx` 管理导航和语言切换，`Tasks.tsx` 展示草稿及隔离示例，`Settings.tsx` 编辑连接和 Reviewer 配置，`bridge.ts` 关联宿主请求与确认。样式使用 VS Code 主题变量，详见 [Webview 概述](../README.md)。

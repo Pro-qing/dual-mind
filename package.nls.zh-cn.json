@@ -1,0 +1,9 @@
+{
+  "description": "提供任务、连接设置及双语审查角色的本地 Worker／Reviewer 工作台。",
+  "openWorkbench": "打开工作台",
+  "showStatus": "显示状态",
+  "language": "DualMind 界面语言。内置 Reviewer 定义按此设置显示，自定义内容和任务快照保留原文。",
+  "languageAuto": "跟随 VS Code",
+  "languageZh": "简体中文",
+  "languageEn": "English"
+}

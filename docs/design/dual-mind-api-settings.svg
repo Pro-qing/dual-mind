@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">DualMind — API connection settings proposal</title>
+  <desc id="description">Illustrative OpenAI-compatible connections, independent default model selections, host-managed key entry, connection-test feedback examples and a disabled deletion action while a connection is used by active tasks.</desc>
+  <style>text { font-family: "DejaVu Sans", Arial, sans-serif; } .mono { font-family: "DejaVu Sans Mono", monospace; }</style>
+  <rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22"/>
+  <g id="editor-chrome">
+    <rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b"/>
+    <rect x="0" y="0" width="224" height="40" rx="0" fill="#191c22"/>
+    <rect x="0" y="0" width="224" height="2" rx="0" fill="#7aaaff"/>
+    <rect x="22" y="12" width="14" height="16" rx="3" fill="#2b4161"/>
+    <text x="46" y="26" font-size="13" fill="#e4e8f0" font-weight="400">DualMind</text>
+    <path d="M3 3 L13 13 M13 3 L3 13" transform="translate(196 12)" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="224" y1="39" x2="1440" y2="39" stroke="#2b3039" stroke-width="1"/>
+    <text x="1416" y="25" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">DESIGN ADDITIONS / 02</text>
+  </g>
+  <g id="application-header">
+    <rect x="24" y="64" width="44" height="44" rx="10" fill="#223047"/>
+    <path d="M43 77 L35 86 L43 95 M49 77 L57 86 L49 95" stroke="#a2c4ff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="84" y="85" font-size="24" fill="#e4e8f0" font-weight="600">DualMind / Settings</text>
+    <text x="85" y="109" font-size="12" fill="#b1bdce" font-weight="400">Connections and Reviewer presets for this VS Code user.</text>
+    <rect x="1224" y="72" width="192" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+    <path d="M10 3 L5 8 L10 13" transform="translate(1236 81.0)" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1260" y="93.5" font-size="12" fill="#e4e8f0" font-weight="400">Back to tasks</text>
+  </g>
+  <text x="24" y="884" font-size="10" fill="#95a4ba" font-weight="400">STATIC SVG · Illustrative content · Base layout approved; additions pending review</text>
+  <text x="1416" y="884" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">React implementation follows design approval</text>
+  <g id="settings-navigation">
+    <line x1="24" y1="174" x2="1416" y2="174" stroke="#394352" stroke-width="1"/>
+    <text x="44" y="156" font-size="14" fill="#91bbff" font-weight="600">API Connections</text>
+    <rect x="24" y="172" width="212" height="3" rx="0" fill="#91bbff"/>
+    <text x="272" y="156" font-size="14" fill="#b1bdce" font-weight="600">Reviewer Roles</text>
+    <text x="1416" y="154" font-size="11" fill="#95a4ba" font-weight="400" text-anchor="end">Example configuration · no live connections</text>
+  </g>
+  <rect x="24" y="194" width="260" height="664" rx="6" fill="#20242c" stroke="#394352"/>
+  <rect x="308" y="194" width="1108" height="664" rx="6" fill="#20242c" stroke="#394352"/>
+  <g id="connection-list">
+    <text x="44" y="222" font-size="11" fill="#b1bdce" font-weight="600">CONNECTIONS</text>
+    <rect x="44" y="240" width="220" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+    <path d="M8 2 V14 M2 8 H14" transform="translate(56 249.0)" fill="none" stroke="#eff5ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="261.5" font-size="12" fill="#eff5ff" font-weight="400">New connection</text>
+    <rect x="40" y="294" width="228" height="84" rx="5" fill="#22334d" stroke="#557eaf"/>
+    <text x="56" y="318" font-size="14" fill="#e4e8f0" font-weight="600">Team API</text>
+    <text x="56" y="338" font-size="10" fill="#95a4ba" font-weight="400">OpenAI compatible</text>
+    <circle cx="60" cy="358" r="3" fill="#93dfcd"/>
+    <text x="70" y="362" font-size="11" fill="#93dfcd" font-weight="400">Connected · example</text>
+    <rect x="40" y="392" width="228" height="84" rx="5" fill="#242a33" stroke="#313b49"/>
+    <text x="56" y="416" font-size="14" fill="#e4e8f0" font-weight="600">Local gateway</text>
+    <text x="56" y="436" font-size="10" fill="#95a4ba" font-weight="400">OpenAI compatible</text>
+    <circle cx="60" cy="456" r="3" fill="#95a4ba"/>
+    <text x="70" y="460" font-size="11" fill="#95a4ba" font-weight="400">Not tested</text>
+    <rect x="40" y="490" width="228" height="84" rx="5" fill="#242a33" stroke="#313b49"/>
+    <text x="56" y="514" font-size="14" fill="#e4e8f0" font-weight="600">Staging</text>
+    <text x="56" y="534" font-size="10" fill="#95a4ba" font-weight="400">OpenAI compatible</text>
+    <circle cx="60" cy="554" r="3" fill="#eac58c"/>
+    <text x="70" y="558" font-size="11" fill="#eac58c" font-weight="400">Missing API key</text>
+    <line x1="44" y1="738" x2="264" y2="738" stroke="#394352" stroke-width="1"/>
+    <text x="44" y="763" font-size="12" fill="#b1bdce" font-weight="400">Worker and Reviewer can use</text>
+    <text x="44" y="784" font-size="12" fill="#b1bdce" font-weight="400">different connections and models.</text>
+    <text x="44" y="835" font-size="10" fill="#95a4ba" font-weight="400">Examples only · no API calls</text>
+  </g>
+  <g id="connection-editor">
+    <text x="332" y="226" font-size="20" fill="#e4e8f0" font-weight="600">Team API</text>
+    <rect x="468" y="208" width="174" height="22" rx="11" fill="#26354d"/>
+    <text x="555.0" y="223" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">OPENAI COMPATIBLE</text>
+    <text x="332" y="252" font-size="12" fill="#b1bdce" font-weight="400">Configure a saved endpoint and its default model.</text>
+    <text x="332" y="274" font-size="11" fill="#b1bdce" font-weight="600">CONNECTION NAME</text>
+    <rect x="332" y="284" width="688" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="344" y="306.5" font-size="12" fill="#e4e8f0" font-weight="400">Team API</text>
+    <text x="332" y="346" font-size="11" fill="#b1bdce" font-weight="600">BASE URL</text>
+    <rect x="332" y="356" width="688" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="344" y="378.5" font-size="12" fill="#e4e8f0" font-weight="400">https://api.example.test/v1</text>
+    <text x="332" y="418" font-size="11" fill="#b1bdce" font-weight="600">DEFAULT MODEL ID</text>
+    <rect x="332" y="428" width="688" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="344" y="450.5" font-size="12" fill="#e4e8f0" font-weight="400">reasoning-model</text>
+    <text x="332" y="490" font-size="11" fill="#b1bdce" font-weight="600">API KEY</text>
+    <rect x="332" y="500" width="440" height="38" rx="5" fill="#171c24" stroke="#394352"/>
+    <path d="M10 3 A4 4 0 1 1 9.9 3 M7 9 L2 14 M3 12 L5 14" transform="translate(346 511)" fill="none" stroke="#93dfcd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="374" y="524" font-size="12" fill="#93dfcd" font-weight="400">Saved in VS Code</text>
+    <rect x="788" y="500" width="232" height="38" rx="5" fill="#252c37" stroke="#394352"/>
+    <text x="904.0" y="523.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Replace key</text>
+    <rect x="332" y="556" width="172" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+    <path d="M4 2 L13 8 L4 14 Z" transform="translate(344 565.0)" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="368" y="577.5" font-size="12" fill="#e4e8f0" font-weight="400">Test connection</text>
+    <text x="522" y="578" font-size="11" fill="#93dfcd" font-weight="400">Connected · illustrative result</text>
+    <rect x="870" y="556" width="150" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+    <text x="945.0" y="577.5" font-size="12" fill="#eff5ff" font-weight="400" text-anchor="middle">Save connection</text>
+    <line x1="332" y1="600" x2="1020" y2="600" stroke="#394352" stroke-width="1"/>
+  </g>
+  <g id="default-agent-bindings">
+    <text x="332" y="621" font-size="11" fill="#b1bdce" font-weight="600">DEFAULTS FOR NEW TASKS</text>
+    <rect x="332" y="638" width="332" height="146" rx="6" fill="#232b36" stroke="#394352"/>
+    <text x="348" y="660" font-size="13" fill="#91bbff" font-weight="600">Worker</text>
+    <rect x="348" y="672" width="300" height="32" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="360" y="693" font-size="12" fill="#e4e8f0" font-weight="400">Local gateway</text>
+    <path d="M3 6 L8 11 L13 6" transform="translate(620 680)" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="348" y="726" font-size="10" fill="#95a4ba" font-weight="600">MODEL ID</text>
+    <rect x="348" y="736" width="300" height="32" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="360" y="757" font-size="12" fill="#e4e8f0" font-weight="400">fast-model</text>
+    <rect x="688" y="638" width="332" height="146" rx="6" fill="#232b36" stroke="#394352"/>
+    <text x="704" y="660" font-size="13" fill="#93dfcd" font-weight="600">Reviewer</text>
+    <rect x="704" y="672" width="300" height="32" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="716" y="693" font-size="12" fill="#e4e8f0" font-weight="400">Team API</text>
+    <path d="M3 6 L8 11 L13 6" transform="translate(976 680)" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="704" y="726" font-size="10" fill="#95a4ba" font-weight="600">MODEL ID</text>
+    <rect x="704" y="736" width="300" height="32" rx="5" fill="#171c24" stroke="#394352"/>
+    <text x="716" y="757" font-size="12" fill="#e4e8f0" font-weight="400">reasoning-model</text>
+    <text x="332" y="823" font-size="11" fill="#95a4ba" font-weight="400">New tasks inherit these editable selections.</text>
+    <rect x="848" y="802" width="172" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+    <text x="934.0" y="823.5" font-size="12" fill="#eff5ff" font-weight="400" text-anchor="middle">Save defaults</text>
+  </g>
+  <g id="connection-usage">
+    <rect x="1044" y="248" width="348" height="168" rx="6" fill="#252d39" stroke="#394352"/>
+    <text x="1064" y="272" font-size="10" fill="#b1bdce" font-weight="600">USED BY 2 ACTIVE TASKS</text>
+    <text x="1064" y="299" font-size="12" fill="#e4e8f0" font-weight="400">Fix retry cancellation</text>
+    <text x="1064" y="322" font-size="12" fill="#e4e8f0" font-weight="400">Add export action</text>
+    <rect x="1064" y="342" width="308" height="30" rx="5" fill="#242a34" stroke="#343e4d"/>
+    <path d="M3 4 H13 M6 4 V2 H10 V4 M4 4 L5 14 H11 L12 4 M7 6 V11 M9 6 V11" transform="translate(1076 349.0)" fill="none" stroke="#8390a3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1100" y="361.5" font-size="12" fill="#8390a3" font-weight="400">Delete connection</text>
+    <text x="1064" y="398" font-size="11" fill="#95a4ba" font-weight="400">Stop these tasks before deleting.</text>
+  </g>
+  <g id="connection-feedback-examples">
+    <rect x="1044" y="436" width="348" height="220" rx="6" fill="#1d252e" stroke="#394352"/>
+    <text x="1064" y="460" font-size="10" fill="#95a4ba" font-weight="600">FEEDBACK STATES · EXAMPLES</text>
+    <circle cx="1068" cy="483" r="3" fill="#eac58c"/>
+    <text x="1080" y="487" font-size="12" fill="#eac58c" font-weight="600">Not configured</text>
+    <text x="1080" y="504" font-size="10" fill="#b1bdce" font-weight="400">Add an endpoint, model and key.</text>
+    <circle cx="1068" cy="525" r="3" fill="#91bbff"/>
+    <text x="1080" y="529" font-size="12" fill="#91bbff" font-weight="600">Testing…</text>
+    <text x="1080" y="546" font-size="10" fill="#b1bdce" font-weight="400">Waiting for the connection check.</text>
+    <circle cx="1068" cy="567" r="3" fill="#93dfcd"/>
+    <text x="1080" y="571" font-size="12" fill="#93dfcd" font-weight="600">Connected</text>
+    <text x="1080" y="588" font-size="10" fill="#b1bdce" font-weight="400">The example check succeeded.</text>
+    <circle cx="1068" cy="609" r="3" fill="#efaaaa"/>
+    <text x="1080" y="613" font-size="12" fill="#efaaaa" font-weight="600">Failed</text>
+    <text x="1080" y="630" font-size="10" fill="#b1bdce" font-weight="400">Check the URL, key or model and retry.</text>
+  </g>
+  <g id="host-password-input-example">
+    <rect x="1044" y="676" width="348" height="158" rx="6" fill="#1d252e" stroke="#394352"/>
+    <text x="1064" y="700" font-size="10" fill="#95a4ba" font-weight="600">KEY ENTRY · VS CODE PROMPT</text>
+    <text x="1064" y="724" font-size="11" fill="#b1bdce" font-weight="400">Replace key opens a password input.</text>
+    <rect x="1064" y="738" width="308" height="34" rx="4" fill="#202c3b" stroke="#658dc3"/>
+    <text x="1076" y="761" font-size="14" fill="#e4e8f0" font-weight="400">••••••••••••</text>
+    <text x="1064" y="798" font-size="10" fill="#b1bdce" font-weight="400">Only the saved status appears in settings.</text>
+    <text x="1064" y="819" font-size="10" fill="#95a4ba" font-weight="400">Illustrative prompt · no actual credential</text>
+  </g>
+</svg>

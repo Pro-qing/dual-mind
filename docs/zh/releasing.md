@@ -12,10 +12,10 @@ npm ci
 npm run check
 npm test
 npm run package
-code --install-extension release/dual-mind-0.0.1.vsix
+code --install-extension release/dual-mind-0.0.1.vsix --force
 ```
 
-重载 VS Code 后运行 **DualMind: Show Status**。打包产物被 Git 忽略。打包通过 `vscode:prepublish` 重新构建，排除开发文件、依赖、测试编辑器、source map 和已有 VSIX；文档及 SVG 随包保留。
+重载 VS Code 后运行 **DualMind: 打开工作台**／**DualMind: Open Workbench**。此命令可替换同一未发布 `0.0.1` 版本的旧本地构建。检查任务保存和两种语言，状态命令继续保留。打包产物被 Git 忽略。打包通过 `vscode:prepublish` 重新构建，排除开发文件、依赖、测试编辑器、source map 和已有 VSIX；React 构建后的 JavaScript／CSS、原生本地化文件、文档及全部已审核 SVG／PNG 随包保留。
 
 由于许可证待定，打包脚本暂时使用 `skipLicense: true`，只生成本地文件，不进行发布。npm 的 `private` 标记阻止 npm 发布，并不是 Marketplace 发布保护机制。
 

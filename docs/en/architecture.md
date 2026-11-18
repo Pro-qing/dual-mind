@@ -2,48 +2,56 @@
 
 [简体中文](../zh/architecture.md) · [Documentation](./README.md)
 
-## Implemented today
+## Implemented local workbench
 
-VS Code invokes `activate` when `dualMind.showStatus` is executed. The extension registers the command and adds its disposable to `context.subscriptions`; VS Code disposes it when the extension is unloaded. The command only displays a notification. No model traffic, background agent process, Webview, or workspace modification is present.
+`dualMind.openWorkbench` creates or reveals one React Webview panel. The command completes after the panel renders a host snapshot; the serializer reopens the panel after a window reload. `dualMind.showStatus` remains a localized readiness notification. Commands, listeners, and panels are disposed through the extension lifecycle.
+
+The host owns local state and validates all incoming operations. React owns navigation, form buffers, dialogs, and the isolated read-only example preview. The UI makes no provider requests. Saving a task creates a draft, not a running agent session.
 
 ## Repository layout
 
 ```text
-src/              Extension entry; core, provider, editor, and shared placeholders
-webview/          Future React interface; awaiting design approval
+src/extension.ts   Command registration and extension lifecycle
+src/workbench.ts   Webview resources, CSP, message transport and host prompts
+src/core/         Validated local task/configuration store
+src/shared/       Message types, bilingual UI strings and Reviewer definitions
+src/providers/    Reserved for real model adapters
+src/editor/       Reserved for context collection and result application
+webview/src/      React workbench, settings, forms, bridge and responsive styles
 resources/        Future extension assets
-scripts/          Build, environment, documentation, and packaging tools
-tests/            Environment validation tests and extension-host smoke test
-docs/en/          English guides
-docs/zh/          中文指南
-docs/design/      Shared SVG design proposal
-.github/          CI and bilingual contribution templates
-.vscode/          Launch and build tasks
+scripts/          Build, checks, local tests and actual Webview verification
+tests/local/     Store and React interaction tests
+tests/            VS Code extension-host tests
+docs/design/     Five approved SVG scenes and matching PNG previews
+docs/en/          English documentation
+docs/zh/          中文文档
+.github/          Compatibility CI and collaboration templates
+.vscode/          Shared launch and build tasks
 ```
 
-## Planned boundaries
+## State ownership
 
-| Area             | Intended responsibility                                                 |
-| ---------------- | ----------------------------------------------------------------------- |
-| `src/core/`      | Worker/Reviewer orchestration, rounds, cancellation, and approval state |
-| `src/providers/` | Model adapter interfaces and streaming model implementations            |
-| `src/editor/`    | Read selected context and preview/apply explicitly accepted changes     |
-| `src/shared/`    | Host/Webview message contracts and shared types                         |
-| `webview/src/`   | React rendering of the task, conversation columns, and session state    |
-| `resources/`     | Future extension icons and packaged static assets                       |
+| State                                                                      | Storage and behavior                                                                             |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Drafts and selected task                                                   | `ExtensionContext.workspaceState`, key `dualMind.local.workspace.v1`; requires an open workspace |
+| Connections, model defaults, custom roles and localized built-in overrides | `ExtensionContext.globalState`, key `dualMind.local.global.v1`                                   |
+| API key                                                                    | `ExtensionContext.secrets`, keyed by the connection ID; never included in a UI snapshot          |
+| Language choice                                                            | User setting `dualMind.language`: `auto`, `zh-CN`, or `en`                                       |
+| Selected page                                                              | Webview state, allowing restoration after reload                                                 |
+| Unsaved forms, dialogs and example preview                                 | React memory; examples never enter stored task data                                              |
 
-These areas are placeholders, not implemented services. Keep model calls and editor access in the extension host; the future Webview should handle presentation and user intent.
+The store serializes writes within a host to prevent rapid mutations from losing state. It validates stored version/shape and reports unsupported data without overwriting it. The host acknowledges an operation after persistence, then returns a fresh snapshot. A failed save leaves the form available for retry.
 
-## Intended flow
+Task creation captures one Reviewer role's name, purpose, instructions and language. Edits to an existing draft preserve this snapshot. Built-in overrides are separate per language; custom content has an `original` language marker and is never translated automatically. Worker has a fixed general implementation role. Deleting a preset leaves snapshots intact. Deleting a connection removes its secret, clears matching defaults, and leaves referencing drafts available for rebinding.
 
-```text
-Task input → extension host → Worker → Reviewer
-                                 ↑        │
-                                 └─ revise┘
-                                         ↓
-                                approved result → user review → apply
-```
+## UI and build boundaries
 
-The host will own session state and stream updates to the two columns. Pause, stop, error handling, maximum rounds, and human intervention need implementation after design approval. Approval by the Reviewer must remain distinct from the user's decision to apply code.
+The host bundle targets Node.js 20 for VS Code 1.100.0, while the development toolchain uses nvm-managed Node.js 24. esbuild separately creates `dist/extension.js`, `dist/webview/main.js`, and `dist/webview/main.css`. React is bundled; installed users do not need npm dependencies or an external web server.
 
-The first interface uses one editor tab with two columns, stacking vertically on narrow windows. [Design notes](./design.md) and the [protocol draft](./protocol.md) capture the next milestone.
+Webview resources are limited to its built output, with a nonce-based script CSP and no direct network connections. API key entry uses a host-managed password prompt. The Webview receives only metadata and key-presence status. See the [implemented message boundary](./protocol.md).
+
+The task sidebar collapses below 1200 CSS pixels; below 900 pixels the conversation panels stack vertically. Narrow settings and dialogs scroll without hiding their actions. Theme colors come from VS Code variables. Both UI languages use the same components and stable role IDs.
+
+## Future execution
+
+The [approved designs](./design.md) also illustrate parallel task execution and review results. Real model adapters, independently cancellable sessions, streaming, pause/stop, feedback, and editor changes remain unimplemented. Future execution events must identify their task and run so output cannot cross between conversations. Reviewer approval must remain distinct from explicit user approval to apply a result.

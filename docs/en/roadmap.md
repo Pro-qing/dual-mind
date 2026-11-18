@@ -2,14 +2,16 @@
 
 [简体中文](../zh/roadmap.md) · [Documentation](./README.md)
 
-| Milestone           | Status                      | Outcome                                                                       |
-| ------------------- | --------------------------- | ----------------------------------------------------------------------------- |
-| Repository scaffold | Implemented locally         | Extension entry, nvm setup, debug/build/test/package commands, bilingual docs |
-| UI concept          | Pending owner review        | Static dark-theme SVG and review notes                                        |
-| React Webview       | Waiting for design approval | One tab, two columns, narrow-window layout, host messaging                    |
-| Model adapters      | Planned                     | Independent Worker/Reviewer configuration and streamed output                 |
-| Collaboration loop  | Planned                     | Generate, review, revise, round limits, pause/stop, human intervention        |
-| Editor integration  | Planned                     | Selected context, diff preview, explicit application of approved changes      |
-| Distribution        | Planned                     | License/publisher decisions, packaging review, release validation             |
+| Milestone                           | Status                 | Outcome                                                                                          |
+| ----------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| Engineering scaffold                | Implemented locally    | Ubuntu/Node baseline, F5, builds, checks, tests, packaging and bilingual guides                  |
+| Interface design                    | Approved and preserved | Five SVG/PNG references for tasks, API connections, Reviewer roles and dialogs                   |
+| React workbench                     | Implemented locally    | Single tab, responsive two-column layout, settings and isolated read-only examples               |
+| Local task/configuration management | Implemented locally    | Workspace drafts, user connection defaults, native secret storage, role management and snapshots |
+| English / Simplified Chinese        | Implemented locally    | Persistent selector, localized UI and independent built-in role definitions                      |
+| Model adapters                      | Planned                | Actual OpenAI-compatible requests, connection tests and streamed output                          |
+| Collaboration loop                  | Planned                | Fixed Worker, task-specific Reviewer, independent parallel executions, pause/stop and feedback   |
+| Editor integration                  | Planned                | Selected context, per-task diff preview and explicit application of reviewed changes             |
+| Distribution                        | Planned                | License/publisher decisions and release validation                                               |
 
-No release date is committed. Build a working session before adding persistence or additional providers. [Release prerequisites](./releasing.md) track publication requirements.
+Current tasks are local drafts. Example conversation and parallel states do not execute agents. Establish one real session before enabling concurrent execution. No public release date is committed. See [Usage](./usage.md), the [approved designs](./design.md), and [release prerequisites](./releasing.md).

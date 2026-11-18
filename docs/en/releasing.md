@@ -12,10 +12,10 @@ npm ci
 npm run check
 npm test
 npm run package
-code --install-extension release/dual-mind-0.0.1.vsix
+code --install-extension release/dual-mind-0.0.1.vsix --force
 ```
 
-Reload VS Code and run **DualMind: Show Status**. The artifact is ignored by Git. Packaging rebuilds the extension through `vscode:prepublish` and excludes development files, dependencies, test editors, source maps, and existing VSIX files. The documentation and SVG remain available in the package.
+Reload VS Code and run **DualMind: Open Workbench**. This replaces older local builds of the same unpublished `0.0.1` version. Verify task saving and both language choices; the status command remains available. The artifact is ignored by Git. Packaging rebuilds the extension through `vscode:prepublish` and excludes development files, dependencies, test editors, source maps, and existing VSIX files. The built React JavaScript/CSS, native localization files, documentation and all approved SVG/PNG pairs remain in the package.
 
 The packaging script uses `skipLicense: true` only because the license remains undecided. It creates a local artifact and never publishes it. The `private` npm flag prevents npm publication; it is not a Marketplace publication safeguard.
 

@@ -22,4 +22,4 @@ npm exec --yes --package=yo@7.0.1 --package=generator-code@1.12.0 --   yo code "
 
 该命令用于记录来源，不要在现有工作目录上重新生成。日常开发使用 `npm ci`，无需运行 Yeoman。
 
-生成器默认要求的较新 VS Code 版本调整为 `^1.100.0`，`@types/vscode` 固定为 `1.100.0`，并通过最低版本集成测试验证。TypeScript 使用生成器兼容的 6.0 版本线，避免选用超出 lint 解析器支持范围的大版本。实际依赖版本由锁文件记录。React 依赖将在设计通过后引入。
+生成器默认要求的较新 VS Code 版本调整为 `^1.100.0`，`@types/vscode` 固定为 `1.100.0`，并通过最低版本集成测试验证。TypeScript 使用生成器兼容的 6.0 版本线，避免选用超出 lint 解析器支持范围的大版本。实际依赖版本由锁文件记录。设计通过后，本地工作台引入 React 和 React DOM 19.3.1。锁文件同时记录类型、Testing Library、jsdom 26.1.0 和 Playwright Core；后者使用 VS Code 自身的 Electron 验证界面。

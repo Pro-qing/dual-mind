@@ -1,5 +1,5 @@
-# Placeholder / 占位
+# Local state and future orchestration / 本地状态与后续调度
 
-Orchestrate Worker/Reviewer sessions, rounds, cancellation, and approval. This module is not implemented.
+`store.ts` validates and serializes local task/configuration operations, preserves Reviewer snapshots, and delegates credentials to host secret storage. The Worker/Reviewer execution loop remains reserved in its subdirectories. See [Architecture](../../docs/en/architecture.md).
 
-预留 Worker/Reviewer 会话、轮次、取消和审查状态调度。当前模块尚未实现。
+`store.ts` 校验并串行处理本地任务／配置操作，保留 Reviewer 快照，由宿主秘密存储管理凭据。Worker／Reviewer 执行循环仍在子目录中占位，详见[架构说明](../../docs/zh/architecture.md)。
