@@ -18,7 +18,7 @@ src/shared/       Message types, bilingual UI strings and Reviewer definitions
 src/providers/    Reserved for real model adapters
 src/editor/       Reserved for context collection and result application
 webview/src/      React workbench, settings, forms, bridge and responsive styles
-resources/        Future extension assets
+resources/        Packaged PNG icon and archived branding source
 scripts/          Build, checks, local tests and actual Webview verification
 tests/local/     Store and React interaction tests
 tests/            VS Code extension-host tests
@@ -28,6 +28,8 @@ docs/zh/          中文文档
 .github/          Compatibility CI and collaboration templates
 .vscode/          Shared launch and build tasks
 ```
+
+`resources/icon.png` is the extension and Marketplace icon. The original JPEG in `resources/branding/` stays in Git for maintenance and is excluded from the VSIX. See the [branding notes](../../resources/README.md).
 
 ## State ownership
 

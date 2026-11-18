@@ -4,12 +4,12 @@
 
 ## 0.0.1 — Preview 2
 
-Published 2026-11-18 (11:24:18, UTC+08:00). [GitHub pre-release `v0.0.1-preview.2`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) targets commit `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`. Marketplace upload remains pending.
+GitHub published 2026-11-18 (11:24:18, UTC+08:00). [Pre-release `v0.0.1-preview.2`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) targets commit `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`. [Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) published `Pro-qing.dual-mind` version `0.0.1` on 2026-11-18 (11:31:39, UTC+08:00); its public Preview listing has been verified separately.
 
 - Set Publisher to `Pro-qing`, with extension ID `Pro-qing.dual-mind`; retain version `0.0.1` and add `preview: true`.
 - Add the 256 × 256 PNG icon from the owner's centered JPEG artwork, archive the unchanged source, and package only the icon.
 - Update extension-host identity checks and bilingual switching/upload instructions. New-identity data is configured afresh; no migration or deletion of old data is performed.
-- Prepare a regular VSIX for manual Marketplace upload and GitHub Preview 2 distribution. Preserve Preview 1's tag/assets and all approved interface designs.
+- Distribute the regular VSIX through GitHub Preview 2 and publish `Pro-qing.dual-mind` on Marketplace. Preserve Preview 1's tag/assets and all approved interface designs.
 - Local-workbench features and execution limitations are unchanged; see [Preview 2 release notes](./docs/en/release-notes-preview-2.md).
 
 ## 0.0.1 — Preview 1
@@ -25,4 +25,4 @@ Published 2026-11-18 (10:41:36, UTC+08:00). [GitHub pre-release `v0.0.1-preview.
 - Adopt MIT with copyright `2026 Pro-qing`, include bundled third-party notices, remove the missing-license packaging bypass, and prepare VSIX/checksum Release assets.
 - Update security documentation for the implemented Webview and credential storage; enable and verify GitHub private vulnerability reporting.
 
-Full scope, installation, limitations, and verification are described in the [release notes](./docs/en/release-notes.md). Marketplace registration and real model collaboration remain future milestones.
+Full scope, installation, limitations, and verification are described in the [release notes](./docs/en/release-notes.md). At the time of Preview 1, Marketplace registration and real model collaboration were future milestones.

@@ -12,7 +12,7 @@ DualMind 是一个面向 VS Code 的 AI 结对编程插件项目，将任务准�
 
 React 工作台支持本地任务草稿、连接设置、Reviewer 预设和中英文切换。模型执行与代码应用仍为规划能力，可选对话预览明确标注为只读示例。
 
-Preview 2：[GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) · [发布说明](./docs/zh/release-notes-preview-2.md)。Publisher：**Pro-qing**，扩展版本：**0.0.1**。GitHub Preview 2 已于 2026-11-18 发布，Marketplace 待手动上架。
+已于 2026-11-18 上架 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind)，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**，带有 Preview 标记。[GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 同日发布。[发布说明](./docs/zh/release-notes-preview-2.md)。
 
 ## 两种互补角色
 
@@ -41,7 +41,7 @@ Preview 2：[GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/
 
 ## 文档与参与贡献
 
-- [使用说明](./docs/zh/usage.md) — 本地安装、工作台、语言设置及限制。
+- [使用说明](./docs/zh/usage.md) — Marketplace／VSIX 安装、工作台、语言设置及限制。
 - [开发指南](./docs/zh/development.md) — 环境准备、构建、调试与测试。
 - [架构说明](./docs/zh/architecture.md) — 状态归属与模块职责。
 - [路线图](./docs/zh/roadmap.md) — 已交付与后续里程碑。

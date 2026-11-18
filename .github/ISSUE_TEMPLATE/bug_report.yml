@@ -1,17 +1,43 @@
 name: Bug report / 问题报告
-description: Report a reproducible scaffold problem / 报告可复现的骨架问题
+description: Report a reproducible workbench problem / 报告可复现的工作台问题
 title: '[Bug]: '
 body:
   - type: markdown
     attributes:
       value: 'For sensitive reports, read SECURITY.md first. 敏感报告请先阅读 SECURITY.zh.md。'
+  - type: input
+    id: extension
+    attributes:
+      label: Extension ID and version / 扩展标识与版本
+      description: Copy both from the installed extension details. 请从已安装扩展的详情中填写标识和版本。
+      placeholder: Pro-qing.dual-mind / 0.0.1
+    validations:
+      required: true
+  - type: dropdown
+    id: installation_source
+    attributes:
+      label: Installation source / 安装来源
+      options:
+        - Visual Studio Marketplace
+        - GitHub Release VSIX
+        - Local build or F5 / 本地构建或 F5
+        - Other / 其他
+    validations:
+      required: true
   - type: textarea
     id: environment
     attributes:
-      label: Environment / 环境
-      description: OS, VS Code, Node.js, npm, and commit / 系统、编辑器、Node、npm 与提交
+      label: Environment and languages / 环境与语言
+      description: OS version, CPU architecture, VS Code version/display language, and DualMind language setting. 系统版本、CPU 架构、VS Code 版本及显示语言、DualMind 语言设置。
     validations:
       required: true
+  - type: textarea
+    id: development_environment
+    attributes:
+      label: Source development details (optional) / 源码开发信息（选填）
+      description: For local builds or F5 only, include Node.js, npm, and the commit. 仅本地构建或 F5 问题填写 Node.js、npm 版本与提交。
+    validations:
+      required: false
   - type: textarea
     id: steps
     attributes:

@@ -40,20 +40,20 @@ For iteration, run `npm run watch` and `npm run watch:types` in separate termina
 
 ## Development commands
 
-| Command               | Purpose                                                                     |
-| --------------------- | --------------------------------------------------------------------------- |
-| `npm run check:env`   | Report the environment and verify the Ubuntu/Node baseline                  |
-| `npm run check:node`  | Check Node.js 24 only (compatibility command)                               |
-| `npm run test:env`    | Test version rejection and unvalidated-platform warnings                    |
-| `npm run test:local`  | Run store and React interaction tests without launching VS Code             |
-| `npm run test:ui`     | Exercise a real VS Code Webview in an isolated profile; capture screenshots |
-| `npm run check`       | Environment checks/tests, types, lint, formatting, and documentation links  |
-| `npm run build`       | Type-check and bundle the extension into `dist/`                            |
-| `npm run watch`       | Rebuild the extension when source files change                              |
-| `npm run watch:types` | Watch TypeScript diagnostics in a second terminal                           |
-| `npm run format`      | Format supported source and documentation files                             |
-| `npm test`            | Run the smoke test inside a downloaded stable VS Code                       |
-| `npm run package`     | Build a local `release/dual-mind-0.0.1.vsix`                                |
+| Command               | Purpose                                                                         |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `npm run check:env`   | Report the environment and verify the Ubuntu/Node baseline                      |
+| `npm run check:node`  | Check Node.js 24 only (compatibility command)                                   |
+| `npm run test:env`    | Test version rejection and unvalidated-platform warnings                        |
+| `npm run test:local`  | Run store and React interaction tests without launching VS Code                 |
+| `npm run test:ui`     | Exercise a real VS Code Webview in an isolated profile; capture screenshots     |
+| `npm run check`       | Environment and local store/React tests, types, lint, formatting, and doc links |
+| `npm run build`       | Type-check and bundle the extension host and Webview into `dist/`               |
+| `npm run watch`       | Rebuild the extension host and Webview when source files change                 |
+| `npm run watch:types` | Watch host, Webview, and local-test TypeScript diagnostics                      |
+| `npm run format`      | Format supported source and documentation files                                 |
+| `npm test`            | Run the smoke test inside a downloaded stable VS Code                           |
+| `npm run package`     | Build a local `release/dual-mind-0.0.1.vsix`                                    |
 
 ## Validation
 
@@ -64,9 +64,9 @@ VSCODE_TEST_VERSION=1.100.0 npm test
 npm run package
 ```
 
-`npm test` builds both bundles and tests command-triggered activation, actual React render readiness, singleton tabs, and reopening in a separate VS Code installation. `npm run check` also runs the local store and React interaction tests. `npm run test:ui` uses Playwright with the downloaded editor’s Electron executable (no separate browser download), an isolated temporary user profile/workspace, and real settings/task interactions. It verifies reload persistence and workspace isolation, then records English/Chinese wide/narrow screenshots under `.vscode-test/ui-validation/<version>/`. It requires a desktop or `xvfb-run -a npm run test:ui`. Downloads are cached in `.vscode-test/`; the first run requires internet access. The editor download allows up to 120 seconds without receiving data before timing out. A graphical display is needed. On headless Ubuntu, install the Electron libraries, `xvfb`, and `xauth` described in the [environment guide](./environment.md), then use `xvfb-run -a npm test` and `VSCODE_TEST_VERSION=1.100.0 xvfb-run -a npm test`.
+`npm test` builds both bundles and tests command-triggered activation, actual React render readiness, singleton tabs, and reopening in a separate VS Code installation. `npm run check` also runs the local store and React interaction tests. `npm run test:ui` uses Playwright with the downloaded editor’s Electron executable (no separate browser download), an isolated temporary user profile/workspace, and real settings/task interactions. It verifies reload persistence and workspace isolation, then records English/Chinese wide/narrow screenshots under `.vscode-test/ui-validation/<version>/`. It requires a desktop or `xvfb-run -a npm run test:ui`. Downloads are cached in `.vscode-test/`; the first run requires internet access. The `npm test` configuration allows up to 120 seconds without receiving download data; `test:ui` uses the download helper's default timeout. A graphical display is needed. On headless Ubuntu, install the Electron libraries, `xvfb`, and `xauth` described in the [environment guide](./environment.md), then use `xvfb-run -a npm test` and `VSCODE_TEST_VERSION=1.100.0 xvfb-run -a npm test`.
 
-CI checks formatting, types, lint, relative documentation links, SVG constraints, editor activation, and local packaging. It covers VS Code 1.100.0 and stable in Ubuntu 20.04 containers, plus stable on native Ubuntu 24.04; see the [validation matrix](./environment.md). Use `npm run format` after editing supported text files. The SVG is intentionally excluded from Prettier so its hand-authored geometry stays readable.
+CI runs environment and local store/React tests, formatting, types, lint, documentation links, design-asset checks, and extension-host tests in each matrix job. It covers VS Code 1.100.0 and stable in Ubuntu 20.04 containers, plus stable on native Ubuntu 24.04. The Ubuntu 20.04 stable job additionally validates the real Webview and packaging; see the [validation matrix](./environment.md). Use `npm run format` after editing supported text files. The SVG is intentionally excluded from Prettier so its hand-authored geometry stays readable.
 
 ## Troubleshooting
 
@@ -76,6 +76,6 @@ CI checks formatting, types, lint, relative documentation links, SVG constraints
 | F5 says nvm or Node 24 is missing        | Install Node with nvm in a terminal first; ensure `NVM_DIR` points to your nvm installation              |
 | Electron cannot launch or open a display | Install the [test dependencies](./environment.md), then use a desktop session or `xvfb-run`              |
 | Download fails                           | Verify access to npm and VS Code download services, then rerun                                           |
-| No chat panel appears                    | Run **DualMind: Open Workbench**; if updating the same VSIX version, force-install and reload the window |
+| No workbench appears                     | Run **DualMind: Open Workbench**; if updating the same VSIX version, force-install and reload the window |
 
 Build output, downloaded editors, dependencies, and VSIX files are ignored by Git. [Usage guide](./usage.md) covers local installation and current behavior; [packaging guide](./releasing.md) covers VSIX creation and release preparation.

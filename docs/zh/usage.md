@@ -2,34 +2,49 @@
 
 [English](../en/usage.md) · [文档索引](./README.md)
 
-## 下载、校验和安装预览版
+## 运行要求
 
-支持基线为 **Ubuntu 20.04+、x86_64/amd64、VS Code 1.100.0+**。其他平台和 ARM64 暂未验证。使用已构建的 VSIX 无需另行安装 Node.js，详见[环境说明](./environment.md)。
+支持基线为 **Ubuntu 20.04+、x86_64/amd64、VS Code 1.100.0+**。其他平台和 ARM64 暂未验证。从 Marketplace 或已构建的 VSIX 安装均无需另行安装 Node.js，详见[环境说明](./environment.md)。
 
-进入 [Preview 2 GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2)，阅读 [Preview 2 说明](./release-notes-preview-2.md)。新包使用 Publisher `Pro-qing`、标识 `Pro-qing.dual-mind`、版本 `0.0.1` 及 PNG 图标。Preview 2 已于 2026-11-18 发布，Release 页面提供已核验的 VSIX 和校验文件，Marketplace 尚待上传。
+## 从 Marketplace 安装
+
+[Visual Studio Marketplace 上的 DualMind](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) 已于 **2026-11-18** 公开，Publisher 为 **Pro-qing**，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**。在扩展面板（`Ctrl+Shift+X`）搜索 `@id:Pro-qing.dual-mind`，确认发布者和图标后点击**安装**。也可执行：
+
+```bash
+code --install-extension Pro-qing.dual-mind
+```
+
+如果安装过旧开发身份，请先按下方 Preview 1 切换说明处理，再打开新工作台。
+
+Preview 标记表示扩展仍处于早期开发阶段。当前使用 Marketplace 普通发布通道，无需选择预发布通道。该扩展 ID 后续公开更新会递增扩展版本，用户可通过 VS Code 正常更新扩展；GitHub 同步保留对应版本的 VSIX 和校验文件。
+
+## 下载、校验和安装 VSIX
+
+[Preview 2 GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 已于 2026-11-18 发布，提供经过验证的 `Pro-qing.dual-mind` 版本 `0.0.1` VSIX 和校验文件。变更与验证记录见 [Preview 2 说明](./release-notes-preview-2.md)。
 
 在 **Preview 2 的 Assets** 中下载 `dual-mind-0.0.1.vsix` 和 `SHA256SUMS.txt`，放到同一目录。两个预览版的文件名相同，但扩展身份及校验值不同，请使用同一 Release 的两个附件。自动生成的源码压缩包是源码快照，不是 VSIX 安装包。在下载目录执行：
 
 ```bash
 sha256sum --check SHA256SUMS.txt
+```
+
+确认校验结果为 `OK`／成功后，再安装已校验的包：
+
+```bash
 code --install-extension dual-mind-0.0.1.vsix --force
 ```
 
-校验结果为 `OK`／成功后再安装。重载 VS Code，在命令面板运行 **DualMind: 打开工作台**（英文编辑器为 **DualMind: Open Workbench**）。该命令打开一个标签页，重复执行会定位到已有工作台；**DualMind: 显示状态**／**DualMind: Show Status** 保留为就绪检查。也可通过 **Extensions: Install from VSIX...** 选择已校验安装包。
+也可通过 **Extensions: Install from VSIX...** 选择已校验文件。从源码构建请按[开发指南](./development.md)和[打包指南](./releasing.md)操作。当前本地包位于 `release/dual-mind-0.0.1.vsix`，安装包及下载验证文件均不进入 Git 记录。
 
 ## 从 Preview 1 切换
 
 旧标识 `dual-mind-dev-placeholder.dual-mind` 和新标识 `Pro-qing.dual-mind` 是不同扩展。在扩展列表搜索 `@id:dual-mind-dev-placeholder.dual-mind`，通过齿轮菜单**停用**旧扩展，重载窗口后再打开新扩展，避免重复注册命令。可以保留已停用的旧扩展安装，旧数据不会被主动删除。
 
-新身份拥有独立的草稿、连接元信息、API 密钥、模型默认值和自定义角色，需要按需重新配置；本轮不提供自动迁移。`dualMind.language` 用户设置保留相同键名，可以继续生效。`--force` 不会跨 publisher 搬移数据。如果需要历史构建，请保留 Preview 1 原附件。
+新身份拥有独立的草稿、连接元信息、API 密钥、模型默认值和自定义角色，需要按需重新配置；当前不提供自动迁移。`dualMind.language` 用户设置保留相同键名，可以继续生效。`--force` 不会跨 publisher 搬移数据。如果需要历史构建，请保留 Preview 1 原附件。
 
-## 上架后从 Marketplace 安装
+## 打开工作台
 
-**Marketplace 状态：待手动上传。** 所有者上传准备好的包并由服务端公开后，在扩展面板（`Ctrl+Shift+X`）搜索 `@id:Pro-qing.dual-mind`，确认发布者 **Pro-qing** 和图标后点击**安装**。上架后的命令行安装方式为 `code --install-extension Pro-qing.dual-mind`。
-
-清单中的 `preview: true` 用于展示 Preview 标记，安装包仍为普通包，本次无需选择 Marketplace 预发布通道。该扩展 ID 后续公开更新需要递增扩展版本，用户可通过 VS Code 正常更新扩展；GitHub 同步保留对应版本的附件和校验文件。
-
-从源码构建请按[开发指南](./development.md)和[打包指南](./releasing.md)操作。本地包位于 `release/dual-mind-0.0.1.vsix`，安装包及下载验证文件均不进入 Git 记录。
+安装后按提示重载 VS Code，在命令面板运行 **DualMind: 打开工作台**（英文编辑器为 **DualMind: Open Workbench**）。该命令打开一个标签页，重复执行会定位到已有工作台；**DualMind: 显示状态**／**DualMind: Show Status** 保留为就绪检查。创建草稿前先打开文件夹或工作区；未打开工作区时仍可浏览设置和只读示例。
 
 ## 本地任务
 
@@ -71,4 +86,4 @@ Worker 与 Reviewer 的默认配置相互独立。保存默认绑定供新草稿
 
 模型执行、连接测试、流式输出、自动审查循环、提交反馈、暂停／停止、读取编辑器上下文及代码应用尚未接入，对应控件禁用，不会报告模拟成功。真实任务目前均为草稿，运行／暂停／完成状态仅存在于隔离的只读示例中。
 
-五组[已审核设计稿](./design.md)继续保留，其中的执行状态描述后续预期行为。剩余工作见[路线图](./roadmap.md)。更新后找不到工作台命令时，请确认 VSIX 安装在当前 VS Code 实例中，并重载窗口。
+五组[已审核设计稿](./design.md)继续保留，其中的执行状态描述后续预期行为。剩余工作见[路线图](./roadmap.md)。更新后找不到工作台命令时，请确认 `Pro-qing.dual-mind` 已安装并启用于当前 VS Code 实例，并重载窗口。

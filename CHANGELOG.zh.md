@@ -4,12 +4,12 @@
 
 ## 0.0.1 — Preview 2
 
-已于 2026-11-18（11:24:18，UTC+08:00）公开发布。[GitHub 预览版 `v0.0.1-preview.2`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 对应提交 `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`，Marketplace 尚待上传。
+GitHub 已于 2026-11-18（11:24:18，UTC+08:00）公开发布。[预览版 `v0.0.1-preview.2`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 对应提交 `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`。[Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) 已于 2026-11-18（11:31:39，UTC+08:00）公开 `Pro-qing.dual-mind` 版本 `0.0.1`，其带有 Preview 标记的公开页面已单独核验。
 
 - Publisher 改为 `Pro-qing`，扩展标识为 `Pro-qing.dual-mind`；保留 `0.0.1`，添加 `preview: true`。
 - 从所有者提供的 JPEG 中央图案生成 256 × 256 PNG 图标，原图原样归档，VSIX 仅打包图标。
 - 更新扩展宿主身份检查及双语切换／上传说明；新身份下重新配置，不迁移或删除旧数据。
-- 准备供 Marketplace 手动上传及 GitHub Preview 2 分发的普通 VSIX；保留 Preview 1 标签／附件和全部已审核设计稿。
+- 通过 GitHub Preview 2 分发普通 VSIX，并在 Marketplace 上架 `Pro-qing.dual-mind`；保留 Preview 1 标签／附件和全部已审核设计稿。
 - 本地工作台功能及执行能力限制保持原状，详见 [Preview 2 发布说明](./docs/zh/release-notes-preview-2.md)。
 
 ## 0.0.1 — Preview 1
@@ -25,4 +25,4 @@
 - 采用 MIT，版权署名 `2026 Pro-qing`，保留随包第三方声明，移除缺失许可证跳过设置，并准备 VSIX／校验附件。
 - 根据已实现的 Webview 及凭据存储更新安全说明，启用并验证 GitHub 私密漏洞报告。
 
-完整范围、安装、限制与验证见[发布说明](./docs/zh/release-notes.md)。Marketplace 注册及真实模型协作留待后续里程碑。
+完整范围、安装、限制与验证见[发布说明](./docs/zh/release-notes.md)。在 Preview 1 发布时，Marketplace 注册及真实模型协作仍属于后续里程碑。

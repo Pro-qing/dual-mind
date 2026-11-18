@@ -40,20 +40,20 @@ code .
 
 ## 开发命令
 
-| 命令                  | 用途                                         |
-| --------------------- | -------------------------------------------- |
-| `npm run check:env`   | 报告环境并检查 Ubuntu/Node 基线              |
-| `npm run check:node`  | 仅检查 Node.js 24，保留兼容命令              |
-| `npm run test:env`    | 测试版本拒绝和未验证平台提示                 |
-| `npm run test:local`  | 无需启动 VS Code，执行存储与 React 交互测试  |
-| `npm run test:ui`     | 在隔离配置中操作真实 VS Code Webview 并截图  |
-| `npm run check`       | 环境检查及其测试、类型、lint、格式和文档链接 |
-| `npm run build`       | 检查类型并将扩展构建到 `dist/`               |
-| `npm run watch`       | 源码变化时重新构建扩展                       |
-| `npm run watch:types` | 在另一个终端持续检查 TypeScript 类型         |
-| `npm run format`      | 格式化支持的源码和文档                       |
-| `npm test`            | 在下载的 VS Code 稳定版中执行冒烟测试        |
-| `npm run package`     | 构建本地 `release/dual-mind-0.0.1.vsix`      |
+| 命令                  | 用途                                                   |
+| --------------------- | ------------------------------------------------------ |
+| `npm run check:env`   | 报告环境并检查 Ubuntu/Node 基线                        |
+| `npm run check:node`  | 仅检查 Node.js 24，保留兼容命令                        |
+| `npm run test:env`    | 测试版本拒绝和未验证平台提示                           |
+| `npm run test:local`  | 无需启动 VS Code，执行存储与 React 交互测试            |
+| `npm run test:ui`     | 在隔离配置中操作真实 VS Code Webview 并截图            |
+| `npm run check`       | 环境与本地存储／React 测试、类型、lint、格式和文档链接 |
+| `npm run build`       | 检查类型并将扩展宿主和 Webview 构建到 `dist/`          |
+| `npm run watch`       | 源码变化时重新构建扩展宿主和 Webview                   |
+| `npm run watch:types` | 持续检查宿主、Webview 和本地测试的 TypeScript 类型     |
+| `npm run format`      | 格式化支持的源码和文档                                 |
+| `npm test`            | 在下载的 VS Code 稳定版中执行冒烟测试                  |
+| `npm run package`     | 构建本地 `release/dual-mind-0.0.1.vsix`                |
 
 ## 验证
 
@@ -64,9 +64,9 @@ VSCODE_TEST_VERSION=1.100.0 npm test
 npm run package
 ```
 
-`npm test` 构建宿主与前端，在独立 VS Code 实例中验证命令激活、React 实际渲染、单例标签和关闭后重开。`npm run check` 也执行本地存储及 React 交互测试。`npm run test:ui` 通过 Playwright 操作下载编辑器的 Electron 程序（无需另下浏览器），使用隔离的临时用户配置和工作区，验证真实设置／任务操作、重载恢复及工作区隔离，并在 `.vscode-test/ui-validation/<version>/` 保存中英文宽／窄截图。它需要桌面，或使用 `xvfb-run -a npm run test:ui`。编辑器下载缓存在 `.vscode-test/`，首次执行需要联网。下载允许最多 120 秒未收到数据，超过后才判定超时。测试需要图形显示环境；无桌面的 Ubuntu 需要按[环境说明](./environment.md)安装 Electron 运行库、`xvfb` 和 `xauth`，然后执行 `xvfb-run -a npm test`，最低版本测试执行 `VSCODE_TEST_VERSION=1.100.0 xvfb-run -a npm test`。
+`npm test` 构建宿主与前端，在独立 VS Code 实例中验证命令激活、React 实际渲染、单例标签和关闭后重开。`npm run check` 也执行本地存储及 React 交互测试。`npm run test:ui` 通过 Playwright 操作下载编辑器的 Electron 程序（无需另下浏览器），使用隔离的临时用户配置和工作区，验证真实设置／任务操作、重载恢复及工作区隔离，并在 `.vscode-test/ui-validation/<version>/` 保存中英文宽／窄截图。它需要桌面，或使用 `xvfb-run -a npm run test:ui`。编辑器下载缓存在 `.vscode-test/`，首次执行需要联网。`npm test` 配置允许下载最多 120 秒未收到数据才判定超时；`test:ui` 使用下载工具的默认超时。测试需要图形显示环境；无桌面的 Ubuntu 需要按[环境说明](./environment.md)安装 Electron 运行库、`xvfb` 和 `xauth`，然后执行 `xvfb-run -a npm test`，最低版本测试执行 `VSCODE_TEST_VERSION=1.100.0 xvfb-run -a npm test`。
 
-CI 检查格式、类型、lint、文档相对链接、SVG 约束、编辑器激活及本地打包。验证组合包括 Ubuntu 20.04 容器中的 VS Code 1.100.0 和 stable，以及原生 Ubuntu 24.04 上的 stable，详见[环境验证组合](./environment.md)。修改支持的文本文件后可执行 `npm run format`。手写 SVG 的几何排版不交由 Prettier 修改。
+CI 各组合运行环境及本地存储／React 测试、格式、类型、lint、文档链接、设计资源检查和扩展宿主测试。验证组合包括 Ubuntu 20.04 容器中的 VS Code 1.100.0 和 stable，以及原生 Ubuntu 24.04 上的 stable；Ubuntu 20.04 stable 组合额外验证真实 Webview 和打包，详见[环境验证组合](./environment.md)。修改支持的文本文件后可执行 `npm run format`。手写 SVG 的几何排版不交由 Prettier 修改。
 
 ## 常见问题
 
@@ -76,6 +76,6 @@ CI 检查格式、类型、lint、文档相对链接、SVG 约束、编辑器激
 | F5 提示缺少 nvm 或 Node 24      | 先在终端通过 nvm 安装 Node，确认 `NVM_DIR` 指向实际 nvm 目录            |
 | Electron 无法启动或打开显示设备 | 安装[测试依赖](./environment.md)，再使用桌面会话或 `xvfb-run`           |
 | 下载失败                        | 检查 npm 与 VS Code 下载服务的网络访问后重试                            |
-| 未出现聊天面板                  | 执行 **DualMind: 打开工作台**；同版本 VSIX 更新后需要强制安装并重载窗口 |
+| 未出现工作台                    | 执行 **DualMind: 打开工作台**；同版本 VSIX 更新后需要强制安装并重载窗口 |
 
 构建产物、测试编辑器、依赖和 VSIX 均被 Git 忽略。本地安装和当前功能见[使用说明](./usage.md)，VSIX 生成及发布准备见[打包指南](./releasing.md)。

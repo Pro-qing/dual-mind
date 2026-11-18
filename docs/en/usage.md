@@ -2,20 +2,39 @@
 
 [简体中文](../zh/usage.md) · [Documentation](./README.md)
 
-## Download, verify, and install the preview
+## Requirements
 
-The supported baseline is **Ubuntu 20.04+, x86_64/amd64, and VS Code 1.100.0+**. Other platforms and ARM64 are not yet validated. A built VSIX does not require a separate Node.js installation. See [Environment](./environment.md).
+The supported baseline is **Ubuntu 20.04+, x86_64/amd64, and VS Code 1.100.0+**. Other platforms and ARM64 are not yet validated. Installing from Marketplace or a built VSIX does not require a separate Node.js installation. See [Environment](./environment.md).
 
-Use the [Preview 2 GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) and [Preview 2 notes](./release-notes-preview-2.md). Its package uses Publisher `Pro-qing`, extension ID `Pro-qing.dual-mind`, version `0.0.1`, and a PNG icon. Preview 2 was published on 2026-11-18; the Release page provides the verified VSIX and checksum. Marketplace upload is still pending.
+## Install from Marketplace
+
+[DualMind on the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) has been public since **2026-11-18**, with Publisher **Pro-qing**, extension ID **Pro-qing.dual-mind**, and version **0.0.1**. Open Extensions (`Ctrl+Shift+X`), search `@id:Pro-qing.dual-mind`, verify the publisher and icon, then select **Install**. Alternatively:
+
+```bash
+code --install-extension Pro-qing.dual-mind
+```
+
+If you installed the old development identity, follow the Preview 1 switching instructions below before opening the new workbench.
+
+The Preview label identifies this extension's early development stage. It uses the regular Marketplace channel; selecting a pre-release channel is not required. Future published updates under the same ID will use higher extension versions and can be installed through VS Code's normal extension update flow. GitHub releases retain the corresponding VSIX and checksum.
+
+## Download, verify, and install a VSIX
+
+The [Preview 2 GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2), published on 2026-11-18, provides the verified `Pro-qing.dual-mind` version `0.0.1` VSIX and checksum. Read the [Preview 2 notes](./release-notes-preview-2.md) for the changes and validation history.
 
 Download `dual-mind-0.0.1.vsix` and `SHA256SUMS.txt` from **Preview 2 Assets** into the same directory. The two previews use the same filenames but different extension identities and checksums; use both files from the same Release. The automatically generated source-code archives are source snapshots, not the VSIX. From the download directory:
 
 ```bash
 sha256sum --check SHA256SUMS.txt
+```
+
+Continue only when the checksum reports `OK`. Install the verified package:
+
+```bash
 code --install-extension dual-mind-0.0.1.vsix --force
 ```
 
-Continue only when the checksum reports `OK`. Reload VS Code, open the Command Palette, and run **DualMind: Open Workbench** (Chinese editor: **DualMind: 打开工作台**). The command opens a single editor tab and reuses it on subsequent invocations. **DualMind: Show Status** remains a readiness check. You can also select **Extensions: Install from VSIX...** and choose the verified package.
+You can also select **Extensions: Install from VSIX...** and choose the verified file. To build from source, follow [Development](./development.md) and [Packaging](./releasing.md). The current local artifact is `release/dual-mind-0.0.1.vsix`; it and downloaded verification files are not committed to Git.
 
 ## Switch from Preview 1
 
@@ -23,13 +42,9 @@ The old `dual-mind-dev-placeholder.dual-mind` and new `Pro-qing.dual-mind` ident
 
 The new identity starts with its own drafts, connection metadata, API keys, model defaults, and custom roles. Recreate them as needed; no automatic migration is included. The `dualMind.language` user setting uses the same key and may carry over. `--force` does not move data across publishers. Preserve Preview 1's original asset if you need that historical build.
 
-## Install from Marketplace after publication
+## Open the workbench
 
-**Marketplace status: pending manual upload.** Once the owner uploads the prepared package and the service makes the listing public, open Extensions (`Ctrl+Shift+X`) and search `@id:Pro-qing.dual-mind`, verify publisher **Pro-qing** and the icon, then select **Install**. The command-line equivalent after publication is `code --install-extension Pro-qing.dual-mind`.
-
-The package's `preview: true` labels the listing as Preview; it is a regular package, so this release does not require selecting a Marketplace pre-release channel. Further published updates of the same extension ID must use a higher extension version and can be installed through VS Code's normal extension update flow. GitHub releases will retain the corresponding versioned artifact and checksum.
-
-To build from source, follow [Development](./development.md) and [Packaging](./releasing.md). The local artifact is `release/dual-mind-0.0.1.vsix`; it and downloaded verification files are not committed to Git.
+After installation, reload VS Code if requested, open the Command Palette, and run **DualMind: Open Workbench** (Chinese editor: **DualMind: 打开工作台**). The command opens a single editor tab and reuses it on subsequent invocations. **DualMind: Show Status** remains a readiness check. Open a folder or workspace before creating drafts; without one, settings and read-only examples remain available.
 
 ## Local tasks
 
@@ -71,4 +86,4 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 Model execution, connection tests, streaming, automatic review loops, feedback submission, pause/stop, editor context collection, and code application are not connected yet. These controls are disabled rather than reporting simulated success. Real task records are drafts; only the isolated examples display running/paused/completed states.
 
-The five [approved design scenes](./design.md) remain in the repository. Their execution states describe intended later behavior. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm the VSIX is installed in that VS Code instance and reload its window.
+The five [approved design scenes](./design.md) remain in the repository. Their execution states describe intended later behavior. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.

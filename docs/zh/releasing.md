@@ -1,31 +1,41 @@
-# 打包、Marketplace 上传与 GitHub 预览发布
+# 打包与双端同步发布
 
 [English](../en/releasing.md) · [文档索引](./README.md)
 
-## Preview 2 标识
+## 当前已发布版本
 
-| 项目                | 值                                                 |
-| ------------------- | -------------------------------------------------- |
-| Publisher／扩展标识 | `Pro-qing`／`Pro-qing.dual-mind`                   |
-| 扩展版本            | `0.0.1`                                            |
-| 商店标记／通道      | `preview: true`／普通 VSIX，不使用 `--pre-release` |
-| 图标                | `resources/icon.png`，256 × 256 PNG                |
-| Git 标签／标题      | `v0.0.1-preview.2`／`DualMind 0.0.1 Preview 2`     |
-| GitHub 发布类型     | 预发布                                             |
-| 附件                | `dual-mind-0.0.1.vsix`、`SHA256SUMS.txt`           |
-| 许可                | MIT，版权署名 `2026 Pro-qing`                      |
+| 项目                | 值                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| Publisher／扩展标识 | `Pro-qing`／`Pro-qing.dual-mind`                                                               |
+| 扩展版本            | `0.0.1`                                                                                        |
+| Marketplace         | [已于 2026-11-18 公开](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) |
+| 商店标记／通道      | `preview: true`／普通 VSIX，不使用 `--pre-release`                                             |
+| 图标                | `resources/icon.png`，256 × 256 PNG                                                            |
+| Git 标签／标题      | `v0.0.1-preview.2`／`DualMind 0.0.1 Preview 2`                                                 |
+| GitHub 发布类型     | 预发布，已于 2026-11-18 公开                                                                   |
+| 附件                | `dual-mind-0.0.1.vsix`、`SHA256SUMS.txt`                                                       |
+| 许可                | MIT，版权署名 `2026 Pro-qing`                                                                  |
 
-所有者提供的已注册 Publisher ID 为 `Pro-qing`。本包用于首次 Marketplace 上传；**所有者完成上传且 Marketplace 确认公开前，商店状态仍为待上架**。VSIX 的 Preview 标记和 GitHub 预发布标记，都独立于 Marketplace 的预发布通道。
+本地工作台已可从两端获取。真实模型请求、连接测试、审查循环和代码应用仍为规划能力。Preview 标记、Marketplace 预发布通道和 GitHub 预发布标记相互独立。`private: true` 继续用于防止 npm 发布。
 
-本次扩展版本按约定保持 `0.0.1`，publisher 变更会产生新扩展身份。Preview 1 的开发身份、标签、附件及[发布说明](./release-notes.md)作为历史保留。[Preview 2 说明](./release-notes-preview-2.md)和[使用指南](./usage.md)描述切换方式：先停用旧扩展，保留旧数据，在新身份下重新配置，不自动迁移。`private: true` 继续用于防止 npm 发布。
+## Preview 2 首次发布：历史记录
+
+- GitHub 已于 **2026-11-18 11:24:18 UTC+08:00** 公开 [Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2)，标签对应提交 `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`。验证结果及公开 VSIX 校验值保留在 [Preview 2 说明](./release-notes-preview-2.md)中。
+- Marketplace 已于 **2026-11-18 11:31:39 UTC+08:00** 公开 `Pro-qing.dual-mind` 版本 `0.0.1`。**New extension → Visual Studio Code** 流程用于该发布者的首次上传，后续版本通过已有扩展条目更新。
+- Preview 1 使用另一发布者身份。保持扩展版本 `0.0.1` 仅适用于新身份的首次发布。Preview 1 的[发布说明](./release-notes.md)、标签、附件和已有用户数据继续保留。[使用说明](./usage.md)介绍如何停用旧身份并重新配置新身份，当前不提供自动迁移。
+
+两个预览版均已发布，保留其标签及附件。下述流程使用新的扩展版本和新标签。
 
 ## 图标与打包输入
 
 原始 1408 × 768 JPEG 原样归档至 `resources/branding/dual-mind.jpeg`。随包 PNG 使用中央裁剪区域 `(320, 0, 1088, 768)`，以 Lanczos 缩小为 256 × 256，不拉伸图案。`.vscodeignore` 放行 `resources/icon.png`，排除源 JPEG 及其他资源维护文件。已审核 SVG／PNG 界面设计继续随包保留。
 
-## 准备与验证
+## 准备下一版本
 
-使用[环境基线](./environment.md)：Ubuntu 20.04+ amd64、VS Code 1.100.0+、nvm 管理的 Node.js 24。在仓库根目录执行：
+1. 选择高于 `Pro-qing.dual-mind` 已上架版本的扩展版本，更新 `package.json`、`package-lock.json`、双语更新日志和发布说明，并确定与该版本对应的未使用发布标签。公开前保持“准备中”表述，发布日期和验证结果以实际记录为准。
+2. 使用[环境基线](./environment.md)：Ubuntu 20.04+ amd64、VS Code 1.100.0+、nvm 管理的 Node.js 24，执行下方检查。运行逻辑／界面修改还需执行 `npm run test:ui`。
+3. 检查差异，创建发布准备提交并推送 `master`，等待该精确提交的 CI 全部通过：Ubuntu 20.04 上 VS Code 1.100.0／stable，以及 Ubuntu 24.04 stable。Ubuntu 20.04 stable 还验证真实 Webview 和打包。
+4. 创建并推送指向该已验证提交的新标签，从此标签的干净检出中生成分发包。若打包前源码或文档发生变化，先验证新提交并最终确定对应标签，再继续操作；已公开标签不移动。
 
 ```bash
 nvm use
@@ -33,40 +43,43 @@ npm ci
 npm run check
 VSCODE_TEST_VERSION=1.100.0 npm test
 VSCODE_TEST_VERSION=stable npm test
-DUAL_MIND_RELEASE_REF=v0.0.1-preview.2 npm run package
-(cd release && sha256sum dual-mind-0.0.1.vsix > SHA256SUMS.txt)
-(cd release && sha256sum --check SHA256SUMS.txt)
 ```
 
-无桌面测试需要文档列明的 Electron 运行库、Xvfb 和 xauth，并给编辑器测试加 `xvfb-run -a` 前缀。运行逻辑／界面修改还需执行 `npm run test:ui`。打包会重建宿主及前端，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签，不要把新包指向 Preview 1 标签。
+无桌面测试需要文档列明的 Electron 运行库、Xvfb 和 xauth。相应执行 `VSCODE_TEST_VERSION=1.100.0 xvfb-run -a npm test`、`VSCODE_TEST_VERSION=stable xvfb-run -a npm test`，以及需要时执行 `xvfb-run -a npm run test:ui`。
 
-检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、版本 `0.0.1`、Preview 标记和 PNG 图标资源，确认没有 Marketplace 预发布通道标记。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及五组 SVG／PNG；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
+## 构建与验证发布产物
 
-在隔离用户配置／扩展目录中安装包，验证原生扩展图标、身份、工作台、两种语言、草稿保存及重载恢复。测试时不要在同一配置中同时启用旧／新两个身份。
+在新标签的干净检出中，按上文加载 nvm 并安装锁定依赖。分发用 VSIX 构建一次，两端使用同一文件。下方 Bash 命令要求工作区无待提交修改，且 `HEAD` 已绑定标签；子 shell 在失败时停止，不改变当前终端的选项：
 
-## GitHub Preview 2 发布
+```bash
+(
+  set -eu
+  test -z "$(git status --porcelain)"
+  release_version="$(node -p 'require("./package.json").version')"
+  release_tag="$(git describe --tags --exact-match HEAD)"
+  DUAL_MIND_RELEASE_REF="$release_tag" npm run package
+  cd release
+  sha256sum "dual-mind-${release_version}.vsix" > SHA256SUMS.txt
+  sha256sum --check SHA256SUMS.txt
+)
+```
 
-1. 核对后创建 `chore: prepare Pro-qing marketplace package` 提交并推送 `master`。构建产物、截图、VSIX 和校验文件继续由 Git 忽略。
-2. 等待该精确提交的 CI 全部通过：Ubuntu 20.04 上 VS Code 1.100.0／stable，以及 Ubuntu 24.04 stable。Ubuntu 20.04 stable 还验证真实 Webview 和打包。
-3. 新建 Release 草稿，`v0.0.1-preview.2` 指向该提交，标题为 `DualMind 0.0.1 Preview 2`，设置 `prerelease: true`，不设为 latest。不移动或替换 `v0.0.1-preview.1` 及附件。
-4. 填入双语说明，包含 publisher 切换、图标、保持 `0.0.1`、重新配置、功能／限制、验证及 SHA-256，上传同次构建的 VSIX 与 `SHA256SUMS.txt`。
-5. 核对草稿目标、标记、正文及附件哈希，再公开发布；确认成功后记录返回的 URL 和实际 `published_at`。
-6. 将两个公开附件重新下载到新目录，核对与本地文件相同，再隔离安装验证下载包。提交、摘要和安装结果保存在被忽略的发布目录。
+`npm run package` 会重建扩展宿主与 Webview，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签。产物路径为 `release/dual-mind-<version>.vsix`，再次打包同一版本会覆盖本地文件；候选包和重新下载的验证副本应分别存放。构建产物、截图、VSIX 和校验文件继续由 Git 忽略。
 
-网页流程见 [GitHub 发布文档](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。API 凭据不得写入源码或暴露在命令参数中。
+检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及五组已审核 SVG／PNG；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
 
-## 所有者首次上传 Marketplace
+在隔离用户配置／扩展目录中安装包，验证图标、身份／版本、工作台、两种语言、草稿保存及重载恢复。该配置只启用目标扩展身份。
 
-使用已验证的同一份 Preview 2 VSIX，避免不必要的重新构建导致附件不同。
+## 将同一产物发布到两端
 
-1. 用拥有 **Pro-qing** 的账号登录 [Publisher 管理页](https://marketplace.visualstudio.com/manage)。
-2. 在 **Pro-qing** 下选择 **New extension → Visual Studio Code**，上传 `dual-mind-0.0.1.vsix`。
-3. 核对 publisher、名称、`0.0.1`、图标、Preview 标记、MIT 许可及商店介绍，明确保留当前模型执行限制。
-4. 等待 Marketplace 验证及公开完成，只有 listing 已公开后才把仓库状态改为已上架。确认标识为 `Pro-qing.dual-mind`。
-5. 在 VS Code 停用旧开发身份，扩展面板搜索 `@id:Pro-qing.dual-mind`，安装并验证工作台和语言选择。
+1. 使用已验证的新标签准备 GitHub Release 草稿，标题匹配新版本，填入双语说明，并上传同次构建的 VSIX 和校验文件。当前预览阶段勾选 **Pre-release**，不设为 latest。公开前核对提交、链接、功能／限制及附件哈希。
+2. 用拥有 **Pro-qing** 的账号登录 [Publisher 管理页](https://marketplace.visualstudio.com/manage)，打开已有的 **DualMind** 扩展条目，上传新版本 VSIX。确认扩展标识、版本、图标、Preview 标记和 README，等待验证及公开完成。
+3. 公开已核对的 GitHub Release 草稿，分别记录两端公开地址和实际发布时间。若只有一端完成发布，仅将该端标为已更新。
+4. 将 GitHub VSIX 和校验文件重新下载到新目录，执行 `sha256sum --check SHA256SUMS.txt` 并与准备产物的摘要比较，然后隔离安装下载包。另从 Marketplace 安装／更新 `Pro-qing.dual-mind`，确认新版本，验证工作台打开、语言切换与草稿持久化。
+5. 记录发布提交、标签、VSIX SHA-256、两端发布时间和实际安装验证结果；确认后同步双语状态文档，保留全部历史标签和公开附件。
 
-官方参考：[扩展发布](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)和[扩展清单](https://code.visualstudio.com/api/references/extension-manifest)。GitHub Release 和 `preview: true` 不会执行 Marketplace 上传，本轮不添加 Marketplace 令牌或自动发布任务。
+## 同步 Marketplace 介绍
 
-## 后续同步更新
+Marketplace 展示上传扩展包中的 README，提交或推送 GitHub 文档不会自动更新商店介绍。**2026-11-18** 核对时，公开的 `0.0.1` 页面仍显示旧包中的发布准备文案。下一版本打包时纳入修正后的 README，并在上传后核对商店实际显示内容；仅完成本次仓库文档更新尚未完成该步骤。
 
-`Pro-qing.dual-mind` 的 `0.0.1` 在 Marketplace 发布后，同一 ID 后续更新需要更高版本。本次版本不变仅适用于新身份的首次发布。更新包清单／锁文件版本及双语日志，完成检查和 CI 后只构建一次，将同一产物分发到 GitHub 和 Marketplace。保留历史标签和附件，分别记录两端实际公开状态，不因一端成功就声称另一端已同步。
+官方参考：[扩展发布](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)、[扩展清单](https://code.visualstudio.com/api/references/extension-manifest)和 [GitHub 发布文档](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。API 凭据不得写入源码或暴露在命令参数中。

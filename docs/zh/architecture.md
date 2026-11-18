@@ -18,7 +18,7 @@ src/shared/       消息类型、双语界面文案和 Reviewer 定义
 src/providers/    真实模型适配占位
 src/editor/       上下文读取和结果应用占位
 webview/src/      React 工作台、设置、表单、通信与自适应样式
-resources/        后续扩展资源
+resources/        随包 PNG 图标及归档品牌原图
 scripts/          构建、检查、本地测试和真实 Webview 验证
 tests/local/     存储与 React 交互测试
 tests/            VS Code 扩展宿主测试
@@ -28,6 +28,8 @@ docs/zh/          中文文档
 .github/          兼容性 CI 和协作模板
 .vscode/          共享调试与构建任务
 ```
+
+`resources/icon.png` 为扩展及 Marketplace 图标；`resources/branding/` 中的 JPEG 原图保留在 Git 中供维护，打包时排除。详见[品牌资源说明](../../resources/README.md)。
 
 ## 状态归属
 

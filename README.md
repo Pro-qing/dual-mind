@@ -12,7 +12,7 @@ DualMind is an AI pair-programming extension project for VS Code. It brings task
 
 The React workbench supports local task drafts, connection settings, Reviewer presets, and English / Simplified Chinese. Model execution and code application are planned capabilities; the optional conversation preview is explicitly read-only example content.
 
-Preview 2: [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) · [Release notes](./docs/en/release-notes-preview-2.md). Publisher: **Pro-qing**; extension version: **0.0.1**. GitHub Preview 2 was published 2026-11-18; Marketplace listing is pending manual upload.
+Available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) as **Pro-qing.dual-mind**, version **0.0.1**, published 2026-11-18 with the Preview label. [GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) was also published on 2026-11-18. [Release notes](./docs/en/release-notes-preview-2.md).
 
 ## Two complementary roles
 
@@ -41,7 +41,7 @@ The five approved SVG / PNG scenes are retained as design references. Some illus
 
 ## Documentation and contribution
 
-- [Usage guide](./docs/en/usage.md) — Local installation, workbench, language settings, and limitations.
+- [Usage guide](./docs/en/usage.md) — Marketplace / VSIX installation, workbench, language settings, and limitations.
 - [Development guide](./docs/en/development.md) — Environment, builds, debugging, and tests.
 - [Architecture](./docs/en/architecture.md) — State ownership and module responsibilities.
 - [Roadmap](./docs/en/roadmap.md) — Delivered and planned milestones.
