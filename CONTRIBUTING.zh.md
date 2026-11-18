@@ -2,7 +2,7 @@
 
 [English](./CONTRIBUTING.md) · [项目首页](./README.zh.md)
 
-DualMind 当前正在准备可用本地 React 工作台的 GitHub 预览版，请先阅读[开发指南](./docs/zh/development.md)、[架构说明](./docs/zh/architecture.md)和[路线图](./docs/zh/roadmap.md)。
+DualMind 的本地 React 工作台现已提供 GitHub 预览版，请先阅读[开发指南](./docs/zh/development.md)、[架构说明](./docs/zh/architecture.md)和[路线图](./docs/zh/roadmap.md)。
 
 ## 提交修改
 

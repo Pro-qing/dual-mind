@@ -4,7 +4,7 @@
 
 ## 0.0.1 — Preview 1
 
-标签：`v0.0.1-preview.1`。本文记录首个预览版的变更，是否已公开及实际发布时间以 [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) 为准；公开前本条目描述待发布候选内容。
+已于 2026-11-18（10:41:36，UTC+08:00）公开发布。[GitHub 预览版 `v0.0.1-preview.1`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) 对应提交 `af9ff3d91e5a31eb313c32563e9c633e26f68515`。
 
 - 实现 React 工作台，提供工作区级草稿、连接设置、原生 API 密钥录入、Reviewer 预设及角色指令快照。
 - 添加持久化中英文选择、可独立编辑的内置双语定义，以及保留原文的自定义内容。

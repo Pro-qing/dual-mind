@@ -6,7 +6,7 @@
 
 支持基线为 **Ubuntu 20.04+、x86_64/amd64、VS Code 1.100.0+**。其他平台和 ARM64 暂未验证。使用已构建的 VSIX 无需另行安装 Node.js，详见[环境说明](./environment.md)。
 
-进入 [GitHub 预览版 Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1)，先阅读[发布说明](./release-notes.md)。实际发布前，说明为草稿，附件尚未公开；公开状态和可下载文件以 GitHub Release 页面为准。
+进入 [GitHub 预览版 Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1)，先阅读[发布说明](./release-notes.md)。Preview 1 已于 2026-11-18 发布，GitHub Release 页面提供对应版本的 VSIX 和校验文件。
 
 在 **Assets** 中下载 `dual-mind-0.0.1.vsix` 和 `SHA256SUMS.txt`，放到同一目录。自动生成的源码压缩包是源码快照，不是 VSIX 安装包。在下载目录执行：
 

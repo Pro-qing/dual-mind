@@ -4,7 +4,7 @@
 
 **Release tag:** `v0.0.1-preview.1` · **Extension version:** `0.0.1` · **License:** [MIT](../../LICENSE)
 
-This document contains the first preview's release content. Before publication it is a release-notes draft; download availability and the actual publication timestamp are recorded on the [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1). A prepared package does not mean that the release is already public.
+**Published:** 2026-11-18 10:41:36 UTC+08:00 (Asia/Hong_Kong). Download the versioned assets from the [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1). The release tag points to preparation commit `af9ff3d91e5a31eb313c32563e9c633e26f68515`; these publication notes were updated after the release was confirmed.
 
 ## Included
 
@@ -38,7 +38,9 @@ Reload VS Code and run **DualMind: Open Workbench** (Chinese editor: **DualMind:
 
 The local-workbench baseline passed 21 environment tests and 21 store/React interaction tests, type/lint/format checks, bilingual documentation links, and all five design-pair checks. Extension-host tests cover actual React rendering, singleton tabs, and reopening on VS Code 1.100.0 and stable. Real Webview validation covers language changes, role snapshots, reload persistence, workspace isolation, and wide/narrow screenshots.
 
-For publication, the release preparation additionally reruns checks, tests the new MIT-licensed VSIX in an isolated installation, and checks the CI result for the tagged commit. The GitHub release body records the final commit, actual editor versions, verification results, and artifact SHA-256. After publication, the uploaded files are downloaded again and checked against that digest.
+The release preparation reran the checks and passed all three CI jobs on the tagged commit. Local extension-host tests passed on VS Code 1.100.0 and stable 1.146.0. The MIT-licensed VSIX was installed independently before publication. After publication, both public assets were downloaded without authentication and their SHA-256 values matched; the downloaded VSIX passed workbench opening, language switching, task saving, and reload persistence on VS Code 1.100.0.
+
+VSIX SHA-256: `a28641501de5f54dbd4dc19f5d6670525191c105a83d87986b0fd8f13800bdd0`. The [exact-commit CI run](https://github.com/Pro-qing/dual-mind/actions/runs/44224284575) and GitHub release body record the validation results.
 
 ## Feedback and license
 

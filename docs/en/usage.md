@@ -6,7 +6,7 @@
 
 The supported baseline is **Ubuntu 20.04+, x86_64/amd64, and VS Code 1.100.0+**. Other platforms and ARM64 are not yet validated. A built VSIX does not require a separate Node.js installation. See [Environment](./environment.md).
 
-Use the [GitHub preview Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) and read the [release notes](./release-notes.md). Before the release is published, the notes are a draft and its attachments are not public. The GitHub Release page is the source of truth for publication and available downloads.
+Use the [GitHub preview Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) and read the [release notes](./release-notes.md). Preview 1 was published on 2026-11-18. The GitHub Release page contains the versioned VSIX and its checksum file.
 
 Download `dual-mind-0.0.1.vsix` and `SHA256SUMS.txt` from **Assets** into the same directory. The automatically generated source-code archives are source snapshots, not the VSIX. From the download directory:
 

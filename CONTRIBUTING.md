@@ -2,7 +2,7 @@
 
 [简体中文](./CONTRIBUTING.zh.md) · [Project home](./README.md)
 
-DualMind is preparing a GitHub preview of its working local React workbench. Start with the [development guide](./docs/en/development.md), [architecture](./docs/en/architecture.md), and [roadmap](./docs/en/roadmap.md).
+DualMind’s local React workbench is available as a GitHub preview. Start with the [development guide](./docs/en/development.md), [architecture](./docs/en/architecture.md), and [roadmap](./docs/en/roadmap.md).
 
 ## Making a change
 

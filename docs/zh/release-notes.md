@@ -4,7 +4,7 @@
 
 **发布标签：** `v0.0.1-preview.1` · **扩展版本：** `0.0.1` · **许可：** [MIT](../../LICENSE)
 
-本文记录首个预览版的发布内容，公开发布前作为说明草稿。安装包是否可下载及实际公开时间，以 [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) 为准；准备好安装包不表示版本已经公开。
+**实际公开时间：**2026-11-18 10:41:36 UTC+08:00（Asia/Hong_Kong）。版本附件见 [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1)，标签指向准备提交 `af9ff3d91e5a31eb313c32563e9c633e26f68515`；本文的公开记录在确认发布后补充。
 
 ## 包含内容
 
@@ -38,7 +38,9 @@ code --install-extension dual-mind-0.0.1.vsix --force
 
 本地工作台基线已通过 21 项环境测试、21 项存储／React 交互测试、类型／lint／格式检查、双语文档链接及五组设计文件检查。扩展宿主测试在 VS Code 1.100.0 和 stable 上验证实际 React 渲染、单例标签及关闭后重开。真实 Webview 测试覆盖语言切换、角色快照、重载持久化、工作区隔离和宽／窄窗口截图。
 
-发布准备会另行重跑检查，在隔离安装中验证新的 MIT 许可 VSIX，并检查标签对应提交的 CI 结果。GitHub 发布正文记录最终提交、实际编辑器版本、验证结果和附件 SHA-256；公开后重新下载附件，核对该校验值。
+发布准备已重跑检查，标签对应提交的三组 CI 全部通过。本地扩展宿主测试在 VS Code 1.100.0 和 stable 1.146.0 上通过。MIT 许可 VSIX 在公开前已独立安装验证；公开后，无需登录重新下载两个附件，SHA-256 均与原文件一致，下载的 VSIX 在 VS Code 1.100.0 上通过工作台打开、语言切换、任务保存和重载持久化验证。
+
+VSIX SHA-256：`a28641501de5f54dbd4dc19f5d6670525191c105a83d87986b0fd8f13800bdd0`。[对应提交的 CI](https://github.com/Pro-qing/dual-mind/actions/runs/44224284575) 和 GitHub 发布正文记录了验证结果。
 
 ## 反馈与许可
 

@@ -4,7 +4,7 @@
 
 ## 0.0.1 — Preview 1
 
-Tag: `v0.0.1-preview.1`. This is the first preview's change record; public availability and the actual publication timestamp are recorded on the [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1). Before publication this entry describes the release candidate.
+Published 2026-11-18 (10:41:36, UTC+08:00). [GitHub pre-release `v0.0.1-preview.1`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) targets commit `af9ff3d91e5a31eb313c32563e9c633e26f68515`.
 
 - Implement a React workbench with workspace-scoped task drafts, connection settings, native API-key entry, Reviewer presets, and captured role instructions.
 - Add persistent English / Simplified Chinese selection, independently editable built-in definitions, and original-language custom content.
