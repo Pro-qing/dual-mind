@@ -12,7 +12,7 @@ DualMind is an AI pair-programming extension project for VS Code. It brings task
 
 The React workbench supports local task drafts, connection settings, Reviewer presets, and English / Simplified Chinese. Model execution and code application are planned capabilities; the optional conversation preview is explicitly read-only example content.
 
-Preview 2: [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) · [Release notes](./docs/en/release-notes-preview-2.md). Publisher: **Pro-qing**; extension version: **0.0.1**. GitHub publication is being prepared; Marketplace listing is pending manual upload.
+Preview 2: [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) · [Release notes](./docs/en/release-notes-preview-2.md). Publisher: **Pro-qing**; extension version: **0.0.1**. GitHub Preview 2 was published 2026-11-18; Marketplace listing is pending manual upload.
 
 ## Two complementary roles
 

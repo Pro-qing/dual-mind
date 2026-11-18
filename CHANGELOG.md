@@ -4,7 +4,7 @@
 
 ## 0.0.1 — Preview 2
 
-Release preparation for `v0.0.1-preview.2`; publication is confirmed on the [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2). Marketplace upload remains pending.
+Published 2026-11-18 (11:24:18, UTC+08:00). [GitHub pre-release `v0.0.1-preview.2`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) targets commit `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`. Marketplace upload remains pending.
 
 - Set Publisher to `Pro-qing`, with extension ID `Pro-qing.dual-mind`; retain version `0.0.1` and add `preview: true`.
 - Add the 256 × 256 PNG icon from the owner's centered JPEG artwork, archive the unchanged source, and package only the icon.

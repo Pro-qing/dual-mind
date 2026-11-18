@@ -4,7 +4,7 @@
 
 **Git 标签：** `v0.0.1-preview.2` · **扩展版本：** `0.0.1` · **Publisher：** `Pro-qing` · **扩展标识：** `Pro-qing.dual-mind` · **许可：** [MIT](../../LICENSE)
 
-当前正在准备发布，实际公开时间和附件可用性以 [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 为准。**Marketplace 状态：待手动上传上架。** 准备好安装包不会自动让扩展出现在 VS Code 搜索结果中。
+**实际公开时间：**2026-11-18 11:24:18 UTC+08:00（Asia/Hong_Kong）。[GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 提供已核验的 VSIX 和校验文件，标签对应提交 `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`。**Marketplace 状态：待手动上传上架。** GitHub 发布不会自动让扩展出现在 VS Code 搜索结果中。
 
 ## 相对 Preview 1 的变化
 
@@ -47,6 +47,6 @@ code --install-extension dual-mind-0.0.1.vsix --force
 
 ## 验证与记录
 
-发布准备检查元信息、256 × 256 图标尺寸、包内文件及排除规则、双语文档、环境／本地测试，以及最低版和 stable VS Code 的真实扩展宿主加载。准备好的 VSIX 在隔离安装中验证 publisher／图标、工作台、语言切换及草稿持久化。对应 CI 全部通过后公开发布，再重新下载公开附件进行哈希和安装核验。
+发布准备已通过元信息与 256 × 256 PNG 检查、包内文件／排除检查、21 项环境测试、21 项本地存储／React 测试、类型、lint、格式和双语文档链接。扩展宿主测试在 VS Code 1.100.0 及 stable 1.146.0 上通过，发布提交的三组 CI 全部成功。准备包和独立下载的公开 VSIX 均在 VS Code 1.100.0 隔离安装中通过原生图标、发布者／版本、工作台、语言切换、草稿保存及重载持久化验证；公开附件哈希与准备文件一致。
 
-实际发布时间、发布提交和 VSIX 摘要在验证完成后记录到 GitHub 正文及发布文档中。安全问题使用[安全说明](../../SECURITY.zh.md)中的私密渠道，普通反馈使用仓库 Issue。
+VSIX SHA-256：`c219356f3e253102f3b779012e49dd0f4e586d02d00e22a95a7d3f50074ce848`。[发布提交的 CI](https://github.com/Pro-qing/dual-mind/actions/runs/44229630530) 及 GitHub 正文记录验证证据和实际公开时间。安全问题使用[安全说明](../../SECURITY.zh.md)中的私密渠道，普通反馈使用仓库 Issue。

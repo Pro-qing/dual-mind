@@ -4,7 +4,7 @@
 
 **Git tag:** `v0.0.1-preview.2` · **Extension version:** `0.0.1` · **Publisher:** `Pro-qing` · **Extension ID:** `Pro-qing.dual-mind` · **License:** [MIT](../../LICENSE)
 
-Publication is being prepared. The [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) records its actual publication time and asset availability. **Marketplace status: pending manual upload.** This package does not by itself make the extension searchable in VS Code.
+**Published:** 2026-11-18 11:24:18 UTC+08:00 (Asia/Hong_Kong). The [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) provides the verified VSIX and checksum, targeting commit `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`. **Marketplace status: pending manual upload.** GitHub publication does not make the extension searchable in VS Code.
 
 ## Changes from Preview 1
 
@@ -47,6 +47,6 @@ The owner can upload this exact VSIX using **Pro-qing → New extension → Visu
 
 ## Verification and history
 
-Release preparation checks metadata, 256 × 256 icon dimensions, all package assets and exclusions, bilingual documents, environment and local tests, and real extension-host loading on minimum/stable VS Code. The prepared VSIX is installed in isolation to check its publisher/icon, workbench, language switching and draft persistence. Publication requires the corresponding CI jobs to pass; public assets are downloaded again for checksum and installation verification.
+Release preparation passed metadata and 256 × 256 PNG checks, package asset/exclusion checks, 21 environment tests, 21 local store/React tests, types, lint, format and bilingual documentation links. Extension-host tests passed on VS Code 1.100.0 and stable 1.146.0. All three CI jobs on the release commit passed. Both the prepared package and the independently downloaded public VSIX passed isolated installation on VS Code 1.100.0, including native icon display, publisher/version, workbench, language switching, draft saving and reload persistence. Public asset hashes match the prepared files.
 
-The actual publication time, release commit and VSIX digest are recorded after verification in the GitHub body and publication notes. Vulnerabilities use the private channel in [SECURITY](../../SECURITY.md); ordinary feedback uses repository issues.
+VSIX SHA-256: `c219356f3e253102f3b779012e49dd0f4e586d02d00e22a95a7d3f50074ce848`. The [release-commit CI run](https://github.com/Pro-qing/dual-mind/actions/runs/44229630530) and GitHub body record the validation evidence and actual publication time. Vulnerabilities use the private channel in [SECURITY](../../SECURITY.md); ordinary feedback uses repository issues.
