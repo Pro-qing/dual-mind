@@ -4,7 +4,7 @@
 
 ## 当前范围
 
-DualMind 0.0.1 Preview 1 是早期本地工作台版本。工作台会保存工作区草稿、用户连接元信息、模型默认值及 Reviewer 预设。通过原生 VS Code 密码框录入的 API 密钥由 `ExtensionContext.secrets` 保存，Webview 只接收密钥保存状态，不接收凭据值。
+DualMind 0.0.1 预览版本处于早期本地工作台阶段。工作台会保存工作区草稿、用户连接元信息、模型默认值及 Reviewer 预设。通过原生 VS Code 密码框录入的 API 密钥由 `ExtensionContext.secrets` 保存，Webview 只接收密钥保存状态，不接收凭据值。
 
 宿主校验本地消息，Webview 限制本地资源访问，并使用基于 nonce 的内容安全策略、禁止直接网络连接。这些是已实现的边界，不代表扩展不存在漏洞。扩展尚不发送模型请求、运行审查循环、读取编辑器上下文或修改工作区文件；只读示例与真实任务存储隔离。
 

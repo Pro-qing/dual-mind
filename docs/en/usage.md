@@ -6,9 +6,9 @@
 
 The supported baseline is **Ubuntu 20.04+, x86_64/amd64, and VS Code 1.100.0+**. Other platforms and ARM64 are not yet validated. A built VSIX does not require a separate Node.js installation. See [Environment](./environment.md).
 
-Use the [GitHub preview Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) and read the [release notes](./release-notes.md). Preview 1 was published on 2026-11-18. The GitHub Release page contains the versioned VSIX and its checksum file.
+Use the [Preview 2 GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) and [Preview 2 notes](./release-notes-preview-2.md). Its package uses Publisher `Pro-qing`, extension ID `Pro-qing.dual-mind`, version `0.0.1`, and a PNG icon. Publication is being prepared; the Release page records actual download availability. Marketplace upload is still pending.
 
-Download `dual-mind-0.0.1.vsix` and `SHA256SUMS.txt` from **Assets** into the same directory. The automatically generated source-code archives are source snapshots, not the VSIX. From the download directory:
+Download `dual-mind-0.0.1.vsix` and `SHA256SUMS.txt` from **Preview 2 Assets** into the same directory. The two previews use the same filenames but different extension identities and checksums; use both files from the same Release. The automatically generated source-code archives are source snapshots, not the VSIX. From the download directory:
 
 ```bash
 sha256sum --check SHA256SUMS.txt
@@ -17,7 +17,17 @@ code --install-extension dual-mind-0.0.1.vsix --force
 
 Continue only when the checksum reports `OK`. Reload VS Code, open the Command Palette, and run **DualMind: Open Workbench** (Chinese editor: **DualMind: 打开工作台**). The command opens a single editor tab and reuses it on subsequent invocations. **DualMind: Show Status** remains a readiness check. You can also select **Extensions: Install from VSIX...** and choose the verified package.
 
-The extension is distributed through GitHub for this preview, with identifier `dual-mind-dev-placeholder.dual-mind`. When updating from an older local `0.0.1` build, `--force` replaces the same-version package. Preserve the existing extension installation while updating to keep its stored drafts/configuration, then reload the window. For later releases, use the version and checksum supplied by that Release; do not substitute the old checksum.
+## Switch from Preview 1
+
+The old `dual-mind-dev-placeholder.dual-mind` and new `Pro-qing.dual-mind` identities are separate extensions. Search `@id:dual-mind-dev-placeholder.dual-mind` in Extensions, use its gear menu to **Disable**, and reload the window before opening the new extension. This prevents duplicate command registrations. You can keep the old extension installed and disabled; its data is not actively deleted.
+
+The new identity starts with its own drafts, connection metadata, API keys, model defaults, and custom roles. Recreate them as needed; no automatic migration is included. The `dualMind.language` user setting uses the same key and may carry over. `--force` does not move data across publishers. Preserve Preview 1's original asset if you need that historical build.
+
+## Install from Marketplace after publication
+
+**Marketplace status: pending manual upload.** Once the owner uploads the prepared package and the service makes the listing public, open Extensions (`Ctrl+Shift+X`) and search `@id:Pro-qing.dual-mind`, verify publisher **Pro-qing** and the icon, then select **Install**. The command-line equivalent after publication is `code --install-extension Pro-qing.dual-mind`.
+
+The package's `preview: true` labels the listing as Preview; it is a regular package, so this release does not require selecting a Marketplace pre-release channel. Further published updates of the same extension ID must use a higher extension version and can be installed through VS Code's normal extension update flow. GitHub releases will retain the corresponding versioned artifact and checksum.
 
 To build from source, follow [Development](./development.md) and [Packaging](./releasing.md). The local artifact is `release/dual-mind-0.0.1.vsix`; it and downloaded verification files are not committed to Git.
 

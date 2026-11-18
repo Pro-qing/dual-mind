@@ -2,6 +2,16 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.1 — Preview 2
+
+Release preparation for `v0.0.1-preview.2`; publication is confirmed on the [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2). Marketplace upload remains pending.
+
+- Set Publisher to `Pro-qing`, with extension ID `Pro-qing.dual-mind`; retain version `0.0.1` and add `preview: true`.
+- Add the 256 × 256 PNG icon from the owner's centered JPEG artwork, archive the unchanged source, and package only the icon.
+- Update extension-host identity checks and bilingual switching/upload instructions. New-identity data is configured afresh; no migration or deletion of old data is performed.
+- Prepare a regular VSIX for manual Marketplace upload and GitHub Preview 2 distribution. Preserve Preview 1's tag/assets and all approved interface designs.
+- Local-workbench features and execution limitations are unchanged; see [Preview 2 release notes](./docs/en/release-notes-preview-2.md).
+
 ## 0.0.1 — Preview 1
 
 Published 2026-11-18 (10:41:36, UTC+08:00). [GitHub pre-release `v0.0.1-preview.1`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) targets commit `af9ff3d91e5a31eb313c32563e9c633e26f68515`.

@@ -1,23 +1,31 @@
-# Packaging and GitHub preview releases
+# Packaging, Marketplace upload, and GitHub previews
 
 [简体中文](../zh/releasing.md) · [Documentation](./README.md)
 
-## Preview identity
+## Preview 2 identity
 
-| Item              | Value                                    |
-| ----------------- | ---------------------------------------- |
-| Extension version | `0.0.1`                                  |
-| Git tag           | `v0.0.1-preview.1`                       |
-| Release title     | `DualMind 0.0.1 Preview 1`               |
-| Release type      | GitHub pre-release                       |
-| Assets            | `dual-mind-0.0.1.vsix`, `SHA256SUMS.txt` |
-| License           | MIT, copyright `2026 Pro-qing`           |
+| Item                        | Value                                              |
+| --------------------------- | -------------------------------------------------- |
+| Publisher / extension ID    | `Pro-qing` / `Pro-qing.dual-mind`                  |
+| Extension version           | `0.0.1`                                            |
+| Marketplace label / channel | `preview: true` / regular VSIX, no `--pre-release` |
+| Icon                        | `resources/icon.png`, 256 × 256 PNG                |
+| Git tag / title             | `v0.0.1-preview.2` / `DualMind 0.0.1 Preview 2`    |
+| GitHub release type         | Pre-release                                        |
+| Assets                      | `dual-mind-0.0.1.vsix`, `SHA256SUMS.txt`           |
+| License                     | MIT, copyright `2026 Pro-qing`                     |
 
-The existing extension ID remains `dual-mind-dev-placeholder.dual-mind` for this preview. `private: true` protects against npm publication; it does not prohibit GitHub VSIX distribution. The [release notes](./release-notes.md) describe available features and limits. A draft or local package is not a public release; use GitHub's actual publication timestamp once published.
+The owner supplied the registered Publisher ID `Pro-qing`. This package is prepared for its first Marketplace upload; **the listing remains pending until the owner uploads it and Marketplace confirms publication**. The VSIX's Preview label and the GitHub pre-release flag are independent of the Marketplace pre-release channel.
 
-## Prepare and validate locally
+The extension version intentionally remains `0.0.1`: the publisher change creates a new extension identity. Preview 1's development identity, tag, attachments, and [release notes](./release-notes.md) are preserved. See [Preview 2 notes](./release-notes-preview-2.md) and [Usage](./usage.md) for switching: disable the old extension, keep its stored data, and configure the new identity afresh. There is no automatic migration. `private: true` remains an npm publishing safeguard.
 
-Use the shared [environment baseline](./environment.md): Ubuntu 20.04+ amd64, VS Code 1.100.0+, and nvm-managed Node.js 24 for development. Use Xvfb/xauth and the documented Electron libraries for headless tests. At the repository root:
+## Icon and package inputs
+
+The original 1408 × 768 JPEG is archived unchanged at `resources/branding/dual-mind.jpeg`. The packaged PNG uses its centered crop `(320, 0, 1088, 768)`, reduced to 256 × 256 with Lanczos. The image is not stretched. `.vscodeignore` allows `resources/icon.png` while excluding the source JPEG and other resource-maintenance files. Approved interface SVG/PNG designs remain in the package.
+
+## Prepare and verify
+
+Use the [environment baseline](./environment.md): Ubuntu 20.04+ amd64, VS Code 1.100.0+, and nvm-managed Node.js 24. At the repository root:
 
 ```bash
 nvm use
@@ -25,42 +33,40 @@ npm ci
 npm run check
 VSCODE_TEST_VERSION=1.100.0 npm test
 VSCODE_TEST_VERSION=stable npm test
-DUAL_MIND_RELEASE_REF=v0.0.1-preview.1 npm run package
+DUAL_MIND_RELEASE_REF=v0.0.1-preview.2 npm run package
 (cd release && sha256sum dual-mind-0.0.1.vsix > SHA256SUMS.txt)
 (cd release && sha256sum --check SHA256SUMS.txt)
 ```
 
-On a headless machine, prefix each editor test with `xvfb-run -a`. For runtime or UI changes, also run `npm run test:ui` (or `xvfb-run -a npm run test:ui`).
+Headless editor tests need the documented Electron libraries, Xvfb and xauth; prefix their commands with `xvfb-run -a`. Run `npm run test:ui` for runtime/UI changes. Packaging rebuilds the host and frontend. `DUAL_MIND_RELEASE_REF` pins packaged README/changelog links to the new tag. Do not point the new package at the Preview 1 tag.
 
-`npm run package` rebuilds the extension and React bundle, then creates the VSIX. `DUAL_MIND_RELEASE_REF` pins rewritten README/changelog links and images to the release tag instead of the moving default branch. Ordinary local packaging can omit it. The license bypass has been removed. Inspect the package for `LICENSE.txt`, third-party notices, both localization files, the host and Webview bundles, bilingual docs, and all five SVG/PNG pairs; development sources, secrets, test profiles, maps, and previous VSIX files must be absent.
+Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, version `0.0.1`, the Preview flag and the PNG icon asset. Confirm that it is not marked as a Marketplace pre-release-channel package. Check the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all five SVG/PNG pairs. The source JPEG, development sources, tests, credentials and source maps must be absent.
 
-Install the prepared package in a separate VS Code profile/extension directory and check opening the workbench, language switching, draft saving, and reload persistence. This checks packaged resources independently of development paths. The install command for normal local use is:
+Install the package in an isolated profile/extensions directory and verify the native extension icon, identity, workbench, both languages, draft saving and reload recovery. Do not test by leaving both the old and new identities enabled in one user profile.
 
-```bash
-code --install-extension release/dual-mind-0.0.1.vsix --force
-```
+## GitHub Preview 2 publication
 
-Reload the window and run **DualMind: Open Workbench**. The same-version force update is appropriate for this initial local preview; later published builds should increment the extension version rather than silently replace an existing release artifact.
+1. Review and commit the changes as `chore: prepare Pro-qing marketplace package`, then push `master`. Keep generated bundles, screenshots, VSIX files and checksum files ignored by Git.
+2. Wait for all CI jobs on that exact commit: Ubuntu 20.04 with VS Code 1.100.0/stable and Ubuntu 24.04 stable. The Ubuntu 20.04 stable job also validates the real Webview and packaging.
+3. Create a new Release draft with tag `v0.0.1-preview.2` targeting that commit, title `DualMind 0.0.1 Preview 2`, `prerelease: true`, and not latest. Do not move or replace `v0.0.1-preview.1` or its assets.
+4. Add bilingual notes describing the publisher switch, icon, fixed `0.0.1` version, fresh configuration, features/limitations, verification and SHA-256. Upload the VSIX and `SHA256SUMS.txt` from the same build.
+5. Review the draft target, flags, body and asset hashes, then publish. Record the returned URL and actual `published_at` timestamp only after confirmation.
+6. Download both public attachments into a fresh directory, verify hashes against the prepared files, and test the downloaded VSIX in isolation. Record the commit, digest and installation results under the ignored release directory.
 
-## Commit, CI, and release draft
+The [GitHub release documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) describes the web workflow. API credentials must not be stored in source files or exposed in command arguments.
 
-1. Review the bilingual documentation, feature claims, security reporting channel, license metadata, and changelog. Preserve the approved design assets. Do not invent contact details or claim publication before it happens.
-2. Commit the preparation as `chore: prepare v0.0.1 preview release`, then push `master`. `release/`, dependencies, generated bundles, and verification screenshots stay ignored.
-3. Wait for all CI jobs on that exact commit to succeed: Ubuntu 20.04 with VS Code 1.100.0 and stable, plus Ubuntu 24.04 stable. The Ubuntu 20.04 stable job also exercises the real Webview and packaging.
-4. Open the repository's **Releases → Draft a new release**. Set tag `v0.0.1-preview.1` to the tested preparation commit, enter the title above, and mark the release as a pre-release rather than latest.
-5. Add the English and Chinese release notes, including the baseline, installation command, current limits, commit SHA, tested editor versions, and VSIX SHA-256. Upload the two prepared assets. Use absolute repository/tag links in the GitHub body, since its relative-link context differs from the documentation files.
-6. Save the draft and check the target/tag, title, release flags, full body, asset names/sizes, hashes, and verified private vulnerability-reporting link before publishing.
+## First Marketplace upload by the owner
 
-The GitHub API may be used for the same draft/upload/publish flow with an authorized account. Do not put credentials in repository files or command arguments. A draft must not be published if the required CI or asset checks fail.
+Use the exact verified Preview 2 VSIX; rebuilding it unnecessarily would create a different artifact.
 
-## Publish and verify the downloaded files
+1. Sign in to the [publisher management page](https://marketplace.visualstudio.com/manage) with the account that owns **Pro-qing**.
+2. Under **Pro-qing**, choose **New extension → Visual Studio Code**, then upload `dual-mind-0.0.1.vsix`.
+3. Check the publisher, name, `0.0.1` version, icon, Preview label, MIT license and listing descriptions. Keep the current model-execution limitations explicit.
+4. Wait for Marketplace validation/publication to complete. Only after the listing is public should the repository describe it as available there. Confirm the listing ID is `Pro-qing.dual-mind`.
+5. In VS Code, disable the old development identity, search `@id:Pro-qing.dual-mind` in Extensions, install, and verify workbench opening and language selection.
 
-Publish the reviewed draft. Record the returned Release URL, `published_at` timestamp, preparation commit, tag, and VSIX digest in the release record; the timestamp is recorded only after GitHub confirms publication.
+Official references: [Publishing extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) and [Extension manifest](https://code.visualstudio.com/api/references/extension-manifest). A GitHub Release and `preview: true` do not perform the Marketplace upload. No Marketplace token or automatic publishing job is added by this preparation.
 
-Download both assets from the published Release into a fresh directory. Run `sha256sum --check SHA256SUMS.txt`, compare the digest with the prepared artifact, and verify the downloaded VSIX in an isolated installation. Check workbench opening, language changes, and saved drafts. Keep the resulting verification record locally under the ignored release directory. If verification fails, report the actual release state and fix it through an explicit follow-up release; do not report a completed verification.
+## Subsequent synchronized updates
 
-The [GitHub documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) describes the web flow. Assets and checksums belong in the Release, not in the source tree.
-
-## Later Marketplace publication
-
-Marketplace distribution is a separate milestone: register a final publisher, replace the development publisher consistently (including tests and migration considerations), prepare the final icon and listing, and validate that release. The current MIT license and GitHub preview do not register a Marketplace publisher. Real model features must be described only after implementation. This repository has no automatic Marketplace publishing workflow or embedded publication token.
+Once `Pro-qing.dual-mind` version `0.0.1` has been published to Marketplace, future updates under that same ID need a higher version. This initial unchanged-version exception is for the new identity only. Update the package/lockfile version and bilingual changelog, run checks and CI, package once, and publish that same artifact to both GitHub and Marketplace. Keep historical tags and assets intact. Record each actual publication state independently; do not report one service as updated merely because the other succeeded.

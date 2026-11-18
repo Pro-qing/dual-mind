@@ -4,7 +4,7 @@
 
 ## Current scope
 
-DualMind 0.0.1 Preview 1 is an early local-workbench milestone. The workbench saves workspace drafts, user connection metadata, model defaults, and Reviewer presets. API keys entered through the native VS Code password prompt are stored through `ExtensionContext.secrets`. The Webview receives only saved-key status, not credential values.
+DualMind 0.0.1 previews are early local-workbench milestones. The workbench saves workspace drafts, user connection metadata, model defaults, and Reviewer presets. API keys entered through the native VS Code password prompt are stored through `ExtensionContext.secrets`. The Webview receives only saved-key status, not credential values.
 
 The host validates local messages; the Webview limits local resource access and uses a nonce-based content security policy with direct network connections disabled. These are implemented boundaries, not a guarantee that the extension has no vulnerabilities. The extension does not yet make model requests, run review loops, collect editor context, or apply changes to workspace files. Read-only examples are isolated from saved tasks.
 

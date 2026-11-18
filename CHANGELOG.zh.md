@@ -2,6 +2,16 @@
 
 [English](./CHANGELOG.md) · [项目首页](./README.zh.md)
 
+## 0.0.1 — Preview 2
+
+正在准备 `v0.0.1-preview.2`，实际公开状态以 [GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 为准。Marketplace 尚待上传。
+
+- Publisher 改为 `Pro-qing`，扩展标识为 `Pro-qing.dual-mind`；保留 `0.0.1`，添加 `preview: true`。
+- 从所有者提供的 JPEG 中央图案生成 256 × 256 PNG 图标，原图原样归档，VSIX 仅打包图标。
+- 更新扩展宿主身份检查及双语切换／上传说明；新身份下重新配置，不迁移或删除旧数据。
+- 准备供 Marketplace 手动上传及 GitHub Preview 2 分发的普通 VSIX；保留 Preview 1 标签／附件和全部已审核设计稿。
+- 本地工作台功能及执行能力限制保持原状，详见 [Preview 2 发布说明](./docs/zh/release-notes-preview-2.md)。
+
 ## 0.0.1 — Preview 1
 
 已于 2026-11-18（10:41:36，UTC+08:00）公开发布。[GitHub 预览版 `v0.0.1-preview.1`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1) 对应提交 `af9ff3d91e5a31eb313c32563e9c633e26f68515`。

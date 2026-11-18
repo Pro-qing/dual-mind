@@ -29,3 +29,4 @@ tsconfig.json
 package-lock.json
 !CONTRIBUTING.md
 !CODE_OF_CONDUCT.md
+!resources/icon.png

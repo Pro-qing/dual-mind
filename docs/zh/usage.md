@@ -6,9 +6,9 @@
 
 支持基线为 **Ubuntu 20.04+、x86_64/amd64、VS Code 1.100.0+**。其他平台和 ARM64 暂未验证。使用已构建的 VSIX 无需另行安装 Node.js，详见[环境说明](./environment.md)。
 
-进入 [GitHub 预览版 Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.1)，先阅读[发布说明](./release-notes.md)。Preview 1 已于 2026-11-18 发布，GitHub Release 页面提供对应版本的 VSIX 和校验文件。
+进入 [Preview 2 GitHub Release](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2)，阅读 [Preview 2 说明](./release-notes-preview-2.md)。新包使用 Publisher `Pro-qing`、标识 `Pro-qing.dual-mind`、版本 `0.0.1` 及 PNG 图标。当前正在准备发布，附件可用性以 Release 页面为准，Marketplace 尚待上传。
 
-在 **Assets** 中下载 `dual-mind-0.0.1.vsix` 和 `SHA256SUMS.txt`，放到同一目录。自动生成的源码压缩包是源码快照，不是 VSIX 安装包。在下载目录执行：
+在 **Preview 2 的 Assets** 中下载 `dual-mind-0.0.1.vsix` 和 `SHA256SUMS.txt`，放到同一目录。两个预览版的文件名相同，但扩展身份及校验值不同，请使用同一 Release 的两个附件。自动生成的源码压缩包是源码快照，不是 VSIX 安装包。在下载目录执行：
 
 ```bash
 sha256sum --check SHA256SUMS.txt
@@ -17,7 +17,17 @@ code --install-extension dual-mind-0.0.1.vsix --force
 
 校验结果为 `OK`／成功后再安装。重载 VS Code，在命令面板运行 **DualMind: 打开工作台**（英文编辑器为 **DualMind: Open Workbench**）。该命令打开一个标签页，重复执行会定位到已有工作台；**DualMind: 显示状态**／**DualMind: Show Status** 保留为就绪检查。也可通过 **Extensions: Install from VSIX...** 选择已校验安装包。
 
-本预览版通过 GitHub 分发，扩展标识为 `dual-mind-dev-placeholder.dual-mind`。从旧本地 `0.0.1` 更新时，`--force` 会替换同版本包。更新时保留现有扩展安装，以保留其草稿／配置，随后重载窗口。后续版本使用对应 Release 提供的版本和校验文件，不要套用旧校验值。
+## 从 Preview 1 切换
+
+旧标识 `dual-mind-dev-placeholder.dual-mind` 和新标识 `Pro-qing.dual-mind` 是不同扩展。在扩展列表搜索 `@id:dual-mind-dev-placeholder.dual-mind`，通过齿轮菜单**停用**旧扩展，重载窗口后再打开新扩展，避免重复注册命令。可以保留已停用的旧扩展安装，旧数据不会被主动删除。
+
+新身份拥有独立的草稿、连接元信息、API 密钥、模型默认值和自定义角色，需要按需重新配置；本轮不提供自动迁移。`dualMind.language` 用户设置保留相同键名，可以继续生效。`--force` 不会跨 publisher 搬移数据。如果需要历史构建，请保留 Preview 1 原附件。
+
+## 上架后从 Marketplace 安装
+
+**Marketplace 状态：待手动上传。** 所有者上传准备好的包并由服务端公开后，在扩展面板（`Ctrl+Shift+X`）搜索 `@id:Pro-qing.dual-mind`，确认发布者 **Pro-qing** 和图标后点击**安装**。上架后的命令行安装方式为 `code --install-extension Pro-qing.dual-mind`。
+
+清单中的 `preview: true` 用于展示 Preview 标记，安装包仍为普通包，本次无需选择 Marketplace 预发布通道。该扩展 ID 后续公开更新需要递增扩展版本，用户可通过 VS Code 正常更新扩展；GitHub 同步保留对应版本的附件和校验文件。
 
 从源码构建请按[开发指南](./development.md)和[打包指南](./releasing.md)操作。本地包位于 `release/dual-mind-0.0.1.vsix`，安装包及下载验证文件均不进入 Git 记录。
 
