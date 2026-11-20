@@ -1,20 +1,24 @@
-# 已审核界面设计参考
+# 界面设计：已审核工作台与模型查询增补提案
 
 [English](../en/design.md) · [文档索引](./README.md)
 
-**五个场景及任务管理、设置增补设计均已审核通过。** 原始 SVG／PNG 完整保留，包括图中历史审核标签。它们是含示例内容的设计参考，不是当前运行截图。React 工作台现已实现本地草稿、连接／角色设置和双语界面，真实执行及应用结果仍待后续开发，当前行为见[使用说明](./usage.md)。
+**当前源码版本：0.0.2 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-20；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.2 版本说明](./release-notes-0.0.2.md)。
+
+**场景 1–7 均已采用；场景 6–7 已在开发分支实现。** 原 SVG／PNG 及历史审核标签保持原样，图中内容为示例，不是真实查询结果。已发布的 0.0.1 保留本地配置行为，开发分支新增显式模型查询与选择；模型推理及代码应用仍待实现。当前行为见[使用说明](./usage.md)。
 
 每张画布均为 **1440 × 900**，采用贴近 VS Code 的深色配色，使用可编辑的 SVG 文字与矢量元素。界面标签为英文，配套中英双语说明。SVG 没有内嵌图片、脚本、外部字体或外部资源，PNG 为渲染预览。
 
 ## 设计稿导航
 
-| 场景                 | 可编辑源文件                                  | 预览                                          |
-| -------------------- | --------------------------------------------- | --------------------------------------------- |
-| 1. 并行任务工作台    | [SVG](../design/dual-mind-workbench.svg)      | [PNG](../design/dual-mind-workbench.png)      |
-| 2. API 连接设置      | [SVG](../design/dual-mind-api-settings.svg)   | [PNG](../design/dual-mind-api-settings.png)   |
-| 3. Reviewer 角色设置 | [SVG](../design/dual-mind-reviewer-roles.svg) | [PNG](../design/dual-mind-reviewer-roles.png) |
-| 4. 新建任务          | [SVG](../design/dual-mind-new-task.svg)       | [PNG](../design/dual-mind-new-task.png)       |
-| 5. 删除任务          | [SVG](../design/dual-mind-delete-task.svg)    | [PNG](../design/dual-mind-delete-task.png)    |
+| 场景                 | 可编辑源文件                                        | 预览                                                |
+| -------------------- | --------------------------------------------------- | --------------------------------------------------- |
+| 1. 并行任务工作台    | [SVG](../design/dual-mind-workbench.svg)            | [PNG](../design/dual-mind-workbench.png)            |
+| 2. API 连接设置      | [SVG](../design/dual-mind-api-settings.svg)         | [PNG](../design/dual-mind-api-settings.png)         |
+| 3. Reviewer 角色设置 | [SVG](../design/dual-mind-reviewer-roles.svg)       | [PNG](../design/dual-mind-reviewer-roles.png)       |
+| 4. 新建任务          | [SVG](../design/dual-mind-new-task.svg)             | [PNG](../design/dual-mind-new-task.png)             |
+| 5. 删除任务          | [SVG](../design/dual-mind-delete-task.svg)          | [PNG](../design/dual-mind-delete-task.png)          |
+| 6. API 模型查询      | [SVG](../design/dual-mind-api-model-discovery.svg)  | [PNG](../design/dual-mind-api-model-discovery.png)  |
+| 7. 任务模型选择      | [SVG](../design/dual-mind-task-model-selection.svg) | [PNG](../design/dual-mind-task-model-selection.png) |
 
 ### 1. 并行任务工作台
 
@@ -69,6 +73,54 @@
 
 删除后选择其他剩余任务；删除最后一个任务后显示 **No tasks yet** 和 **New task**。本稿左右侧面板和底部说明明确标注为供审核的状态示例，不表示实际界面同时打开这些弹窗。
 
+## 已实现的模型查询增补设计
+
+场景 6–7 沿用已采用布局，定义开发分支已实现的连接验证与模型选择，这两组设计本身不定义任务执行、审查循环或代码应用；整体执行能力见当前版本说明。
+
+### 6. API 连接与模型查询
+
+![API 连接表单、可搜索模型 ID 及查询状态示例](../design/dual-mind-api-model-discovery.png)
+
+中间展示已保存的连接和展开的模型选择器，右侧卡片是供审核的独立状态示例，不代表产品会同时显示这些面板。`example-model-*`、连接名称、数量和时间均为示例，不推荐具体模型，也不假定某个账号拥有这些模型。
+
+新增连接预填 `https://api.openai.com/v1`，Base URL 可修改为 OpenAI 兼容服务的地址。开发分支将**默认模型改为可选**，首次配置流程为：保存名称和 Base URL → 通过 VS Code 密码框设置密钥 → **测试并获取模型** → 按需选择默认模型 → 保存。当前 `0.0.1` 保存连接仍要求填写默认模型，开发分支现已允许默认模型为空。**设置密钥／替换密钥**继续只在页面显示保存状态。
+
+**测试并获取模型**验证模型列表接口的访问并返回模型 ID，**刷新模型**重复该查询。两者均要求已保存连接和密钥；修改 Base URL 后需要先保存再查询。打开页面或选择器不自动发出请求。结果显示模型数量和查询时间，成功文案为**模型列表可访问**，不表示完成了推理测试；列表中的模型也不一定适合聊天或代码任务。
+
+选择器可编辑并按模型 ID 搜索，允许直接输入列表之外的 ID。展开时显示候选项，输入文字后过滤。返回的 ID 原样展示和保存，不翻译或编造友好名称。查询成功不自动选择第一个模型，也不覆盖当前选择。API 页原有的 Worker／Reviewer 默认设置区域继续保留，并复用同一控件；本图聚焦连接编辑区。
+
+状态示例覆盖未保存连接、缺少密钥、查询中、中间主面板的成功状态、空列表、查询失败和地址已修改。查询期间禁用重复请求。空列表、端点不支持或其他失败均保留手动输入和当前 ID，配置允许时提供重试。地址或密钥变化后旧结果失效，需要重新查询。成功返回空列表与查询失败分别展示。
+
+### 7. 任务模型选择
+
+![Worker／Reviewer 独立模型选择、旧 ID 保留及窄窗口排列](../design/dual-mind-task-model-selection.png)
+
+主面板为新建任务弹窗，两个智能体使用独立连接和模型：Worker 使用示例 OpenAI 选择，Reviewer 使用手动填写的网关 ID 且尚未配置密钥，**创建草稿**仍可用。侧边分别展示编辑草稿、切换连接和窄窗口排列，属于弹窗之外的审核参考。
+
+新草稿继承已保存的 Worker／Reviewer 默认值。每个选择器只使用所选连接的候选列表，提供获取／刷新与手动输入。用户主动切换连接时，当前表单使用该连接的默认模型，默认值可以为空；刷新列表不会改变已选择的 ID。打开已有草稿时，即使模型不在最新列表中也保留绑定，仅在用户明确编辑并保存后修改。编辑草稿继续保留 Reviewer 角色快照；主图中的内置角色选项仅用于新建草稿。
+
+缺少密钥时禁用该连接的查询操作，但仍可填写 ID 和保存草稿。列表查询失败也保留已输入或已保存的值。两个智能体使用不同连接时，候选项和查询结果不能串用。工作台原有任务侧栏及对话布局沿用已审核设计。
+
+### 语言、键盘与窄窗口行为
+
+| 英文标签                 | 简体中文标签       |
+| ------------------------ | ------------------ |
+| Test & fetch models      | 测试并获取模型     |
+| Fetch / Refresh          | 获取模型／刷新模型 |
+| Default model — Optional | 默认模型（可选）   |
+| Search or type an ID     | 搜索或输入模型 ID  |
+| Model list accessible    | 模型列表可访问     |
+| Fetching models…         | 正在获取模型…      |
+| No models returned       | 未返回模型         |
+| Query failed             | 查询失败           |
+| Save draft               | 保存草稿           |
+
+说明、状态、校验和错误均提供中英文，模型 ID 与用户填写的连接名称保留原文。切换界面语言时保留表单值和当前选择。
+
+可编辑组合框应具有可访问标签、键盘焦点和可滚动候选列表。Tab 切换控件，方向键上下选择展开列表中的候选项，Enter 选中高亮项，Escape 优先关闭列表，再用于关闭弹窗。未匹配候选项的文本保留为手动 ID；仅关闭列表不会提交表单或清空 ID。长 ID 保留完整值，输入框内可横向滚动，焦点／悬停时可查看全文，候选行允许换行，避免丢失用于区分模型的后缀。
+
+低于 900 CSS 像素时，Worker 在上、Reviewer 在下。连接设置改为可滚动单栏，查询按钮和状态文本允许换行。候选菜单保持在弹窗可见区域内、独立滚动，下方空间不足时向上展开；保存／取消操作保持可达。图中的状态参考卡片属于设计说明，不是新增运行面板。
+
 ## 布局与状态约定
 
 - 任务和对话历史按工作区组织；连接、默认模型绑定及角色预设属于本机 VS Code 用户配置；凭据值由宿主秘密存储管理。
@@ -78,21 +130,20 @@
 
 ## 审核与实现门槛
 
-所有者已认可完整设计。本地工作台沿用任务、连接和角色布局，并在设置中加入语言选择器。内置 Reviewer 定义分别维护中英文版本，自定义文本和任务快照保留原文。图中的运行状态和连接测试结果，在对应功能实现前仍为示例。
+所有者已采用场景 1–7，开发分支已实现显式 API 查询、共享模型选择器及隔离测试。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
 
-预定职责见[架构说明](./architecture.md)，任务关联和配置边界见[通信协议草案](./protocol.md)。其中区分已实现的本地消息类型与后续执行能力边界。
+预定职责见[架构说明](./architecture.md)，任务关联和配置边界见[通信协议](./protocol.md)。其中区分已实现的本地消息类型与后续执行能力边界。
 
 ## 更新与验证预览
 
-SVG 是可编辑源文件，每张 SVG 旁保留同名 PNG，供 README 和 VSIX 文档展示。在安装了 CairoSVG 2.7.1 的 Python 环境中，于仓库根目录重新生成全部预览：
+SVG 是可编辑源文件，每张 SVG 旁保留同名 PNG。原有五组已审核文件保持原样。使用单独安装 CairoSVG 2.7.1 的 Python 环境，于仓库根目录仅重新生成这两组增补稿：
 
 ```bash
-for svg in docs/design/*.svg; do
-  python3 -m cairosvg "$svg" -o "${svg%.svg}.png"
+for scene in dual-mind-api-model-discovery dual-mind-task-model-selection; do
+  python3 -m cairosvg "docs/design/${scene}.svg" -o "docs/design/${scene}.png"
 done
 npm run docs:check
 npm run format:check
-npm run package
 ```
 
-逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对，要求五个场景齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。
+逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对，要求七个场景齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。本次设计交付不重建或替换已发布 VSIX。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。

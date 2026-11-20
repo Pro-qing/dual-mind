@@ -96,14 +96,60 @@ export type ErrorCode =
   | 'storageFailed'
   | 'invalidStoredData'
   | 'unavailable';
+export const modelErrorCodes = [
+  'invalidMessage',
+  'notFound',
+  'storageFailed',
+  'invalidUrl',
+  'keyRequired',
+  'modelsAuth',
+  'modelsForbidden',
+  'modelsUnsupported',
+  'modelsRateLimited',
+  'modelsServer',
+  'modelsTimeout',
+  'modelsNetwork',
+  'modelsInvalidResponse',
+  'modelsTooLarge',
+  'modelsRedirect',
+  'modelsBusy',
+  'modelsChanged',
+  'modelsFailed',
+] as const;
+export type ModelErrorCode = (typeof modelErrorCodes)[number];
+export interface ModelList {
+  models: string[];
+  fetchedAt: string;
+}
+export interface ModelQueryState {
+  status: 'loading' | 'success' | 'error';
+  models: string[];
+  fetchedAt?: string;
+  error?: ModelErrorCode;
+}
+export type ModelQueryResult =
+  | { type: 'models.result'; requestId: string; connectionId: string; ok: true; result: ModelList }
+  | {
+      type: 'models.result';
+      requestId: string;
+      connectionId: string;
+      ok: false;
+      error: ModelErrorCode;
+    };
 export type ClientMessage =
-  { type: 'ready' | 'rendered' } | { type: 'request'; requestId: string; action: Action };
+  | { type: 'models.query'; requestId: string; connectionId: string }
+  | { type: 'ready' | 'rendered' }
+  | { type: 'request'; requestId: string; action: Action };
 export type HostMessage =
+  | ModelQueryResult
+  | { type: 'models.invalidated'; connectionId: string }
   | { type: 'snapshot'; snapshot: AppSnapshot }
   | { type: 'result'; requestId: string; ok: boolean; error?: ErrorCode; snapshot?: AppSnapshot }
   | { type: 'fatal'; error: ErrorCode };
 export interface Bridge {
   request(action: Action): Promise<AppSnapshot>;
+  queryModels(connectionId: string): Promise<ModelList>;
+  onModelsInvalidated(listener: (connectionId: string) => void): () => void;
 }
 export function emptyBinding(): ModelBinding {
   return { connectionId: '', model: '' };

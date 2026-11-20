@@ -2,6 +2,7 @@
 const fs = require('fs');
 const childProcess = require('child_process');
 const { getNodeVersionError } = require('./check-node.cjs');
+const { getGitVersionError } = require('./check-git.cjs');
 
 function parseOsRelease(contents) {
   const fields = Object.create(null);
@@ -44,7 +45,13 @@ function collectEnvironment() {
     glibc = result.status === 0 ? result.stdout.trim() : 'not detected';
   }
 
+  const git = childProcess.spawnSync('git', ['--version'], {
+    encoding: 'utf8',
+    timeout: 2000,
+    maxBuffer: 4096,
+  });
   return {
+    gitVersion: git.status === 0 ? git.stdout.trim() : '',
     platform: process.platform,
     arch: process.arch,
     release,
@@ -61,6 +68,11 @@ function evaluateEnvironment(environment) {
   const nodeError = getNodeVersionError(environment.nodeVersion);
   if (nodeError) {
     errors.push(nodeError);
+  }
+
+  const gitError = getGitVersionError(environment.gitVersion);
+  if (gitError) {
+    errors.push(gitError);
   }
 
   const release = environment.release || {};
@@ -106,6 +118,7 @@ function main() {
   console.log('C library: ' + environment.glibc);
   console.log('Node.js: ' + environment.nodeVersion);
   console.log('Node executable: ' + environment.nodePath);
+  console.log('Git: ' + (environment.gitVersion || 'not available'));
   if (environment.releaseError) {
     console.warn('OS identification: ' + environment.releaseError);
   }
@@ -118,7 +131,9 @@ function main() {
   if (result.errors.length > 0) {
     process.exitCode = 1;
   } else if (result.verified) {
-    console.log('Environment matches the Ubuntu 20.04+ amd64 / Node.js 24 development baseline.');
+    console.log(
+      'Environment matches the Ubuntu 20.04+ amd64 / Node.js 24 / Git 2.25+ development baseline.',
+    );
   } else {
     console.log('Environment check completed with unvalidated-platform warnings.');
   }

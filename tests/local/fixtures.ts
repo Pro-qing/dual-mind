@@ -1,3 +1,5 @@
+import { ModelQueries } from '../../src/core/modelQueries';
+import { fetchModels } from '../../src/providers/models';
 import { LocalStore, type StateStorage, type StorePorts } from '../../src/core/store';
 import { emptyBinding, type LanguageSetting, type TaskInput } from '../../src/shared/model';
 export class Memory implements StateStorage {
@@ -19,6 +21,7 @@ export function fixture(
     workspace?: Memory;
     hasWorkspace?: boolean;
     editorLanguage?: string;
+    fetchModels?: typeof fetchModels;
   } = {},
 ) {
   const global = options.global || new Memory(),
@@ -27,6 +30,8 @@ export function fixture(
   let language: LanguageSetting = 'auto';
   let enteredKey: string | undefined = 'test-only-key';
   let opened = false;
+  const invalidated: string[] = [];
+  const listeners = new Set<(id: string) => void>();
   const ports: StorePorts = {
     global,
     workspace,
@@ -47,12 +52,30 @@ export function fixture(
       language = value;
     },
     askKey: async () => enteredKey,
+    onConnectionChanged: (id) => {
+      invalidated.push(id);
+      queries.invalidate(id);
+    },
     openWorkspace: async () => {
       opened = true;
     },
   };
+  const store = new LocalStore(ports);
+  const queries = new ModelQueries(
+    (id) => store.connectionForQuery(id),
+    (id) => listeners.forEach((listener) => listener(id)),
+    options.fetchModels,
+  );
   return {
-    store: new LocalStore(ports),
+    store,
+    queries,
+    invalidated,
+    onModelsInvalidated(listener: (id: string) => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
     ports,
     global,
     workspace,

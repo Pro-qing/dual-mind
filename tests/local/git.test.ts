@@ -1,0 +1,375 @@
+import { test, type TestContext } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { GitProcess } from '../../src/git/process';
+import {
+  TaskWorkspaces,
+  taskGitStorageKey,
+  type TaskGitWorkspace,
+} from '../../src/git/taskWorkspaces';
+import { fixture, taskInput } from './fixtures';
+
+async function harness(t: TestContext, commit = true) {
+  const root = await mkdtemp(join(tmpdir(), 'dualmind git test-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const repo = join(root, 'source'),
+    storage = join(root, 'storage');
+  await mkdir(repo);
+  await mkdir(storage);
+  const config = join(root, 'gitconfig');
+  await writeFile(config, '');
+  const env = { GIT_CONFIG_GLOBAL: config, GIT_CONFIG_NOSYSTEM: '1' };
+  const git = new GitProcess({ env });
+  const run = (...args: string[]) => git.checked(args, repo);
+  await run('init');
+  await run('symbolic-ref', 'HEAD', 'refs/heads/main');
+  await run('config', 'user.name', 'DualMind Test');
+  await run('config', 'user.email', 'test@example.invalid');
+  await writeFile(join(repo, 'file.txt'), 'baseline\n');
+  if (commit) {
+    await run('add', '--', 'file.txt');
+    await run('commit', '-m', 'fixture');
+  }
+  const f = fixture();
+  let trusted = true;
+  let folders = [repo];
+  const ports = {
+    state: f.workspace,
+    folders: () => folders,
+    storageRoot: () => storage,
+    trusted: () => trusted,
+    taskExists: async (id: string) =>
+      (await f.store.snapshot()).tasks.some((task) => task.id === id),
+  };
+  const service = new TaskWorkspaces(ports, git);
+  const task = async () => {
+    await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+    return (await f.store.snapshot()).tasks[0].id;
+  };
+  return {
+    root,
+    repo,
+    storage,
+    env,
+    git,
+    run,
+    f,
+    ports,
+    service,
+    task,
+    trust: (value: boolean) => {
+      trusted = value;
+    },
+    folders: (value: string[]) => {
+      folders = value;
+    },
+  };
+}
+
+test('prepares separate task branches, preserves the source and freezes baseline across reuse', async (t) => {
+  const h = await harness(t);
+  const original = (await h.run('rev-parse', 'HEAD')).trim();
+  const a = await h.task(),
+    b = await h.task();
+  assert.equal((await h.run('worktree', 'list', '--porcelain')).split('worktree ').length - 1, 1);
+  const [first, same, other] = await Promise.all([
+    h.service.prepare(a),
+    h.service.prepare(a),
+    h.service.prepare(b),
+  ]);
+  assert.deepEqual(first, same);
+  assert.notEqual(first.directory, other.directory);
+  assert.equal(first.branch, `dualmind/task/${a}/worker`);
+  assert.equal(first.baseCommit, original);
+  const worker = await h.service.files(a, 'worker'),
+    reviewer = await h.service.files(a, 'reviewer');
+  assert.ok(Object.isFrozen(reviewer));
+  assert.ok(!('writeFile' in reviewer), 'Reviewer receives no write capability');
+  assert.throws(() => (reviewer as unknown as { writeFile(): void }).writeFile(), TypeError);
+  await worker.writeFile('file.txt', 'worker result\n');
+  await worker.writeFile('new.txt', 'test evidence');
+  await worker.writeFile('new-directory/evidence.txt', 'nested evidence');
+  assert.equal(await reviewer.readFile('file.txt'), 'worker result\n');
+  assert.match(await reviewer.diff(), /\+worker result/);
+  assert.match(await reviewer.status(), /new.txt/);
+  assert.deepEqual((await reviewer.listFiles()).sort(), [
+    'file.txt',
+    'new-directory/evidence.txt',
+    'new.txt',
+  ]);
+  assert.equal(await (await h.service.files(b, 'reviewer')).readFile('file.txt'), 'baseline\n');
+  assert.equal(await readFile(join(h.repo, 'file.txt'), 'utf8'), 'baseline\n');
+  assert.equal((await h.run('symbolic-ref', '--short', 'HEAD')).trim(), 'main');
+  assert.equal(await h.run('status', '--porcelain'), '');
+  await writeFile(join(h.repo, 'file.txt'), 'source moved\n');
+  await h.run('add', 'file.txt');
+  await h.run('commit', '-m', 'source update');
+  await writeFile(join(h.repo, 'untracked.txt'), 'preserve');
+  const reopened = new TaskWorkspaces(h.ports, h.git);
+  assert.deepEqual(await reopened.prepare(a), first);
+  assert.equal(await reviewer.readFile('file.txt'), 'worker result\n');
+  await h.f.store.dispatch({ kind: 'task.delete', id: a, confirmed: true });
+  await assert.rejects(reviewer.readFile('file.txt'), { code: 'accessDenied' });
+  await assert.rejects(reopened.prepare(a), { code: 'taskNotFound' });
+  assert.equal(await readFile(join(first.directory, 'file.txt'), 'utf8'), 'worker result\n');
+  assert.ok(h.f.workspace.values.has(taskGitStorageKey));
+});
+
+test('checks Git, trust, saved task, repository, commits, branch and folder constraints before mutation', async (t) => {
+  const h = await harness(t, false);
+  const id = await h.task();
+  h.trust(false);
+  await assert.rejects(h.service.prepare(id), { code: 'workspaceUntrusted' });
+  h.trust(true);
+  await assert.rejects(h.service.prepare('not-a-task'), { code: 'taskNotFound' });
+  h.folders([h.repo, h.root]);
+  await assert.rejects(h.service.prepare(id), { code: 'workspaceUnsupported' });
+  h.folders([h.root]);
+  await assert.rejects(h.service.prepare(id), { code: 'notRepository' });
+  h.folders([h.repo]);
+  await assert.rejects(h.service.prepare(id), { code: 'noCommit' });
+  await h.run('add', '.');
+  await h.run('commit', '-m', 'initial');
+  await h.run('checkout', '--detach');
+  await assert.rejects(h.service.prepare(id), { code: 'detachedHead' });
+  await h.run('checkout', 'main');
+  const absentGit = new TaskWorkspaces(
+    h.ports,
+    new GitProcess({ executable: join(h.root, 'absent') }),
+  );
+  await assert.rejects(absentGit.prepare(id), { code: 'gitUnavailable' });
+  assert.equal(h.f.workspace.values.has(taskGitStorageKey), false);
+});
+
+for (const change of ['staged', 'unstaged', 'untracked'] as const) {
+  test(`blocks ${change} source changes without modifying them`, async (t) => {
+    const h = await harness(t);
+    const id = await h.task();
+    const file = change === 'untracked' ? 'other.txt' : 'file.txt';
+    await writeFile(join(h.repo, file), 'preserve');
+    if (change === 'staged') {
+      await h.run('add', file);
+    }
+    const before = await h.run('status', '--porcelain=v1');
+    await assert.rejects(h.service.prepare(id), { code: 'dirtyRepository' });
+    assert.equal(await h.run('status', '--porcelain=v1'), before);
+    assert.equal(await readFile(join(h.repo, file), 'utf8'), 'preserve');
+    assert.equal(h.f.workspace.values.has(taskGitStorageKey), false);
+  });
+}
+
+test('supports an existing worktree as source and rejects submodules', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  const linked = join(h.root, 'linked');
+  await h.run('worktree', 'add', '-b', 'linked', linked);
+  h.folders([linked]);
+  const prepared = await h.service.prepare(id);
+  assert.equal(prepared.repository, linked);
+  h.folders([h.repo]);
+  // A real gitlink exercises detection without cloning or network access.
+  await h.run('update-index', '--add', '--cacheinfo', '160000', prepared.baseCommit, 'sub');
+  await h.run('commit', '-m', 'gitlink');
+  await assert.rejects(h.service.prepare(await h.task()), { code: 'submodulesUnsupported' });
+});
+
+test('rejects unregistered collisions and recovers only matching interrupted preparations', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  await h.run('branch', `dualmind/task/${id}/worker`);
+  await assert.rejects(h.service.prepare(id), { code: 'workspaceConflict' });
+  assert.equal(h.f.workspace.values.has(taskGitStorageKey), false);
+  const recovery = await h.task();
+  const update = h.f.workspace.update.bind(h.f.workspace);
+  let rejectReady = true;
+  h.f.workspace.update = async (key, value) => {
+    if (
+      key === taskGitStorageKey &&
+      rejectReady &&
+      (value as { entries: TaskGitWorkspace[] }).entries.some((entry) => entry.phase === 'ready')
+    ) {
+      throw new Error('simulated persistence failure');
+    }
+    await update(key, value);
+  };
+  await assert.rejects(h.service.prepare(recovery), { code: 'storageFailed' });
+  rejectReady = false;
+  const recovered = await new TaskWorkspaces(h.ports, h.git).prepare(recovery);
+  assert.equal(recovered.phase, 'ready');
+  await h.git.checked(['checkout', '--detach'], recovered.directory);
+  await assert.rejects(h.service.prepare(recovery), { code: 'workspaceChanged' });
+  await h.git.checked(['checkout', recovered.branch], recovered.directory);
+  await rm(recovered.directory, { recursive: true, force: true });
+  await assert.rejects(h.service.prepare(recovery), { code: 'workspaceChanged' });
+});
+
+test('rejects path traversal, links and Git metadata and revokes role access with workspace trust', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  const prepared = await h.service.prepare(id);
+  const writer = await h.service.files(id, 'worker'),
+    reader = await h.service.files(id, 'reviewer');
+  await symlink(h.repo, join(prepared.directory, 'escape'));
+  for (const name of [
+    '../source/file.txt',
+    '/etc/passwd',
+    'C:\\outside',
+    '.git',
+    '.git/config',
+    'dir/../file.txt',
+    'escape/file.txt',
+  ]) {
+    await assert.rejects(reader.readFile(name), { code: 'invalidPath' });
+    await assert.rejects(writer.writeFile(name, 'unsafe'), { code: 'invalidPath' });
+  }
+  assert.equal(await readFile(join(h.repo, 'file.txt'), 'utf8'), 'baseline\n');
+  assert.ok(!(await reader.listFiles()).includes('escape'));
+  await assert.rejects(writer.writeFile('big.txt', 'x'.repeat(2 * 1024 * 1024 + 1)), {
+    code: 'outputTooLarge',
+  });
+  await writeFile(join(prepared.directory, 'big.txt'), 'x'.repeat(2 * 1024 * 1024 + 1));
+  await assert.rejects(reader.readFile('big.txt'), { code: 'outputTooLarge' });
+  h.trust(false);
+  await assert.rejects(writer.writeFile('file.txt', 'unsafe'), { code: 'accessDenied' });
+});
+
+test('suppresses checkout hooks, content filters, external diff and textconv programs', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  const marker = join(h.root, 'unexpected-execution'),
+    program = join(h.root, 'dangerous.sh');
+  await writeFile(program, `#!/bin/sh\nprintf 'executed' > '${marker}'\n`);
+  await chmod(program, 0o700);
+  const hooks = join(h.root, 'hooks');
+  await mkdir(hooks);
+  await writeFile(join(hooks, 'post-checkout'), await readFile(program));
+  await chmod(join(hooks, 'post-checkout'), 0o700);
+  await h.run('config', 'core.hooksPath', hooks);
+  await h.run('config', 'diff.external', program);
+  await h.run('config', 'diff.untrusted.textconv', program);
+  await h.run('config', 'filter.untrusted.clean', program);
+  await h.run('config', 'filter.untrusted.smudge', program);
+  await h.run('config', 'filter.untrusted.process', program);
+  await h.run('config', 'filter.untrusted.required', 'true');
+  await writeFile(join(h.repo, '.gitattributes'), '*.txt diff=untrusted filter=untrusted\n');
+  await h.run('add', '.gitattributes');
+  await h.run('commit', '-m', 'attributes');
+  await h.service.prepare(id);
+  await (await h.service.files(id, 'worker')).writeFile('file.txt', 'new content\n');
+  assert.match(await (await h.service.files(id, 'reviewer')).diff(), /\+new content/);
+  await assert.rejects(readFile(marker), { code: 'ENOENT' });
+});
+
+test('limits process output and time, and does not inherit repository redirection', async (t) => {
+  const h = await harness(t);
+  const redirected = new GitProcess({
+    env: {
+      ...h.env,
+      GIT_DIR: '/absent',
+      GIT_WORK_TREE: '/absent',
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'core.hooksPath',
+      GIT_CONFIG_VALUE_0: '/absent',
+    },
+  });
+  assert.equal((await redirected.checked(['rev-parse', '--show-toplevel'], h.repo)).trim(), h.repo);
+  await assert.rejects(new GitProcess({ env: h.env, maxBytes: 1 }).version(), {
+    code: 'outputTooLarge',
+  });
+  const fake = join(h.root, 'slow-git');
+  await writeFile(fake, '#!/bin/sh\nexec sleep 10\n');
+  await chmod(fake, 0o700);
+  await assert.rejects(new GitProcess({ executable: fake, timeoutMs: 40 }).version(), {
+    code: 'gitTimeout',
+  });
+});
+
+test('preserves unrelated directories and refuses redirected task storage before touching the source', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  const { createHash } = await import('node:crypto');
+  const { realpath } = await import('node:fs/promises');
+  const { resolve } = await import('node:path');
+  const common = await realpath(
+    resolve(h.repo, (await h.run('rev-parse', '--git-common-dir')).trim()),
+  );
+  const directory = join(
+    h.storage,
+    'task-worktrees',
+    createHash('sha256').update(common).digest('hex').slice(0, 16),
+    id,
+  );
+  await mkdir(directory, { recursive: true });
+  await writeFile(join(directory, 'keep.txt'), 'user data');
+  await assert.rejects(h.service.prepare(id), { code: 'workspaceConflict' });
+  assert.equal(await readFile(join(directory, 'keep.txt'), 'utf8'), 'user data');
+  assert.equal(h.f.workspace.values.has(taskGitStorageKey), false);
+  const redirected = new TaskWorkspaces(
+    { ...h.ports, storageRoot: () => join(h.root, 'redirect') },
+    h.git,
+  );
+  await symlink(h.repo, join(h.root, 'redirect'));
+  const original = await h.run('status', '--porcelain=v1');
+  await assert.rejects(redirected.prepare(await h.task()), { code: 'invalidPath' });
+  assert.equal(await h.run('status', '--porcelain=v1'), original);
+});
+
+test('persists intent before Git creation, retries untouched intent and preserves partial resources', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  h.f.workspace.fail = true;
+  await assert.rejects(h.service.prepare(id), { code: 'storageFailed' });
+  assert.equal((await h.run('worktree', 'list', '--porcelain')).split('worktree ').length - 1, 1);
+  h.f.workspace.fail = false;
+  class InterruptedGit extends GitProcess {
+    override async checked(args: readonly string[], cwd: string): Promise<string> {
+      if (args[0] === 'worktree' && args[1] === 'add') {
+        throw new Error('interrupted before creation');
+      }
+      return super.checked(args, cwd);
+    }
+  }
+  await assert.rejects(
+    new TaskWorkspaces(h.ports, new InterruptedGit({ env: h.env })).prepare(id),
+    { code: 'gitFailed' },
+  );
+  const pending = h.f.workspace.get<{ entries: TaskGitWorkspace[] }>(taskGitStorageKey, {
+    entries: [],
+  }).entries[0];
+  assert.equal(pending.phase, 'preparing');
+  const recovered = await h.service.prepare(id);
+  assert.equal(recovered.phase, 'ready');
+  assert.equal(recovered.baseCommit, pending.baseCommit);
+  // Another interrupted prepare whose branch exists but checkout never finished is left for inspection.
+  const other = await h.task();
+  await assert.rejects(
+    new TaskWorkspaces(h.ports, new InterruptedGit({ env: h.env })).prepare(other),
+    { code: 'gitFailed' },
+  );
+  await h.run('branch', `dualmind/task/${other}/worker`);
+  await assert.rejects(h.service.prepare(other), { code: 'workspaceConflict' });
+  assert.equal(
+    (await h.run('show-ref', '--verify', `refs/heads/dualmind/task/${other}/worker`))
+      .trim()
+      .split(' ')[1],
+    `refs/heads/dualmind/task/${other}/worker`,
+  );
+});
+
+test('does not copy ignored source files and rejects stale role handles after folder changes', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  await writeFile(join(h.repo, '.gitignore'), 'generated/\n');
+  await h.run('add', '.gitignore');
+  await h.run('commit', '-m', 'ignore generated files');
+  await mkdir(join(h.repo, 'generated'));
+  await writeFile(join(h.repo, 'generated/output'), 'source-only');
+  const prepared = await h.service.prepare(id);
+  await assert.rejects(readFile(join(prepared.directory, 'generated/output')), { code: 'ENOENT' });
+  const reader = await h.service.files(id, 'reviewer');
+  h.folders([h.root]);
+  await assert.rejects(reader.readFile('file.txt'), { code: 'accessDenied' });
+  assert.equal(await readFile(join(h.repo, 'generated/output'), 'utf8'), 'source-only');
+});

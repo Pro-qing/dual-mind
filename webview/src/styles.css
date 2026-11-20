@@ -666,6 +666,7 @@ label textarea {
 }
 .settings-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   border-bottom: 1px solid var(--dm-line);
   margin-bottom: 22px;
@@ -811,14 +812,6 @@ label textarea {
 .warning-text,
 .settings-item span.warning-text {
   color: var(--dm-warning);
-}
-.defaults-section {
-  margin-top: 26px;
-  border-top: 1px solid var(--dm-line);
-  padding-top: 22px;
-}
-.defaults-section > p {
-  margin: 10px 0 16px;
 }
 .defaults-section .form-actions {
   margin-top: 18px;
@@ -1081,7 +1074,8 @@ label textarea {
     color: var(--dm-text);
     padding: 16px;
   }
-  .agent-grid {
+  .agent-grid,
+  .two-fields {
     grid-template-columns: minmax(0, 1fr);
   }
   .app-header {
@@ -1213,4 +1207,104 @@ label > textarea {
 }
 .round-field {
   display: flex;
+}
+
+.model-picker {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.model-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.model-picker-heading label {
+  margin: 0;
+  font-size: 12px;
+}
+.model-refresh {
+  font-size: 11px;
+  padding: 5px 8px;
+}
+.model-query-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.model-combobox {
+  position: relative;
+  min-width: 0;
+}
+.model-combobox input {
+  width: 100%;
+  padding-right: 36px;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+.model-toggle {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  bottom: 2px;
+  width: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dm-muted);
+}
+.model-options {
+  position: fixed;
+  z-index: 150;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--dm-accent);
+  border-radius: 5px;
+  background: var(--dm-field);
+  box-shadow: 0 8px 20px #0006;
+  padding: 4px;
+}
+.model-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+}
+.model-option.active,
+.model-option[aria-selected='true'] {
+  background: var(--dm-selected);
+  color: var(--dm-selected-text);
+}
+.model-no-options {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--dm-muted);
+}
+.model-query-status {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.model-query-meta {
+  display: block;
+  margin-top: 4px;
+}
+
+.model-option-id {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.model-option-check {
+  flex: 0 0 1em;
+  color: var(--dm-accent);
+}
+
+.model-query-actions > .model-query-status {
+  flex: 1 1 180px;
+  align-self: center;
 }

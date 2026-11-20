@@ -8,11 +8,13 @@ DualMind 是一个面向 VS Code 的 AI 结对编程插件项目，将任务准�
 
 ## 项目状态
 
-**早期开发阶段 · 本地工作台已可用 · 界面设计已审核通过**
+**当前源码 0.0.2 · 本地版本记录 · 尚未发布**
 
 React 工作台支持本地任务草稿、连接设置、Reviewer 预设和中英文切换。模型执行与代码应用仍为规划能力，可选对话预览明确标注为只读示例。
 
-已于 2026-11-18 上架 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind)，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**，带有 Preview 标记。[GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 同日发布。[发布说明](./docs/zh/release-notes-preview-2.md)。
+历史发布记录：0.0.1 已于 2026-11-18 上架 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind)，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**，带有 Preview 标记。[GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 同日发布。[发布说明](./docs/zh/release-notes-preview-2.md)。
+
+[0.0.2 版本说明](./docs/zh/release-notes-0.0.2.md)记录本次源码能力与验证；[更新日志](./CHANGELOG.zh.md)区分本地版本和历史公开制品。
 
 ## 两种互补角色
 
@@ -31,13 +33,13 @@ React 工作台支持本地任务草稿、连接设置、Reviewer 预设和中�
 
 ## 规划能力
 
-模型连接、流式对话、独立并行会话、暂停／停止、自动审查循环、编辑器上下文及明确应用已审核修改，仍待后续开发。
+模型推理、流式对话、独立并行会话、暂停／停止、自动审查循环、编辑器上下文及明确应用已审核修改，仍待后续开发。
 
-## 已审核界面设计
+## 界面设计
 
 ![已审核的 DualMind 并行任务设计参考](./docs/design/dual-mind-workbench.png)
 
-五组已审核 SVG／PNG 保留为设计参考，部分执行状态对应后续能力。[工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
+七组已采用 SVG／PNG 保留为设计参考，其中 [API 模型查询](./docs/design/dual-mind-api-model-discovery.png)与[任务模型选择](./docs/design/dual-mind-task-model-selection.png)已在开发分支实现；已发布的 0.0.1 制品保持原有行为。部分执行状态对应后续能力。[工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
 
 ## 文档与参与贡献
 

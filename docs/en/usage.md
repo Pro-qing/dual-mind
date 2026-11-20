@@ -2,6 +2,8 @@
 
 [简体中文](../zh/usage.md) · [Documentation](./README.md)
 
+**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+
 ## Requirements
 
 The supported baseline is **Ubuntu 20.04+, x86_64/amd64, and VS Code 1.100.0+**. Other platforms and ARM64 are not yet validated. Installing from Marketplace or a built VSIX does not require a separate Node.js installation. See [Environment](./environment.md).
@@ -34,7 +36,7 @@ Continue only when the checksum reports `OK`. Install the verified package:
 code --install-extension dual-mind-0.0.1.vsix --force
 ```
 
-You can also select **Extensions: Install from VSIX...** and choose the verified file. To build from source, follow [Development](./development.md) and [Packaging](./releasing.md). The current local artifact is `release/dual-mind-0.0.1.vsix`; it and downloaded verification files are not committed to Git.
+You can also select **Extensions: Install from VSIX...** and choose the verified file. To build from source, follow [Development](./development.md) and [Packaging](./releasing.md). The retained historical local artifact is `release/dual-mind-0.0.1.vsix`; it and downloaded verification files are not committed to Git.
 
 ## Switch from Preview 1
 
@@ -58,11 +60,22 @@ Drafts and the selected task are saved per workspace. Reopening the workbench or
 
 ## API settings
 
-Settings → **API Connections** manages OpenAI-compatible endpoint names, absolute HTTP(S) Base URLs, and default model IDs. Save a connection, then use **Set key / Replace key** to enter its API key in the native VS Code password prompt. Only saved-key status is returned to the workbench; credentials are stored in VS Code secret storage.
+The following discovery features are available in the development branch built from source. The published `0.0.1` / Preview 2 artifact retains its original local-settings-only behavior.
 
-Worker and Reviewer defaults are independent. Save default bindings for new drafts; existing drafts keep their own choices. Deleting a connection removes its credential and clears matching defaults. Referencing drafts remain, display an unavailable binding, and can be edited to choose a replacement.
+Settings → **API Connections** manages a name, HTTP(S) Base URL, and an optional default model ID. The initial URL is `https://api.openai.com/v1`; compatible API base paths are editable. Configure a first connection in this order:
 
-Connection metadata, defaults, and role presets belong to the local VS Code user. They can be used in other workspaces. **Test connection** is disabled in this milestone, and saving metadata makes no network request.
+1. Save its name and Base URL; the default model may be empty.
+2. Use **Set key** to enter a key in the native VS Code password prompt. The page only receives its saved status.
+3. Click **Test & fetch models**. **Model list accessible** confirms access to the list endpoint only; it does not verify inference or chat compatibility.
+4. Search or choose an ID, or enter a custom ID, then **Save connection**. **Refresh models** never changes the current model value.
+
+Opening settings or a selector makes no request. Lists remain separate per connection and are cached only while the workbench is mounted. Queries show loading, success with count/time, an empty list, or a localized error. Manual IDs remain usable when listing fails or is unsupported. Save an edited Base URL before querying; successful URL/key changes or deletion invalidate the old list. Cancelling key replacement leaves the old key and list intact.
+
+Settings → **Defaults for new tasks** is a separate tab between API Connections and Reviewer Roles. Configure the Worker and Reviewer bindings here and click **Save defaults**. Switching tabs discards unsaved edits; reloading restores the selected tab and saved values. The connection’s own default model remains on API Connections.
+
+Worker and Reviewer defaults are independent. New drafts inherit them; existing drafts retain their saved IDs even if absent from a new list. Switching a connection in a form uses that connection's default model, which may be empty. Arrow keys navigate suggestions, Enter selects, and Escape closes suggestions before closing a task dialog. Mouse selection closes the menu and keeps input focus.
+
+Connection metadata, defaults, and role presets belong to the local VS Code user and are shared across workspaces. Deleting a connection removes its secret and clears matching defaults; referencing drafts remain editable. Credentials stay in VS Code secret storage, and queries never send task requirements or workspace content.
 
 ## Languages and Reviewer definitions
 
@@ -84,6 +97,6 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 ## Current limitations
 
-Model execution, connection tests, streaming, automatic review loops, feedback submission, pause/stop, editor context collection, and code application are not connected yet. These controls are disabled rather than reporting simulated success. Real task records are drafts; only the isolated examples display running/paused/completed states.
+Model execution, streaming, automatic review loops, feedback submission, pause/stop, editor context collection, and code application are not connected yet. These controls are disabled rather than reporting simulated success. Real task records are drafts; only the isolated examples display running/paused/completed states.
 
-The five [approved design scenes](./design.md) remain in the repository. Their execution states describe intended later behavior. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+The seven [adopted design scenes](./design.md) remain in the repository. Their execution states describe intended later behavior. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.

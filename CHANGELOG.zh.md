@@ -2,6 +2,17 @@
 
 [English](./CHANGELOG.md) · [项目首页](./README.zh.md)
 
+## 0.0.2 — 本地源码版本（未发布）
+
+2026-11-20 整理；本地附注标签 `v0.0.2`。此记录不表示商店或 GitHub Release 已更新。
+
+- 按保存的连接显式查询模型列表，支持路径前缀、取消、超时和响应大小限制；模型 ID 可搜索、选择或手动输入。
+- 将 Worker／Reviewer 新任务默认配置移入独立设置标签；保持草稿与角色指令快照独立，修正缺失连接及模型列表状态提示。
+- 增加 Git 2.25+ 检测、按需准备任务专用分支／worktree 的宿主服务和角色文件访问边界；Reviewer 只读。
+- 修正本机开发工具链，保留项目 Node.js 24；测试串行、限制堆与总内存，支持复用本机 VS Code。
+
+范围、限制及验证见 [0.0.2 版本说明](./docs/zh/release-notes-0.0.2.md)。
+
 ## 0.0.1 — Preview 2
 
 GitHub 已于 2026-11-18（11:24:18，UTC+08:00）公开发布。[预览版 `v0.0.1-preview.2`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 对应提交 `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`。[Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) 已于 2026-11-18（11:31:39，UTC+08:00）公开 `Pro-qing.dual-mind` 版本 `0.0.1`，其带有 Preview 标记的公开页面已单独核验。

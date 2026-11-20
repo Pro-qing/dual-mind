@@ -2,7 +2,9 @@
 
 [简体中文](../zh/releasing.md) · [Documentation](./README.md)
 
-## Current published version
+**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+
+## Historical 0.0.1 publication
 
 | Item                        | Value                                                                                             |
 | --------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -16,7 +18,7 @@
 | Assets                      | `dual-mind-0.0.1.vsix`, `SHA256SUMS.txt`                                                          |
 | License                     | MIT, copyright `2026 Pro-qing`                                                                    |
 
-The local workbench is available from both services. Real model requests, connection tests, review loops, and code application remain planned. The Preview label, Marketplace pre-release channel, and GitHub pre-release flag are separate concepts. `private: true` remains an npm publishing safeguard.
+The table describes the historical 0.0.1 artifact. Current source capabilities are documented in the version notes above. The Preview label, Marketplace pre-release channel, and GitHub pre-release flag are separate concepts. `private: true` remains an npm publishing safeguard.
 
 ## Preview 2 first publication — historical record
 
@@ -66,7 +68,7 @@ From the clean checkout of the new tag, load nvm and install locked dependencies
 
 `npm run package` rebuilds the extension host and Webview. `DUAL_MIND_RELEASE_REF` fixes packaged README/changelog links to the new tag. The output is `release/dual-mind-<version>.vsix`; running packaging again for that version overwrites the local file. Keep release candidates and downloaded verification copies in separate locations. Generated bundles, screenshots, VSIX files and checksum files remain ignored by Git.
 
-Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all five approved SVG/PNG pairs. The source JPEG, development sources, tests, credentials and source maps must be absent.
+Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all seven adopted SVG/PNG pairs. The source JPEG, development sources, tests, credentials and source maps must be absent.
 
 Install the package in an isolated user profile/extensions directory. Verify the icon, identity/version, workbench, both languages, draft saving and reload recovery. Keep only the intended extension identity enabled in that profile.
 
@@ -83,3 +85,5 @@ Install the package in an isolated user profile/extensions directory. Verify the
 Marketplace displays the README from the uploaded extension package. Committing or pushing GitHub documentation does not automatically update that description. As checked on **2026-11-18**, the public `0.0.1` listing still contains the package's older publication-preparation wording. Include the corrected README in the next version's package and verify the displayed description after uploading it. The repository documentation update alone does not complete this step.
 
 Official references: [Publishing extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension), [Extension manifest](https://code.visualstudio.com/api/references/extension-manifest), and [GitHub releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository). API credentials must not be stored in source files or exposed in command arguments.
+
+The local source tag `v0.0.2` is not a public release. Before publication, validate the exact candidate commit and target editor/OS matrix, then separately package, install, push and publish. These distribution steps are not performed by this local version record.

@@ -1,3 +1,4 @@
+import { ModelPicker } from './ModelPicker';
 import { useEffect, useRef, useState } from 'react';
 import type {
   AgentBindings,
@@ -9,7 +10,7 @@ import type {
 import { Confirm, Icon, ModelFields } from './components';
 import { useUI } from './context';
 
-function DefaultsForm() {
+export function Defaults() {
   const { snapshot, tr, run, pending } = useUI();
   const [input, setInput] = useState<AgentBindings>(() => structuredClone(snapshot.defaults));
   const previous = useRef(JSON.stringify(snapshot.defaults));
@@ -24,9 +25,13 @@ function DefaultsForm() {
     }
   }, [snapshot.defaults]);
   return (
-    <section className="defaults-section">
-      <h3 className="eyebrow">{tr('defaults')}</h3>
-      <p className="hint">{tr('defaultsHint')}</p>
+    <section className="settings-main defaults-section">
+      <header className="section-heading">
+        <div>
+          <h2>{tr('defaults')}</h2>
+          <p>{tr('defaultsHint')}</p>
+        </div>
+      </header>
       <form
         noValidate
         onSubmit={(event) => {
@@ -71,7 +76,7 @@ function ConnectionEditor({
   const { snapshot, tr, run, pending } = useUI();
   const [input, setInput] = useState<Omit<ConnectionRecord, 'id'>>(() => ({
     name: record?.name || '',
-    baseUrl: record?.baseUrl || '',
+    baseUrl: record?.baseUrl || 'https://api.openai.com/v1',
     defaultModel: record?.defaultModel || '',
   }));
   const [deleting, setDeleting] = useState(false);
@@ -119,19 +124,11 @@ function ConnectionEditor({
                 required
                 type="url"
                 maxLength={2048}
-                placeholder="https://api.example.test/v1"
+                placeholder="https://api.openai.com/v1"
                 onChange={(event) => setInput({ ...input, baseUrl: event.target.value })}
               />
             </label>
-            <label>
-              {tr('defaultModel')} <span className="required">*</span>
-              <input
-                value={input.defaultModel}
-                required
-                maxLength={500}
-                onChange={(event) => setInput({ ...input, defaultModel: event.target.value })}
-              />
-            </label>
+            <p className="hint">{tr('modelsUrlHint')}</p>
             <div>
               <span className="field-label">{tr('apiKey')}</span>
               <div className="key-row">
@@ -154,16 +151,22 @@ function ConnectionEditor({
               </div>
               <p className="hint">{tr(record ? 'keyHint' : 'saveBeforeKey')}</p>
             </div>
+            <ModelPicker
+              label={tr('defaultModel')}
+              value={input.defaultModel}
+              onChange={(defaultModel) => setInput({ ...input, defaultModel })}
+              connectionId={record?.id || ''}
+              connectionMode
+              blockedReason={
+                record && input.baseUrl.trim() !== record.baseUrl ? 'modelsSaveAddress' : undefined
+              }
+            />
             <div className="form-actions">
-              <button type="button" disabled title={tr('unavailable')}>
-                {tr('testConnection')}
-              </button>
               <button className="primary" disabled={pending}>
                 {tr('saveConnection')}
               </button>
             </div>
           </form>
-          <DefaultsForm />
         </div>
         <aside className="settings-notes">
           <div className="note-card">
@@ -172,7 +175,7 @@ function ConnectionEditor({
           </div>
           <div className="note-card">
             <h3>{tr('testConnection')}</h3>
-            <p>{tr('unavailable')}</p>
+            <p>{tr('modelsScope')}</p>
           </div>
           {record && (
             <div className="note-card">
@@ -204,7 +207,7 @@ function ConnectionEditor({
   );
 }
 export function Connections() {
-  const { snapshot, tr, pending } = useUI();
+  const { snapshot, tr, pending, models } = useUI();
   const [selected, setSelected] = useState(snapshot.connections[0]?.id || 'new');
   return (
     <div className="settings-layout">
@@ -226,6 +229,12 @@ export function Connections() {
               <span className={c.hasKey ? 'key-saved' : 'warning-text'}>
                 {tr(c.hasKey ? 'keySaved' : 'keyMissing')}
               </span>
+              {models[c.id]?.status === 'success' && (
+                <span>
+                  {models[c.id].models.length} {tr('modelsCount')}
+                </span>
+              )}
+              {models[c.id]?.status === 'loading' && <span>{tr('modelsLoading')}</span>}
             </button>
           ))}
         </div>

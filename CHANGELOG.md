@@ -2,6 +2,17 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.2 — Local source version (unpublished)
+
+Recorded 2026-11-20; local annotated tag `v0.0.2`. This does not indicate a Marketplace update or a GitHub Release.
+
+- Explicit model-list queries preserve endpoint prefixes and enforce cancellation, timeout and response limits; IDs support search, selection and manual input.
+- Move Worker/Reviewer defaults to a separate settings tab; preserve independent drafts/role instruction snapshots and clarify missing-connection/model-list states.
+- Add Git 2.25+ detection, lazy per-task dedicated branch/worktree preparation and role-bound file interfaces; Reviewer is read-only.
+- Repair the local toolchain while retaining project Node.js 24; serialize bounded tests and support reuse of installed VS Code.
+
+See the [0.0.2 version notes](./docs/en/release-notes-0.0.2.md) for scope, limitations and verification.
+
 ## 0.0.1 — Preview 2
 
 GitHub published 2026-11-18 (11:24:18, UTC+08:00). [Pre-release `v0.0.1-preview.2`](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) targets commit `7fda78008f19c9c30e2a1342de8b03f5ff0f22d4`. [Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) published `Pro-qing.dual-mind` version `0.0.1` on 2026-11-18 (11:31:39, UTC+08:00); its public Preview listing has been verified separately.

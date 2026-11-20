@@ -1,20 +1,24 @@
-# Approved UI design reference
+# UI designs: adopted workbench and model-discovery scenes
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
-**All five scenes, including the task-management and settings additions, are approved.** The original SVG/PNG files are preserved without alteration, including their historical review labels. They are design references with illustrative content, not current runtime screenshots. The React workbench now implements local drafts, connection/role settings, and bilingual UI; real execution and application remain future work. See [Usage](./usage.md) for current behavior.
+**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+
+**All seven scenes are adopted; scenes 6–7 are implemented in the development branch.** Original SVG/PNG files and their historical review labels remain unchanged. Drawings contain illustrative content, not live API results. Published 0.0.1 retains local settings; the development branch adds explicit model-list queries and selection. Model inference and code application remain planned. See [Usage](./usage.md).
 
 Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. English interface labels are explained in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
 
 ## Design gallery
 
-| Scene                      | Editable source                               | Preview                                       |
-| -------------------------- | --------------------------------------------- | --------------------------------------------- |
-| 1. Parallel task workbench | [SVG](../design/dual-mind-workbench.svg)      | [PNG](../design/dual-mind-workbench.png)      |
-| 2. API Connections         | [SVG](../design/dual-mind-api-settings.svg)   | [PNG](../design/dual-mind-api-settings.png)   |
-| 3. Reviewer Roles          | [SVG](../design/dual-mind-reviewer-roles.svg) | [PNG](../design/dual-mind-reviewer-roles.png) |
-| 4. New task                | [SVG](../design/dual-mind-new-task.svg)       | [PNG](../design/dual-mind-new-task.png)       |
-| 5. Delete task             | [SVG](../design/dual-mind-delete-task.svg)    | [PNG](../design/dual-mind-delete-task.png)    |
+| Scene                      | Editable source                                     | Preview                                             |
+| -------------------------- | --------------------------------------------------- | --------------------------------------------------- |
+| 1. Parallel task workbench | [SVG](../design/dual-mind-workbench.svg)            | [PNG](../design/dual-mind-workbench.png)            |
+| 2. API Connections         | [SVG](../design/dual-mind-api-settings.svg)         | [PNG](../design/dual-mind-api-settings.png)         |
+| 3. Reviewer Roles          | [SVG](../design/dual-mind-reviewer-roles.svg)       | [PNG](../design/dual-mind-reviewer-roles.png)       |
+| 4. New task                | [SVG](../design/dual-mind-new-task.svg)             | [PNG](../design/dual-mind-new-task.png)             |
+| 5. Delete task             | [SVG](../design/dual-mind-delete-task.svg)          | [PNG](../design/dual-mind-delete-task.png)          |
+| 6. API model discovery     | [SVG](../design/dual-mind-api-model-discovery.svg)  | [PNG](../design/dual-mind-api-model-discovery.png)  |
+| 7. Task model selection    | [SVG](../design/dual-mind-task-model-selection.svg) | [PNG](../design/dual-mind-task-model-selection.png) |
 
 ### 1. Parallel task workbench
 
@@ -69,6 +73,54 @@ Confirmation names the task and explains that only its record and conversation h
 
 After deletion, select another remaining task; after the last deletion, show **No tasks yet** with **New task**. The side panels and lower note in this scene are labeled state examples for design review, not additional dialogs that would all open together.
 
+## Implemented model discovery additions
+
+Scenes 6–7 extend the adopted layout and define the implemented connection and model selection flow. They do not enable task execution, review loops or code application.
+
+### 6. API connection and model discovery
+
+![API connection form, searchable model IDs, and query-state examples](../design/dual-mind-api-model-discovery.png)
+
+The center shows a saved connection and an open model selector. The right-hand cards are separate state examples for review, not panels shown together in the product. `example-model-*`, connection names, counts, and times are illustrative; no model is recommended or assumed to be available to an account.
+
+New connections prefill `https://api.openai.com/v1`; the Base URL remains editable for OpenAI-compatible services. The **default model is optional** so the first-use sequence can be: save name and Base URL → set the key in VS Code's password prompt → **Test & fetch models** → choose a default if desired → save. Current `0.0.1` still requires a default model when saving; the development branch now allows an empty default. **Set key / Replace key** continues to show only saved-key status in the page.
+
+**Test & fetch models** verifies access to the model-list endpoint and returns model IDs. **Refresh** repeats that query. Both require a saved connection and key; editing the Base URL requires saving before either query can run. Opening a page or selector does not automatically send a request. The visible result reports a count and query time, with success described as **Model list accessible**, not an inference test. Availability in a returned list does not establish chat or code-task suitability.
+
+The editable selector searches model IDs while allowing an ID to be typed directly, including one absent from the list. Opening it shows suggestions; typing filters them. Returned IDs are displayed and saved verbatim, without translation or an invented friendly name. A successful query never selects the first model automatically or overwrites the current selection. Existing Worker/Reviewer default settings remain in the API page and reuse this same control; this scene focuses on the connection editor.
+
+The state examples cover an unsaved connection, missing key, in-progress request, success in the center panel, an empty list, a failed request, and an edited address. Disable duplicate requests while fetching. On an empty list, unsupported endpoint or other failure, retain manual input and the selected ID; offer retry when configuration permits. Address/key changes invalidate old results, so another query is needed. An empty successful list is distinct from a failed query.
+
+### 7. Task model selection
+
+![independent Worker and Reviewer model choices, saved-ID preservation and narrow-window layout](../design/dual-mind-task-model-selection.png)
+
+The main panel shows a new-task dialog with separate connections and model IDs: Worker uses an illustrative OpenAI selection; Reviewer uses a manually entered gateway ID with a missing key. **Create draft** remains available. The side insets show an edit-draft case, connection switching, and narrow layout; they are review references outside the dialog.
+
+New drafts inherit the saved Worker/Reviewer defaults. Each selector uses only the selected connection's suggestions and offers fetch/refresh plus manual entry. Explicitly changing a connection uses that connection's default model, which may be blank, in the current form. Refreshing a list does not change the selected ID. Opening an existing draft keeps its bindings even when an ID is absent from the latest list; only an explicit edit and save changes them. Editing retains its Reviewer role snapshot; the built-in role choices in the main panel apply to creating a draft.
+
+A missing key disables query actions for that connection but does not prevent typing an ID or saving the draft. A list failure also preserves typed and saved values. Choosing different connections for the two agents never mixes their suggestions or results. The main task sidebar and conversation layout remain as approved.
+
+### Language, keyboard, and narrow-window behavior
+
+| English label            | Simplified Chinese label |
+| ------------------------ | ------------------------ |
+| Test & fetch models      | 测试并获取模型           |
+| Fetch / Refresh          | 获取模型／刷新模型       |
+| Default model — Optional | 默认模型（可选）         |
+| Search or type an ID     | 搜索或输入模型 ID        |
+| Model list accessible    | 模型列表可访问           |
+| Fetching models…         | 正在获取模型…            |
+| No models returned       | 未返回模型               |
+| Query failed             | 查询失败                 |
+| Save draft               | 保存草稿                 |
+
+All explanatory text, statuses, validation and errors will have both languages; model IDs and user-entered connection names keep their original text. Language switching preserves current form values and selections.
+
+The editable combobox has an accessible label, keyboard focus, and a scrollable suggestion list. Tab traverses controls; Up/Down navigate an open list, Enter selects its highlighted option, and Escape closes the list before the dialog. Typing an unmatched ID keeps it as a manual value. Closing the list alone does not submit the form or clear the current ID. Long IDs retain their complete value, scroll in the input, and are available in full on focus/hover; suggestion rows may wrap to avoid losing the identifying suffix.
+
+Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection settings use one scrollable column, with wrapping query controls and status text. Menus stay within the visible dialog, scroll independently, and may open upward when space below is limited. Save/cancel actions remain reachable. Reference-state cards in these drawings are explanatory material, not additional runtime panels.
+
 ## Layout and state conventions
 
 - Tasks and conversation history are organized by workspace. Connections, default model bindings, and role presets are local to the VS Code user. Credential values belong in the host's secret storage.
@@ -78,21 +130,20 @@ After deletion, select another remaining task; after the last deletion, show **N
 
 ## Review and implementation gate
 
-The owner has approved the full design. The local workbench follows its task, connection and role layout, and adds a language selector to Settings. Built-in Reviewer definitions have independent English/Chinese versions; custom text and task snapshots keep their original content. Running states and connection-test results in the drawings remain examples until their underlying features are implemented.
+The owner has adopted scenes 1–7. The development branch implements explicit API queries and shared model selectors with isolated tests. Historical labels inside the original artwork are preserved; they do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
 
-See [Architecture](./architecture.md) for the planned responsibilities and [Protocol draft](./protocol.md) for task association and configuration boundaries. The implemented local message types and future execution boundary are documented there.
+See [Architecture](./architecture.md) for the planned responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. The implemented local message types and future execution boundary are documented there.
 
 ## Updating and validating previews
 
-SVG is the editable source. Keep a same-name PNG beside every SVG so README and VSIX documentation can display previews. In a Python environment with CairoSVG 2.7.1 installed, regenerate all previews from the repository root:
+SVG is the editable source. Keep a same-name PNG beside every SVG. Preserve the approved five pairs byte-for-byte. Use a separate Python environment with CairoSVG 2.7.1, and regenerate only these model-discovery scenes from the repository root:
 
 ```bash
-for svg in docs/design/*.svg; do
-  python3 -m cairosvg "$svg" -o "${svg%.svg}.png"
+for scene in dual-mind-api-model-discovery dual-mind-task-model-selection; do
+  python3 -m cairosvg "docs/design/${scene}.svg" -o "docs/design/${scene}.png"
 done
 npm run docs:check
 npm run format:check
-npm run package
 ```
 
-Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair, requires all five scenes, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
+Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair, requires all seven scenes, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. This design-only delivery does not rebuild or replace a published VSIX. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.

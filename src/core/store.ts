@@ -40,6 +40,7 @@ export interface StorePorts {
   setLanguage(value: LanguageSetting): PromiseLike<void>;
   askKey(name: string, locale: Locale): PromiseLike<string | undefined>;
   openWorkspace(): PromiseLike<unknown>;
+  onConnectionChanged?(connectionId: string): void;
 }
 export class StoreError extends Error {
   constructor(public readonly code: ErrorCode) {
@@ -124,7 +125,7 @@ function connectionInput(value: unknown): Omit<ConnectionRecord, 'id'> {
   return {
     name: string(v.name, true, 200, true),
     baseUrl,
-    defaultModel: string(v.defaultModel, true, 500, true),
+    defaultModel: string(v.defaultModel, false, 500, true),
   };
 }
 function confirmed(v: Record<string, unknown>): true {
@@ -278,6 +279,20 @@ export class LocalStore {
       };
     });
   }
+  /** Read credentials briefly under the store lock; network work runs outside it. */
+  async connectionForQuery(connectionId: string): Promise<{ baseUrl: string; key?: string }> {
+    return this.serialize(async () => {
+      const { global } = this.read();
+      const connection = global.connections.find((c) => c.id === connectionId);
+      if (!connection) {
+        throw new StoreError('notFound');
+      }
+      return {
+        baseUrl: connection.baseUrl,
+        key: await this.ports.secrets.get(secretKey(connectionId)),
+      };
+    });
+  }
   async dispatch(value: unknown): Promise<void> {
     const action = parseAction(value);
     return this.serialize(async () => {
@@ -359,14 +374,15 @@ export class LocalStore {
           await this.ports.workspace.update(workspaceStorageKey, workspace);
           break;
         case 'connection.save': {
-          if (action.id) {
-            findConnection(action.id);
-          }
+          const previous = action.id ? findConnection(action.id) : undefined;
           const item = { ...action.input, id: action.id || randomUUID() };
           global.connections = action.id
             ? global.connections.map((c) => (c.id === action.id ? item : c))
             : [...global.connections, item];
           await this.ports.global.update(globalStorageKey, global);
+          if (previous && previous.baseUrl !== item.baseUrl) {
+            this.ports.onConnectionChanged?.(item.id);
+          }
           break;
         }
         case 'connection.delete': {
@@ -388,6 +404,7 @@ export class LocalStore {
             }
             throw error;
           }
+          this.ports.onConnectionChanged?.(action.id);
           break;
         }
         case 'connection.key': {
@@ -397,7 +414,11 @@ export class LocalStore {
             resolveLocale(this.ports.getLanguage(), this.ports.editorLanguage()),
           );
           if (entered !== undefined) {
-            await this.ports.secrets.store(secretKey(c.id), string(entered, true, 10000, true));
+            const key = string(entered, true, 10000, true);
+            if (key !== (await this.ports.secrets.get(secretKey(c.id)))) {
+              await this.ports.secrets.store(secretKey(c.id), key);
+              this.ports.onConnectionChanged?.(c.id);
+            }
           }
           break;
         }

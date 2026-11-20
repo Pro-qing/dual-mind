@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">DualMind — API connection and model discovery proposal</title>
+  <desc id="description">Pending-review static design: save a connection without a default model, set its key in the host password prompt, explicitly test and fetch model IDs, search or enter a custom ID, and handle configuration, query and empty-list states. All results and connection metadata are illustrative.</desc>
+  <style>text { font-family: "DejaVu Sans", Arial, sans-serif; } .mono { font-family: "DejaVu Sans Mono", monospace; }</style>
+  <rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22"/>
+  <g id="editor-chrome">
+  <rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b"/>
+  <rect x="0" y="0" width="224" height="40" rx="0" fill="#191c22"/>
+  <rect x="0" y="0" width="224" height="2" rx="0" fill="#91bbff"/>
+  <rect x="22" y="12" width="14" height="16" rx="3" fill="#2b4161"/>
+  <text x="46" y="26" font-size="13" fill="#e4e8f0" font-weight="400">DualMind</text>
+  <path d="M199 14 l10 10 M209 14 l-10 10" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="224" y1="39" x2="1440" y2="39" stroke="#394352"/>
+  <text x="1416" y="25" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">MODEL DISCOVERY / 06</text>
+  </g>
+  <g id="application-header">
+  <rect x="24" y="64" width="44" height="44" rx="10" fill="#223047"/>
+  <path d="M43 77 L35 86 L43 95 M49 77 L57 86 L49 95" fill="none" stroke="#a2c4ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="84" y="86" font-size="24" fill="#e4e8f0" font-weight="600">DualMind / Settings</text>
+  <text x="85" y="110" font-size="12" fill="#b1bdce" font-weight="400">Save a connection, fetch its model IDs, and choose a default.</text>
+  <rect x="1032" y="70" width="184" height="22" rx="11" fill="#26354d"/>
+  <text x="1124.0" y="85" font-size="10" fill="#eac58c" font-weight="600" text-anchor="middle">PENDING DESIGN REVIEW</text>
+  <rect x="1240" y="66" width="176" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+  <text x="1328.0" y="87.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Back to tasks</text>
+  </g>
+  <text x="24" y="884" font-size="10" fill="#95a4ba" font-weight="400">STATIC SVG · Sample content only · No live request or credential</text>
+  <text x="1416" y="884" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">Design approval precedes API and UI implementation</text>
+  <g id="settings-navigation">
+  <line x1="24" y1="174" x2="1416" y2="174" stroke="#394352"/>
+  <text x="44" y="156" font-size="14" fill="#91bbff" font-weight="600">API Connections</text>
+  <rect x="24" y="172" width="212" height="3" rx="0" fill="#91bbff"/>
+  <text x="272" y="156" font-size="14" fill="#b1bdce" font-weight="600">Reviewer Roles</text>
+  <text x="1416" y="154" font-size="11" fill="#95a4ba" font-weight="400" text-anchor="end">Example configuration · no live connections</text>
+  </g>
+  <rect x="24" y="194" width="248" height="664" rx="6" fill="#20242c" stroke="#394352"/>
+  <rect x="292" y="194" width="740" height="664" rx="6" fill="#20242c" stroke="#394352"/>
+  <rect x="1052" y="194" width="364" height="664" rx="6" fill="#1d232d" stroke="#394352"/>
+  <g id="connection-list">
+  <text x="44" y="222" font-size="11" fill="#b1bdce" font-weight="600">CONNECTIONS</text>
+  <rect x="44" y="240" width="208" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+  <text x="148.0" y="261.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">+  New connection</text>
+  <rect x="40" y="292" width="216" height="84" rx="5" fill="#22334d" stroke="#557eaf"/>
+  <text x="56" y="316" font-size="14" fill="#e4e8f0" font-weight="600">OpenAI</text>
+  <text x="56" y="336" font-size="11" fill="#95a4ba" font-weight="400">Official endpoint · example</text>
+  <circle cx="60" cy="356" r="3" fill="#93dfcd"/>
+  <text x="70" y="360" font-size="11" fill="#93dfcd" font-weight="400">4 models · example</text>
+  <rect x="40" y="390" width="216" height="84" rx="5" fill="#242a33" stroke="#313b49"/>
+  <text x="56" y="414" font-size="14" fill="#e4e8f0" font-weight="600">Local gateway</text>
+  <text x="56" y="434" font-size="11" fill="#95a4ba" font-weight="400">Custom Base URL · example</text>
+  <circle cx="60" cy="454" r="3" fill="#95a4ba"/>
+  <text x="70" y="458" font-size="11" fill="#95a4ba" font-weight="400">Not fetched</text>
+  <rect x="40" y="488" width="216" height="84" rx="5" fill="#242a33" stroke="#313b49"/>
+  <text x="56" y="512" font-size="14" fill="#e4e8f0" font-weight="600">Staging</text>
+  <text x="56" y="532" font-size="11" fill="#95a4ba" font-weight="400">Compatible endpoint · example</text>
+  <circle cx="60" cy="552" r="3" fill="#eac58c"/>
+  <text x="70" y="556" font-size="11" fill="#eac58c" font-weight="400">Key missing</text>
+  <line x1="44" y1="600" x2="252" y2="600" stroke="#394352"/>
+  <text x="44" y="626" font-size="11" fill="#b1bdce" font-weight="600">FIRST CONNECTION</text>
+  <circle cx="54" cy="651" r="10" fill="#26354d"/>
+  <text x="54" y="655" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">1</text>
+  <text x="72" y="655" font-size="11" fill="#b1bdce" font-weight="400">Save name + Base URL</text>
+  <circle cx="54" cy="684" r="10" fill="#26354d"/>
+  <text x="54" y="688" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">2</text>
+  <text x="72" y="688" font-size="11" fill="#b1bdce" font-weight="400">Set key in VS Code</text>
+  <circle cx="54" cy="717" r="10" fill="#26354d"/>
+  <text x="54" y="721" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">3</text>
+  <text x="72" y="721" font-size="11" fill="#b1bdce" font-weight="400">Test &amp; fetch models</text>
+  <circle cx="54" cy="750" r="10" fill="#26354d"/>
+  <text x="54" y="754" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">4</text>
+  <text x="72" y="754" font-size="11" fill="#b1bdce" font-weight="400">Choose default (optional)</text>
+  <circle cx="54" cy="783" r="10" fill="#26354d"/>
+  <text x="54" y="787" font-size="10" fill="#91bbff" font-weight="600" text-anchor="middle">5</text>
+  <text x="72" y="787" font-size="11" fill="#b1bdce" font-weight="400">Save connection</text>
+  <text x="44" y="828" font-size="10" fill="#95a4ba" font-weight="400">Model IDs below are illustrative.</text>
+  </g>
+  <g id="connection-editor">
+  <text x="316" y="226" font-size="20" fill="#e4e8f0" font-weight="600">OpenAI</text>
+  <rect x="844" y="208" width="164" height="22" rx="11" fill="#26354d"/>
+  <text x="926.0" y="223" font-size="10" fill="#93dfcd" font-weight="600" text-anchor="middle">SAVED · EXAMPLE</text>
+  <text x="316" y="250" font-size="12" fill="#b1bdce" font-weight="400">Official URL is prefilled; compatible endpoints remain editable.</text>
+  <text x="316" y="274" font-size="11" fill="#b1bdce" font-weight="600">CONNECTION NAME</text>
+  <rect x="316" y="284" width="692" height="34" rx="5" fill="#171c24" stroke="#394352"/>
+  <text x="328" y="305.5" font-size="13" fill="#e4e8f0" font-weight="400">OpenAI</text>
+  <text x="316" y="340" font-size="11" fill="#b1bdce" font-weight="600">BASE URL</text>
+  <rect x="316" y="350" width="692" height="34" rx="5" fill="#171c24" stroke="#394352"/>
+  <text x="328" y="371.5" font-size="12" fill="#e4e8f0" font-weight="400" class="mono">https://api.openai.com/v1</text>
+  <text x="316" y="404" font-size="11" fill="#95a4ba" font-weight="400">Use the API base path. Save address changes before querying.</text>
+  <text x="316" y="428" font-size="11" fill="#b1bdce" font-weight="600">API KEY</text>
+  <rect x="316" y="438" width="448" height="34" rx="5" fill="#171c24" stroke="#394352"/>
+  <circle cx="333" cy="455" r="3" fill="#93dfcd"/>
+  <text x="346" y="460" font-size="12" fill="#93dfcd" font-weight="400">Saved in VS Code</text>
+  <rect x="780" y="438" width="228" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+  <text x="894.0" y="459.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Replace key</text>
+  <text x="316" y="493" font-size="11" fill="#95a4ba" font-weight="400">Key entry opens a native password prompt; only saved status appears here.</text>
+  <rect x="316" y="510" width="216" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+  <text x="424.0" y="531.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Test &amp; fetch models</text>
+  <rect x="544" y="510" width="110" height="34" rx="5" fill="#252c37" stroke="#394352"/>
+  <text x="599.0" y="531.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Refresh</text>
+  <rect x="670" y="510" width="338" height="34" rx="5" fill="#20322f" stroke="#38534b"/>
+  <circle cx="687" cy="527" r="3" fill="#93dfcd"/>
+  <text x="700" y="532" font-size="12" fill="#93dfcd" font-weight="400">4 models · fetched 10:42:16</text>
+  <text x="316" y="576" font-size="11" fill="#b1bdce" font-weight="600">DEFAULT MODEL</text>
+  <text x="435" y="576" font-size="11" fill="#95a4ba" font-weight="400">Optional</text>
+  <text x="1008" y="576" font-size="11" fill="#95a4ba" font-weight="400" text-anchor="end">Search or type an ID</text>
+  <rect x="316" y="588" width="692" height="36" rx="5" fill="#171c24" stroke="#91bbff"/>
+  <text x="328" y="610.5" font-size="12" fill="#e4e8f0" font-weight="400" class="mono">example-model-alpha</text>
+  <path d="M983 604.0 l5 5 l5 -5" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="316" y="628" width="692" height="134" rx="5" fill="#171e29" stroke="#557eaf"/>
+  <rect x="320" y="632" width="684" height="29" rx="3" fill="#253e5b"/>
+  <text x="332" y="652" font-size="12" fill="#e4e8f0" font-weight="400" class="mono">example-model-alpha</text>
+  <path d="M975 646 l4 4 l8 -9" fill="none" stroke="#91bbff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="332" y="683" font-size="12" fill="#e4e8f0" font-weight="400" class="mono">example-model-beta</text>
+  <text x="332" y="714" font-size="12" fill="#e4e8f0" font-weight="400" class="mono">example-model-gamma</text>
+  <text x="332" y="745" font-size="12" fill="#e4e8f0" font-weight="400" class="mono">example-model-delta</text>
+  <text x="316" y="782" font-size="11" fill="#95a4ba" font-weight="400">Type any custom ID; fetching never replaces your selected model.</text>
+  <line x1="316" y1="798" x2="1008" y2="798" stroke="#394352"/>
+  <text x="316" y="819" font-size="11" fill="#b1bdce" font-weight="400">Model list accessible · example result</text>
+  <text x="316" y="837" font-size="11" fill="#b1bdce" font-weight="400">Inference and chat compatibility are not tested.</text>
+  <rect x="850" y="808" width="158" height="34" rx="5" fill="#305981" stroke="#527fb0"/>
+  <text x="929.0" y="829.5" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="middle">Save connection</text>
+  </g>
+  <g id="query-state-reference">
+  <text x="1072" y="222" font-size="11" fill="#b1bdce" font-weight="600">QUERY STATES · EXAMPLES</text>
+  <text x="1072" y="243" font-size="11" fill="#95a4ba" font-weight="400">Variants for review, not simultaneous UI.</text>
+  <rect x="1072" y="260" width="324" height="64" rx="5" fill="#242b36" stroke="#343e4d"/>
+  <circle cx="1087" cy="281" r="3" fill="#eac58c"/>
+  <text x="1100" y="286" font-size="13" fill="#eac58c" font-weight="600">Unsaved connection</text>
+  <text x="1088" y="307" font-size="11" fill="#b1bdce" font-weight="400">Save before fetching models.</text>
+  <rect x="1072" y="336" width="324" height="64" rx="5" fill="#242b36" stroke="#343e4d"/>
+  <circle cx="1087" cy="357" r="3" fill="#eac58c"/>
+  <text x="1100" y="362" font-size="13" fill="#eac58c" font-weight="600">Missing key</text>
+  <text x="1088" y="383" font-size="11" fill="#b1bdce" font-weight="400">Set key in the VS Code password prompt.</text>
+  <rect x="1072" y="412" width="324" height="64" rx="5" fill="#242b36" stroke="#343e4d"/>
+  <circle cx="1087" cy="433" r="3" fill="#91bbff"/>
+  <text x="1100" y="438" font-size="13" fill="#91bbff" font-weight="600">Fetching models…</text>
+  <text x="1088" y="459" font-size="11" fill="#b1bdce" font-weight="400">Refresh is disabled while querying.</text>
+  <rect x="1072" y="488" width="324" height="64" rx="5" fill="#242b36" stroke="#343e4d"/>
+  <circle cx="1087" cy="509" r="3" fill="#95a4ba"/>
+  <text x="1100" y="514" font-size="13" fill="#95a4ba" font-weight="600">No models returned</text>
+  <text x="1088" y="535" font-size="11" fill="#b1bdce" font-weight="400">0 models · custom IDs are still allowed.</text>
+  <rect x="1072" y="564" width="324" height="80" rx="5" fill="#242b36" stroke="#343e4d"/>
+  <circle cx="1087" cy="585" r="3" fill="#efaaaa"/>
+  <text x="1100" y="590" font-size="13" fill="#efaaaa" font-weight="600">Query failed</text>
+  <text x="1088" y="611" font-size="11" fill="#b1bdce" font-weight="400">Check the URL, key or endpoint support.</text>
+  <text x="1088" y="629" font-size="11" fill="#b1bdce" font-weight="400">Retry, or enter a model ID manually.</text>
+  <rect x="1072" y="660" width="324" height="80" rx="5" fill="#242b36" stroke="#343e4d"/>
+  <circle cx="1087" cy="681" r="3" fill="#eac58c"/>
+  <text x="1100" y="686" font-size="13" fill="#eac58c" font-weight="600">Address edited</text>
+  <text x="1088" y="707" font-size="11" fill="#b1bdce" font-weight="400">Save the changed Base URL first.</text>
+  <text x="1088" y="725" font-size="11" fill="#b1bdce" font-weight="400">Fetch again after address or key changes.</text>
+  <text x="1072" y="774" font-size="11" fill="#b1bdce" font-weight="600">WHAT SUCCESS MEANS</text>
+  <text x="1072" y="798" font-size="11" fill="#95a4ba" font-weight="400">The model list is accessible.</text>
+  <text x="1072" y="818" font-size="11" fill="#95a4ba" font-weight="400">No inference or task execution is tested.</text>
+  <text x="1072" y="838" font-size="11" fill="#95a4ba" font-weight="400">No task text is sent by this query.</text>
+  </g>
+</svg>

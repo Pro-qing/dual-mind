@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Action, AppSnapshot } from '../../src/shared/model';
+import type { Action, AppSnapshot, ModelQueryState } from '../../src/shared/model';
 import { t, type MessageKey } from '../../src/shared/i18n';
 export interface LanguageGuard {
   save(): Promise<void>;
@@ -8,6 +8,8 @@ export interface LanguageGuard {
 export interface UIContextValue {
   snapshot: AppSnapshot;
   pending: boolean;
+  models: Record<string, ModelQueryState>;
+  queryModels(connectionId: string): Promise<void>;
   run(action: Action, notice?: MessageKey | false): Promise<AppSnapshot>;
   registerLanguageGuard(guard: LanguageGuard | null): void;
 }

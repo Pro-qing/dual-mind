@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import { randomBytes } from 'node:crypto';
 import { LocalStore, StoreError } from './core/store';
+import { ModelQueries } from './core/modelQueries';
+import { TaskWorkspaces } from './git/taskWorkspaces';
+import { ModelQueryError } from './providers/models';
 import { t } from './shared/i18n';
 import {
   resolveLocale,
@@ -22,6 +25,8 @@ export class Workbench implements vscode.Disposable {
   private rejectReady: ((error: Error) => void) | undefined;
   private readyTimeout: ReturnType<typeof setTimeout> | undefined;
   private readonly store: LocalStore;
+  private readonly models: ModelQueries;
+  private readonly taskWorkspaces: TaskWorkspaces;
   constructor(private readonly context: vscode.ExtensionContext) {
     this.store = new LocalStore({
       global: context.globalState,
@@ -43,7 +48,25 @@ export class Workbench implements vscode.Disposable {
           validateInput: (value) => (value.trim() ? null : t(locale, 'keyRequired')),
         }),
       openWorkspace: () => vscode.commands.executeCommand('vscode.openFolder'),
+      onConnectionChanged: (id) => this.models.invalidate(id),
     });
+    this.taskWorkspaces = new TaskWorkspaces({
+      state: context.workspaceState,
+      trusted: () => vscode.workspace.isTrusted,
+      folders: () =>
+        (vscode.workspace.workspaceFolders || []).map((folder) =>
+          folder.uri.scheme === 'file' ? folder.uri.fsPath : '',
+        ),
+      storageRoot: () =>
+        context.storageUri?.scheme === 'file' ? context.storageUri.fsPath : undefined,
+      taskExists: async (id) => (await this.store.snapshot()).tasks.some((task) => task.id === id),
+    });
+    this.models = new ModelQueries(
+      (id) => this.store.connectionForQuery(id),
+      (connectionId) => {
+        void this.post({ type: 'models.invalidated', connectionId });
+      },
+    );
     context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
         if (event.affectsConfiguration('dualMind.language')) {
@@ -65,6 +88,10 @@ export class Workbench implements vscode.Disposable {
         },
       }),
     );
+  }
+  /** Host-only future execution hook. No command or Webview action invokes this yet. */
+  prepareTaskWorkspace(taskId: string) {
+    return this.taskWorkspaces.prepare(taskId);
   }
   async open(): Promise<void> {
     if (this.panel) {
@@ -99,6 +126,7 @@ export class Workbench implements vscode.Disposable {
     this.panelDisposables = [
       panel.onDidDispose(() => {
         if (this.panel === panel) {
+          this.models.dispose();
           this.panel = undefined;
         }
         clearTimeout(this.readyTimeout);
@@ -109,7 +137,7 @@ export class Workbench implements vscode.Disposable {
         this.panelDisposables = [];
       }),
       panel.webview.onDidReceiveMessage((message: unknown) => {
-        void this.onMessage(message);
+        void this.onMessage(message, panel);
       }),
     ];
     const locale = resolveLocale(getLanguage(), vscode.env.language);
@@ -135,11 +163,54 @@ export class Workbench implements vscode.Disposable {
       });
     }
   }
-  private async onMessage(value: unknown): Promise<void> {
+  private async onMessage(value: unknown, source: vscode.WebviewPanel): Promise<void> {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       return;
     }
     const message = value as Record<string, unknown>;
+    if (this.panel !== source) {
+      return;
+    }
+    if (message.type === 'models.query') {
+      if (
+        typeof message.requestId !== 'string' ||
+        !message.requestId ||
+        message.requestId.length > 100 ||
+        typeof message.connectionId !== 'string'
+      ) {
+        return;
+      }
+      const { requestId, connectionId } = message;
+      try {
+        const result = await this.models.query(connectionId);
+        if (this.panel === source) {
+          await source.webview.postMessage({
+            type: 'models.result',
+            requestId,
+            connectionId,
+            ok: true,
+            result,
+          } satisfies HostMessage);
+        }
+      } catch (error) {
+        const code =
+          error instanceof ModelQueryError
+            ? error.code
+            : error instanceof StoreError && error.code === 'notFound'
+              ? 'notFound'
+              : 'storageFailed';
+        if (this.panel === source) {
+          await source.webview.postMessage({
+            type: 'models.result',
+            requestId,
+            connectionId,
+            ok: false,
+            error: code,
+          } satisfies HostMessage);
+        }
+      }
+      return;
+    }
     if (message.type === 'ready') {
       await this.sendSnapshot();
       return;
@@ -172,6 +243,7 @@ export class Workbench implements vscode.Disposable {
     }
   }
   dispose(): void {
+    this.models.dispose();
     this.panel?.dispose();
     clearTimeout(this.readyTimeout);
   }

@@ -12,7 +12,7 @@ DualMind’s local React workbench is available as a GitHub preview. Start with 
 4. Run `npm run check`, relevant extension-host tests, and `npm run package` when changing runtime/build behavior. For documentation-only changes, checks are sufficient.
 5. Describe the problem, resulting behavior, and validation in a pull request. Include SVG revisions when proposing UI changes.
 
-The five existing [interface designs](./docs/en/design.md) are approved and retained. Future interface changes should include an updated SVG proposal for explicit review before implementation. Reserved directories should gain code only when a concrete feature needs it.
+The seven existing [interface designs](./docs/en/design.md) are approved and retained. Future interface changes should include an updated SVG proposal for explicit review before implementation. Reserved directories should gain code only when a concrete feature needs it.
 
 Follow the [code of conduct](./CODE_OF_CONDUCT.md). Use the [security policy](./SECURITY.md) for sensitive reports. Do not place credentials in issues, commits, examples, or screenshots.
 

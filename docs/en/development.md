@@ -2,6 +2,8 @@
 
 [简体中文](../zh/development.md) · [Documentation](./README.md)
 
+**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+
 ## Environment
 
 Use **Ubuntu 20.04+ on x86_64/amd64**, VS Code 1.100.0+, and nvm-managed Node.js 24. Other platforms and ARM64 are not yet validated. The [environment guide](./environment.md) is the reference for system requirements, nvm setup, Electron libraries, Xvfb, and xauth. The extension bundle targets Node.js 20 for the minimum supported editor's extension host.
@@ -53,7 +55,7 @@ For iteration, run `npm run watch` and `npm run watch:types` in separate termina
 | `npm run watch:types` | Watch host, Webview, and local-test TypeScript diagnostics                      |
 | `npm run format`      | Format supported source and documentation files                                 |
 | `npm test`            | Run the smoke test inside a downloaded stable VS Code                           |
-| `npm run package`     | Build a local `release/dual-mind-0.0.1.vsix`                                    |
+| `npm run package`     | Build a local `release/dual-mind-<version>.vsix`                                |
 
 ## Validation
 
@@ -79,3 +81,9 @@ CI runs environment and local store/React tests, formatting, types, lint, docume
 | No workbench appears                     | Run **DualMind: Open Workbench**; if updating the same VSIX version, force-install and reload the window |
 
 Build output, downloaded editors, dependencies, and VSIX files are ignored by Git. [Usage guide](./usage.md) covers local installation and current behavior; [packaging guide](./releasing.md) covers VSIX creation and release preparation.
+
+## Resource-bounded model verification
+
+Local tests run serially with a 512 MiB JavaScript heap and the existing 30-second per-test timeout. Run each verification command separately with a 1 GiB memory / 60-second overall limit for local checks, or 2 GiB / 180 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
+
+Set `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` to reuse an installed VS Code for `npm test` and `npm run test:ui`; omit it to retain automatic download. Run Electron under `xvfb-run -a` when headless. All tests use isolated user profiles. The real Webview test starts a local mock server and uses a fake key in the native password prompt, then verifies query, selection, persistence, both languages and narrow layouts. It never reads personal credentials or calls inference endpoints.

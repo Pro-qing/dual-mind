@@ -2,6 +2,8 @@
 
 [English](../en/development.md) · [文档索引](./README.md)
 
+**当前源码版本：0.0.2 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-20；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.2 版本说明](./release-notes-0.0.2.md)。
+
 ## 开发环境
 
 使用 **Ubuntu 20.04+、x86_64/amd64**、VS Code 1.100.0+ 和 nvm 管理的 Node.js 24。其他平台和 ARM64 暂未验证。[环境说明](./environment.md)集中记录系统要求、nvm 配置、Electron 运行库、Xvfb 和 xauth。扩展构建目标为 Node.js 20，以兼容最低支持编辑器的扩展宿主。
@@ -53,7 +55,7 @@ code .
 | `npm run watch:types` | 持续检查宿主、Webview 和本地测试的 TypeScript 类型     |
 | `npm run format`      | 格式化支持的源码和文档                                 |
 | `npm test`            | 在下载的 VS Code 稳定版中执行冒烟测试                  |
-| `npm run package`     | 构建本地 `release/dual-mind-0.0.1.vsix`                |
+| `npm run package`     | 构建本地 `release/dual-mind-<version>.vsix`            |
 
 ## 验证
 
@@ -64,7 +66,7 @@ VSCODE_TEST_VERSION=1.100.0 npm test
 npm run package
 ```
 
-`npm test` 构建宿主与前端，在独立 VS Code 实例中验证命令激活、React 实际渲染、单例标签和关闭后重开。`npm run check` 也执行本地存储及 React 交互测试。`npm run test:ui` 通过 Playwright 操作下载编辑器的 Electron 程序（无需另下浏览器），使用隔离的临时用户配置和工作区，验证真实设置／任务操作、重载恢复及工作区隔离，并在 `.vscode-test/ui-validation/<version>/` 保存中英文宽／窄截图。它需要桌面，或使用 `xvfb-run -a npm run test:ui`。编辑器下载缓存在 `.vscode-test/`，首次执行需要联网。`npm test` 配置允许下载最多 120 秒未收到数据才判定超时；`test:ui` 使用下载工具的默认超时。测试需要图形显示环境；无桌面的 Ubuntu 需要按[环境说明](./environment.md)安装 Electron 运行库、`xvfb` 和 `xauth`，然后执行 `xvfb-run -a npm test`，最低版本测试执行 `VSCODE_TEST_VERSION=1.100.0 xvfb-run -a npm test`。
+`npm test` 构建宿主与前端，在独立 VS Code 实例中验证命令激活、React 实际渲染、单例标签和关闭后重开。`npm run check` 也执行本地存储及 React 交互测试。`npm run test:ui` 通过 Playwright 操作下载编辑器的 Electron 程序（无需另下浏览器），使用隔离的临时用户配置和工作区，验证真实设置／任务操作、重载恢复及工作区隔离，并在 `.vscode-test/ui-validation/<VS Code version>/` 保存中英文宽／窄截图。它需要桌面，或使用 `xvfb-run -a npm run test:ui`。编辑器下载缓存在 `.vscode-test/`，首次执行需要联网。`npm test` 配置允许下载最多 120 秒未收到数据才判定超时；`test:ui` 使用下载工具的默认超时。测试需要图形显示环境；无桌面的 Ubuntu 需要按[环境说明](./environment.md)安装 Electron 运行库、`xvfb` 和 `xauth`，然后执行 `xvfb-run -a npm test`，最低版本测试执行 `VSCODE_TEST_VERSION=1.100.0 xvfb-run -a npm test`。
 
 CI 各组合运行环境及本地存储／React 测试、格式、类型、lint、文档链接、设计资源检查和扩展宿主测试。验证组合包括 Ubuntu 20.04 容器中的 VS Code 1.100.0 和 stable，以及原生 Ubuntu 24.04 上的 stable；Ubuntu 20.04 stable 组合额外验证真实 Webview 和打包，详见[环境验证组合](./environment.md)。修改支持的文本文件后可执行 `npm run format`。手写 SVG 的几何排版不交由 Prettier 修改。
 
@@ -79,3 +81,9 @@ CI 各组合运行环境及本地存储／React 测试、格式、类型、lint�
 | 未出现工作台                    | 执行 **DualMind: 打开工作台**；同版本 VSIX 更新后需要强制安装并重载窗口 |
 
 构建产物、测试编辑器、依赖和 VSIX 均被 Git 忽略。本地安装和当前功能见[使用说明](./usage.md)，VSIX 生成及发布准备见[打包指南](./releasing.md)。
+
+## 限制资源的模型验证
+
+本地测试串行执行，JavaScript 堆上限为 512 MiB，保留单项 30 秒超时。每次独立运行验证命令：本地检查总内存 1 GiB、整体超时 60 秒；Electron 总内存 2 GiB、整体超时 180 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
+
+设置 `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` 后，`npm test` 与 `npm run test:ui` 复用已安装 VS Code；未设置时保留自动下载。无显示环境使用 `xvfb-run -a`。测试使用隔离用户配置；真实 Webview 测试启动本地模拟服务，在原生密码框输入测试密钥，验证查询、选择、保存重载、中英文及窄窗口布局，不读取个人凭据或调用推理接口。

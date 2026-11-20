@@ -2,13 +2,15 @@
 
 [简体中文](./SECURITY.zh.md) · [Project home](./README.md)
 
-## Current scope
+## Current source scope
 
-DualMind 0.0.1 previews are early local-workbench milestones. The workbench saves workspace drafts, user connection metadata, model defaults, and Reviewer presets. API keys entered through the native VS Code password prompt are stored through `ExtensionContext.secrets`. The Webview receives only saved-key status, not credential values.
+DualMind 0.0.2 is a local, unpublished source version. Public 0.0.1 artifacts retain historical behavior. API keys enter through the native VS Code password prompt and remain in SecretStorage; the Webview receives only saved status. The host validates messages; the Webview uses nonce-based CSP and disallows direct network access.
 
-The host validates local messages; the Webview limits local resource access and uses a nonce-based content security policy with direct network connections disabled. These are implemented boundaries, not a guarantee that the extension has no vulnerabilities. The extension does not yet make model requests, run review loops, collect editor context, or apply changes to workspace files. Read-only examples are isolated from saved tasks.
+Explicit model-list queries are host requests with authentication and contain no task requirements, role instructions or workspace content. This version has no inference, runtime conversation history or executor.
 
-Preview users should use the latest preview assets on the [Releases page](https://github.com/Pro-qing/dual-mind/releases). There is no long-term support or guaranteed response-time commitment for preview versions.
+The lazy Git foundation can create dedicated task branches/worktrees and provide Worker write/Reviewer read interfaces. It is not connected to Start. Saving drafts does not prepare branches or modify project files. Path checks and role interfaces are not OS sandboxes or proof of runtime context isolation.
+
+No long-term preview support or fixed response time is promised. Local source tags do not indicate public distribution.
 
 ## Private reports
 
@@ -17,7 +19,3 @@ GitHub private vulnerability reporting is **enabled and verified as of November 
 Include the affected tag/commit, VS Code and operating-system versions, reproduction steps, impact, and relevant logs. Remove API keys, tokens, personal data, and confidential task content. Do not post exploitable details in public issues while a report is being assessed.
 
 If the private reporting entry becomes unavailable, request a private contact without publishing vulnerability details. A separate private maintainer email is **not configured**; no address or response SLA is implied. Conduct incidents are addressed separately in the [code of conduct](./CODE_OF_CONDUCT.md).
-
-## Future integration
-
-Before enabling actual provider requests, streaming, concurrent execution, or editor changes, extend the threat review and tests for credential handling, task isolation, cancellation, untrusted model output, and explicit user approval. The current design references describe those future capabilities, not current execution behavior.

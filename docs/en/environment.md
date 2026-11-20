@@ -2,6 +2,8 @@
 
 [简体中文](../zh/environment.md) · [Documentation](./README.md)
 
+**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+
 ## Supported baseline
 
 DualMind's formal validation scope is **Ubuntu 20.04 or newer on x86_64/amd64**. Other operating systems, Linux distributions, and ARM64 are not yet validated. The development checker reports warnings for them without adding platform or architecture installation restrictions.
@@ -9,7 +11,7 @@ DualMind's formal validation scope is **Ubuntu 20.04 or newer on x86_64/amd64**.
 | Scenario                                   | Requirements                                                       |
 | ------------------------------------------ | ------------------------------------------------------------------ |
 | Install and use a built VSIX               | Ubuntu 20.04+, x86_64/amd64, and desktop VS Code 1.100.0+          |
-| Develop from source                        | The same baseline, plus Git, nvm-managed Node.js 24, and npm       |
+| Develop from source                        | The same baseline, plus Git 2.25+, nvm-managed Node.js 24, and npm |
 | Run extension-host tests without a desktop | The development baseline, plus Electron libraries, Xvfb, and xauth |
 
 An installed VSIX uses VS Code's extension host; users do not need a separate Node.js or npm installation. Node.js 24 is required for development, checks, and packaging. The bundle targets Node.js 20 to remain compatible with the minimum supported editor.
@@ -81,7 +83,7 @@ The first test downloads each editor into `.vscode-test/`; npm and VS Code downl
 npm run check:env
 ```
 
-The checker reports the distribution and version, CPU architecture, glibc, Node.js version, and Node executable path. It needs no npm dependencies. If an old npm fails before reaching the checker, run it directly:
+The checker reports the distribution and version, CPU architecture, glibc, Node.js version, Node executable path, and Git version. It needs no npm dependencies. If an old npm fails before reaching the checker, run it directly:
 
 ```bash
 node scripts/check-environment.cjs
@@ -89,18 +91,19 @@ node scripts/check-environment.cjs
 
 The script uses Node.js 10-compatible syntax so the system Node can display a clear setup message.
 
-| Detected environment                                                          | Result                                                          |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Ubuntu older than 20.04                                                       | Failure with the minimum version requirement                    |
-| Development Node.js outside major version 24                                  | Failure with `nvm install` / `nvm use` instructions             |
-| Ubuntu 20.04+ amd64 with Node.js 24                                           | Passes the configured baseline check                            |
-| Another platform, distribution, architecture, or an unreadable Ubuntu version | “Not yet validated” warning; valid Node.js 24 is still required |
+| Detected environment                                                          | Result                                                                         |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Ubuntu older than 20.04                                                       | Failure with the minimum version requirement                                   |
+| Development Node.js outside major version 24                                  | Failure with `nvm install` / `nvm use` instructions                            |
+| Git missing from PATH or older than 2.25                                      | Failure with installation guidance                                             |
+| Ubuntu 20.04+ amd64 with Node.js 24 and Git 2.25+                             | Passes the configured baseline check                                           |
+| Another platform, distribution, architecture, or an unreadable Ubuntu version | “Not yet validated” warning; valid Node.js 24 and Git 2.25+ are still required |
 
 This check confirms the configured environment requirements. It reports glibc but does not prove that every Electron library is installed; the extension-host tests check whether the editor can actually launch and activate the extension.
 
 Environment checking runs before dependency installation, the combined checks, build, watch, type-watch, and packaging. `npm run check:node` remains available for the Node-only check. `npm run test:env` covers accepted/rejected versions and the unvalidated-platform warnings.
 
-## CI validation matrix
+## Configured CI matrix (not a new-version result)
 
 | Execution environment                                | VS Code   | Checks                                                                                    |
 | ---------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------- |
@@ -111,3 +114,9 @@ Environment checking runs before dependency installation, the combined checks, b
 The [workflow](../../.github/workflows/ci.yml) uses Bash in the Ubuntu 20.04 container and asserts the actual distribution, version, and amd64 architecture before setup. GitHub [retired its Ubuntu 20.04 hosted runner on April 15, 2025](https://github.com/actions/runner-images/issues/11101), so this job uses a container to preserve the minimum userland baseline. The container shares the host kernel and does not test an Ubuntu 20.04 kernel or a full desktop session.
 
 Containers are for compatibility regression testing. Normal users install the VSIX in desktop VS Code as described in [Usage](./usage.md). Continue with [Development](./development.md) for F5 and commands, or [Packaging and releases](./releasing.md) for a local VSIX.
+
+## Git task workspace dependency
+
+The checker requires Git 2.25+ on PATH and prints its version, including during preinstall. The lazy runtime task-workspace service checks Git again when preparation is requested. Missing Git does not prevent the installed extension from managing local drafts, connections or model lists. This branch implements the host foundation only: saving a draft creates no branch, and Start remains disabled. See [Architecture](./architecture.md#git-task-workspace-foundation-development-branch) for preparation requirements and [Protocol](./protocol.md#internal-git-workspace-service) for retained resources and manual cleanup.
+
+This version audit uses Ubuntu 24.04.5 amd64, Node.js 24.22.3, Git 2.43.0 and local VS Code 1.141.0. The table describes the configured workflow, not successful remote CI for 0.0.2/0.0.3. Ubuntu 20.04, minimum VS Code 1.100.0 and other matrix combinations were not revalidated in this audit.

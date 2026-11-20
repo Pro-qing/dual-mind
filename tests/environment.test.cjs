@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { parseOsRelease, evaluateEnvironment } = require('../scripts/check-environment.cjs');
 const { getNodeVersionError } = require('../scripts/check-node.cjs');
+const { getGitVersionError } = require('../scripts/check-git.cjs');
 
 function ubuntu(version, overrides = {}) {
   return {
@@ -9,6 +10,7 @@ function ubuntu(version, overrides = {}) {
     arch: 'x64',
     release: { ID: 'ubuntu', VERSION_ID: version },
     nodeVersion: 'v24.22.3',
+    gitVersion: 'git version 2.25.1',
     ...overrides,
   };
 }
@@ -74,7 +76,12 @@ test('warns for ARM64 without introducing an architecture install restriction', 
 
 for (const platform of ['win32', 'darwin']) {
   test('warns for ' + platform + ' without introducing a platform install restriction', () => {
-    const result = evaluateEnvironment({ platform, arch: 'x64', nodeVersion: 'v24.22.3' });
+    const result = evaluateEnvironment({
+      platform,
+      arch: 'x64',
+      nodeVersion: 'v24.22.3',
+      gitVersion: 'git version 2.43.0',
+    });
     assert.deepEqual(result.errors, []);
     assert.equal(result.verified, false);
     assert.match(result.warnings.join(' '), /not yet validated/);
@@ -105,4 +112,22 @@ test('still rejects old Ubuntu and Node when the architecture is unvalidated', (
   const result = evaluateEnvironment(ubuntu('18.04', { arch: 'arm64', nodeVersion: 'v10.19.0' }));
   assert.equal(result.errors.length, 2);
   assert.equal(result.warnings.length, 1);
+});
+
+test('Git dependency accepts supported vendor versions and rejects missing or old Git', () => {
+  for (const version of [
+    'git version 2.25.0',
+    'git version 2.43.0',
+    'git version 2.45.1.windows.1',
+    'git version 2.39.5 (Apple Git-154)',
+    'git version 3.0.0',
+  ]) {
+    assert.equal(getGitVersionError(version), null);
+  }
+  for (const version of ['', undefined, 'git version 2.24.9', 'unknown']) {
+    const result = evaluateEnvironment(ubuntu('24.04', { gitVersion: version }));
+    assert.equal(result.errors.length, 1);
+    assert.match(result.errors[0], /Git 2.25.*apt-get install git/);
+    assert.equal(result.verified, false);
+  }
 });

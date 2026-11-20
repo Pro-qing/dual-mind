@@ -42,8 +42,8 @@ const messages = {
   stop: ['Stop', '停止'],
   maximumRounds: ['Maximum rounds', '最大轮次'],
   unavailable: [
-    'Model execution, connection tests and code application are not available in this local milestone.',
-    '当前阶段暂不支持模型执行、连接测试和代码应用。',
+    'Model execution and code application are not available in this local milestone.',
+    '当前阶段暂不支持模型执行和代码应用。',
   ],
   noConversation: ['No conversation yet', '暂无对话'],
   draftConversation: [
@@ -96,8 +96,8 @@ const messages = {
   baseUrl: ['Base URL', '接口地址（Base URL）'],
   defaultModel: ['Default model ID', '默认模型 ID'],
   connectionHint: [
-    'OpenAI-compatible endpoint metadata. No requests are sent by this form.',
-    'OpenAI 兼容接口配置；此表单不会发送模型请求。',
+    'Save an OpenAI-compatible endpoint, then explicitly fetch its model list.',
+    '保存 OpenAI 兼容接口配置后，可主动查询模型列表。',
   ],
   apiKey: ['API key', 'API 密钥'],
   keySaved: ['Saved in VS Code', '已保存在 VS Code 中'],
@@ -111,7 +111,92 @@ const messages = {
   ],
   saveConnection: ['Save connection', '保存连接'],
   deleteConnection: ['Delete connection', '删除连接'],
-  testConnection: ['Test connection', '测试连接'],
+  testConnection: ['Test & fetch models', '测试并获取模型'],
+  refreshModels: ['Refresh models', '刷新模型'],
+  fetchModels: ['Fetch models', '获取模型'],
+  optional: ['Optional', '可选'],
+  modelSearch: ['Search or type a model ID', '搜索或输入模型 ID'],
+  modelSuggestions: ['Model suggestions', '模型候选列表'],
+  modelToggle: ['Show model suggestions', '显示模型候选列表'],
+  modelManual: [
+    'You can enter any model ID, including one absent from the list.',
+    '可手动输入模型 ID，包括列表中没有的模型。',
+  ],
+  modelNoMatch: [
+    'No matching IDs. Keep typing to use a custom ID.',
+    '没有匹配项，可继续输入自定义模型 ID。',
+  ],
+  modelsNotFetched: [
+    'Fetch models to see suggestions. Manual input is available.',
+    '获取模型后可查看候选项，也可直接手动输入。',
+  ],
+  modelsLoading: ['Fetching models…', '正在获取模型…'],
+  modelsAccessible: ['Model list accessible', '模型列表可访问'],
+  modelsEmpty: ['No models returned. Manual input is available.', '未返回模型，仍可手动输入。'],
+  modelsCount: ['models', '个模型'],
+  modelsFetchedAt: ['Fetched at', '查询时间'],
+  modelsSaveFirst: ['Save this connection before fetching models.', '请先保存连接，再获取模型。'],
+  modelsSaveAddress: [
+    'Save the changed Base URL before fetching models.',
+    '接口地址已修改，请先保存后再查询。',
+  ],
+  modelsScope: [
+    'This checks the model list only. It does not test inference or chat compatibility.',
+    '仅验证模型列表访问，不测试模型推理或聊天适用性。',
+  ],
+  modelsUrlHint: [
+    'Use an API base path without query parameters or a fragment; /models is appended.',
+    '填写不含查询参数或片段的 API 基础地址，查询时追加 /models。',
+  ],
+  modelsAuth: [
+    'Authentication failed. Replace the API key and retry.',
+    '鉴权失败，请替换 API 密钥后重试。',
+  ],
+  modelsForbidden: [
+    'This key cannot access the model list. Check its permissions.',
+    '该密钥无权访问模型列表，请检查权限。',
+  ],
+  modelsUnsupported: [
+    'This endpoint does not support model listing. Check the Base URL or enter an ID manually.',
+    '此端点不支持模型列表，请检查基础地址或手动输入模型 ID。',
+  ],
+  modelsRateLimited: [
+    'The service rate-limited this request. Wait before retrying.',
+    '服务限制了请求频率，请稍后重试。',
+  ],
+  modelsServer: [
+    'The service could not complete the request. Retry later.',
+    '服务暂时无法完成请求，请稍后重试。',
+  ],
+  modelsTimeout: [
+    'The model query timed out. Check the service and retry.',
+    '模型查询超时，请检查服务后重试。',
+  ],
+  modelsNetwork: [
+    'Could not reach the service. Check the address, network and certificates.',
+    '无法连接服务，请检查地址、网络和证书。',
+  ],
+  modelsInvalidResponse: [
+    'The service returned an invalid model list. Check API compatibility or enter an ID manually.',
+    '服务返回的模型列表格式无效，请检查接口兼容性或手动输入 ID。',
+  ],
+  modelsTooLarge: [
+    'The model list exceeds the 2 MiB limit. Enter a model ID manually.',
+    '模型列表超过 2 MiB 限制，请手动输入模型 ID。',
+  ],
+  modelsRedirect: [
+    'The endpoint redirected the request. Set its final Base URL and retry.',
+    '端点返回重定向，请填写最终基础地址后重试。',
+  ],
+  modelsBusy: ['A query is already running for this connection.', '该连接已有查询正在进行。'],
+  modelsChanged: [
+    'The connection changed or closed. Fetch its models again.',
+    '连接已变化或工作台已关闭，请重新查询。',
+  ],
+  modelsFailed: [
+    'The model query failed. Check the connection or enter an ID manually.',
+    '模型查询失败，请检查连接或手动输入模型 ID。',
+  ],
   connectionDeleteHint: [
     'Remove this connection and its saved key? Referencing drafts are kept and will need a new connection.',
     '删除此连接及其密钥？引用该连接的草稿会保留，但需要重新选择连接。',

@@ -221,3 +221,114 @@ test('unsupported saved data is reported and never overwritten', async () => {
   assert.deepEqual(f.global.get(globalStorageKey, null), { version: 99 });
   assert.equal(f.workspace.values.has(workspaceStorageKey), false);
 });
+
+test('shared model bindings and returned snapshots cannot alias other agents or persisted data', async () => {
+  // Deliberately retain references so storage cloning cannot hide a store-boundary defect.
+  class ReferenceMemory extends Memory {
+    override get<T>(key: string, fallback: T): T {
+      return (this.values.has(key) ? this.values.get(key) : fallback) as T;
+    }
+    override async update(key: string, value: unknown): Promise<void> {
+      this.values.set(key, value);
+    }
+  }
+  const f = fixture({ global: new ReferenceMemory(), workspace: new ReferenceMemory() });
+  await f.store.dispatch({
+    kind: 'connection.save',
+    input: { name: 'Shared', baseUrl: 'https://example.test/v1', defaultModel: 'same-model' },
+  });
+  const connectionId = (await f.store.snapshot()).connections[0].id;
+  const shared = { connectionId, model: 'same-model' };
+  const defaults = { worker: shared, reviewer: shared };
+  const savingDefaults = f.store.dispatch({ kind: 'defaults.save', input: defaults });
+  shared.model = 'mutated-after-dispatch';
+  await savingDefaults;
+  assert.deepEqual((await f.store.snapshot()).defaults, {
+    worker: { connectionId, model: 'same-model' },
+    reviewer: { connectionId, model: 'same-model' },
+  });
+  shared.model = 'same-model';
+  const input = taskInput({ worker: shared, reviewer: shared });
+  const savingTask = f.store.dispatch({ kind: 'task.save', input });
+  input.requirements = 'mutated-after-dispatch';
+  shared.model = 'changed-input';
+  await savingTask;
+  const first = (await f.store.snapshot()).tasks[0];
+  assert.equal(first.worker.model, 'same-model');
+  assert.equal(first.reviewer.model, 'same-model');
+  assert.equal(first.requirements, taskInput().requirements);
+  await f.store.dispatch({
+    kind: 'task.save',
+    input: taskInput({ name: 'Second', worker: first.worker, reviewer: first.reviewer }),
+  });
+  const expected = await f.store.snapshot();
+  const detached = await f.store.snapshot();
+  detached.defaults.worker.model = 'changed-default';
+  detached.tasks[0].worker.model = 'changed-worker';
+  detached.tasks[0].role.instructions = 'changed-role';
+  detached.tasks[0].requirements = 'changed-task';
+  detached.roles[0].instructions = 'changed-preset';
+  detached.connections[0].name = 'changed-connection';
+  assert.equal(detached.defaults.reviewer.model, 'same-model');
+  assert.equal(detached.tasks[0].reviewer.model, 'same-model');
+  assert.equal(detached.tasks[1].role.instructions, first.role.instructions);
+  detached.tasks.length = 0;
+  assert.deepEqual(await new LocalStore(f.ports).snapshot(), expected);
+});
+
+test('editing one role binding, task or workspace cannot rewrite another task or role snapshot', async () => {
+  const global = new Memory();
+  const a = fixture({ global }),
+    b = fixture({ global });
+  await a.store.dispatch({
+    kind: 'connection.save',
+    input: { name: 'Shared', baseUrl: 'https://example.test/v1', defaultModel: 'same-model' },
+  });
+  const connectionId = (await a.store.snapshot()).connections[0].id;
+  const binding = { connectionId, model: 'same-model' };
+  const input = taskInput({ worker: binding, reviewer: binding });
+  await a.store.dispatch({ kind: 'task.save', input });
+  const first = (await a.store.snapshot()).tasks[0];
+  await a.store.dispatch({ kind: 'task.save', input: { ...input, name: 'Other task' } });
+  const other = (await a.store.snapshot()).tasks[0];
+  await b.store.dispatch({ kind: 'task.save', input: { ...input, name: 'Other workspace' } });
+  const remote = (await b.store.snapshot()).tasks[0];
+  await a.store.dispatch({
+    kind: 'defaults.save',
+    input: {
+      worker: { connectionId, model: 'future-worker' },
+      reviewer: { connectionId, model: 'future-reviewer' },
+    },
+  });
+  await a.store.dispatch({
+    kind: 'role.save',
+    id: 'bug',
+    locale: 'en',
+    input: { name: 'Bug', purpose: 'New purpose', instructions: 'New instructions' },
+  });
+  await a.store.dispatch({ kind: 'language.set', value: 'zh-CN' });
+  await a.store.dispatch({
+    kind: 'task.save',
+    id: first.id,
+    input: { ...input, roleId: 'feature', worker: { connectionId, model: 'worker-only' } },
+  });
+  let edited = (await a.store.snapshot()).tasks.find((task) => task.id === first.id)!;
+  assert.equal(edited.worker.model, 'worker-only');
+  assert.equal(edited.reviewer.model, 'same-model');
+  assert.deepEqual(edited.role, first.role);
+  await a.store.dispatch({
+    kind: 'task.save',
+    id: first.id,
+    input: { ...input, worker: edited.worker, reviewer: { connectionId, model: 'reviewer-only' } },
+  });
+  const result = await a.store.snapshot();
+  edited = result.tasks.find((task) => task.id === first.id)!;
+  assert.equal(edited.worker.model, 'worker-only');
+  assert.equal(edited.reviewer.model, 'reviewer-only');
+  assert.deepEqual(edited.role, first.role);
+  assert.deepEqual(
+    result.tasks.find((task) => task.id === other.id),
+    other,
+  );
+  assert.deepEqual((await b.store.snapshot()).tasks[0], remote);
+});

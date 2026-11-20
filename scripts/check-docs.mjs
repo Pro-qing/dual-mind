@@ -99,6 +99,8 @@ const requiredScenes = [
   'dual-mind-reviewer-roles',
   'dual-mind-new-task',
   'dual-mind-delete-task',
+  'dual-mind-api-model-discovery',
+  'dual-mind-task-model-selection',
 ];
 for (const scene of requiredScenes) {
   if (!svgFiles.includes(`${scene}.svg`)) {

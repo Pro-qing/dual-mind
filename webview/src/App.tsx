@@ -9,11 +9,12 @@ import type {
 import { t, type MessageKey } from '../../src/shared/i18n';
 import { UIContext, type LanguageGuard } from './context';
 import { Dialog, Icon } from './components';
-import { Connections, Roles } from './Settings';
+import { Connections, Defaults, Roles } from './Settings';
 import { Tasks } from './Tasks';
+import { useModelQueries } from './modelQueries';
 
 export interface Navigation {
-  view: 'workbench' | 'api' | 'roles';
+  view: 'workbench' | 'api' | 'defaults' | 'roles';
 }
 export function App({
   snapshot,
@@ -27,11 +28,14 @@ export function App({
   onNavigation?(value: Navigation): void;
 }) {
   const [view, setView] = useState<Navigation['view']>(
-    initialNavigation?.view === 'api' || initialNavigation?.view === 'roles'
+    initialNavigation?.view === 'api' ||
+      initialNavigation?.view === 'defaults' ||
+      initialNavigation?.view === 'roles'
       ? initialNavigation.view
       : 'workbench',
   );
   const [preview, setPreview] = useState(false);
+  const modelQueries = useModelQueries(bridge);
   const [pendingCount, setPendingCount] = useState(0);
   const [notice, setNotice] = useState<{ key: MessageKey; error: boolean } | null>(null);
   const [languageTarget, setLanguageTarget] = useState<LanguageSetting | null>(null);
@@ -110,6 +114,7 @@ export function App({
       value={{
         snapshot,
         pending,
+        ...modelQueries,
         run,
         registerLanguageGuard: (value) => {
           guard.current = value;
@@ -197,6 +202,13 @@ export function App({
                 {tr('apiTab')}
               </button>
               <button
+                className={view === 'defaults' ? 'active' : ''}
+                aria-current={view === 'defaults' ? 'page' : undefined}
+                onClick={() => setView('defaults')}
+              >
+                {tr('defaults')}
+              </button>
+              <button
                 className={view === 'roles' ? 'active' : ''}
                 aria-current={view === 'roles' ? 'page' : undefined}
                 onClick={() => setView('roles')}
@@ -204,7 +216,7 @@ export function App({
                 {tr('rolesTab')}
               </button>
             </nav>
-            {view === 'api' ? <Connections /> : <Roles />}
+            {view === 'api' ? <Connections /> : view === 'defaults' ? <Defaults /> : <Roles />}
           </>
         )}
         {languageTarget && (

@@ -1,3 +1,4 @@
+import { ModelPicker } from './ModelPicker';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import type { ConnectionSummary, ModelBinding } from '../../src/shared/model';
 import { useUI } from './context';
@@ -79,7 +80,7 @@ export function Dialog({
       )
       ?.focus();
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !pendingRef.current) {
+      if (event.key === 'Escape' && !event.defaultPrevented && !pendingRef.current) {
         event.preventDefault();
         closeRef.current();
       }
@@ -226,15 +227,12 @@ export function ModelFields({
           ))}
         </select>
       </label>
-      <label>
-        {tr('modelId')}
-        <input
-          aria-label={`${tr(agent)} ${tr('modelId')}`}
-          value={value.model}
-          maxLength={500}
-          onChange={(event) => onChange({ ...value, model: event.target.value })}
-        />
-      </label>
+      <ModelPicker
+        label={`${tr(agent)} ${tr('modelId')}`}
+        connectionId={value.connectionId}
+        value={value.model}
+        onChange={(model) => onChange({ ...value, model })}
+      />
     </fieldset>
   );
 }

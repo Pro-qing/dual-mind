@@ -24,10 +24,20 @@ const outputs = files.map(
       .at(-1)
       .replace(/\.tsx?$/, '.cjs')}`,
 );
-const child = spawn(process.execPath, ['--test', '--test-timeout=30000', ...outputs], {
-  stdio: 'inherit',
-  env: { ...process.env, NODE_ENV: 'test' },
-});
+const child = spawn(
+  process.execPath,
+  [
+    '--max-old-space-size=512',
+    '--test',
+    '--test-concurrency=1',
+    '--test-timeout=30000',
+    ...outputs,
+  ],
+  {
+    stdio: 'inherit',
+    env: { ...process.env, NODE_ENV: 'test' },
+  },
+);
 child.on('exit', (code) => {
   process.exitCode = code ?? 1;
 });

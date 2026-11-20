@@ -2,18 +2,15 @@
 
 [简体中文](../zh/roadmap.md) · [Documentation](./README.md)
 
-| Milestone                           | Status                         | Outcome                                                                                          |
-| ----------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ |
-| Engineering scaffold                | Delivered                      | Ubuntu/Node baseline, F5, builds, checks, tests, packaging and bilingual guides                  |
-| Interface design                    | Approved and preserved         | Five SVG/PNG references for tasks, API connections, Reviewer roles and dialogs                   |
-| React workbench                     | Published in 0.0.1             | Single tab, responsive two-column layout, settings and isolated read-only examples               |
-| Local task/configuration management | Published in 0.0.1             | Workspace drafts, user connection defaults, native secret storage, role management and snapshots |
-| English / Simplified Chinese        | Published in 0.0.1             | Persistent selector, localized UI and independent built-in role definitions                      |
-| GitHub preview                      | Preview 2 published 2026-11-18 | Separate tags/assets; extension version remains 0.0.1                                            |
-| Marketplace distribution            | Published 2026-11-18           | Pro-qing.dual-mind 0.0.1, PNG icon and Preview label; install through VS Code                    |
-| Marketplace description refresh     | Next version's publication     | Include the corrected README in the new VSIX and verify the public description                   |
-| Model adapters                      | Planned                        | Actual OpenAI-compatible requests, connection tests and streamed output                          |
-| Collaboration loop                  | Planned                        | Fixed Worker, task-specific Reviewer, independent parallel executions, pause/stop and feedback   |
-| Editor integration                  | Planned                        | Selected context, per-task diff preview and explicit application of reviewed changes             |
+**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
 
-Current tasks are local drafts. Example conversation and parallel states do not execute agents. Establish one real session before enabling concurrent execution. The [Preview 2 notes](./release-notes-preview-2.md) record the publishing identity, both publication times, and verification history; [Preview 1](./release-notes.md) remains a historical release. See [Usage](./usage.md), the [approved designs](./design.md), and the [workflow for subsequent releases](./releasing.md).
+| Version           | Status                            | Delivered scope                                                             |
+| ----------------- | --------------------------------- | --------------------------------------------------------------------------- |
+| 0.0.1 Preview 1/2 | Historical public releases        | Local workbench, settings, role presets, languages and read-only examples   |
+| 0.0.2             | Local source version, unpublished | Model discovery, separate defaults, role data isolation and Git preparation |
+
+Tasks in 0.0.2 remain drafts and Start is disabled. Git preparation and role-bound file access are host foundations for later integration. Data/file-interface isolation is verified; independent runtime conversation histories are not implemented.
+
+Next: inference and streamed tools, single-task execution/review loops, activity-bar entry and task-level branch selection; parallel tasks and editor application follow later.
+
+Seven adopted SVG/PNG scenes remain design references, not proof of implementation. Historical [Preview 2](./release-notes-preview-2.md)/[Preview 1](./release-notes.md) and published assets are preserved. Public distribution remains a separate [release workflow](./releasing.md).
