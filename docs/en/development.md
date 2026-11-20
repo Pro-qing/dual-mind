@@ -84,28 +84,27 @@ Build output, downloaded editors, dependencies, and VSIX files are ignored by Gi
 
 ## Resource-bounded model verification
 
-Local tests run serially with a 512 MiB JavaScript heap and the existing 30-second per-test timeout. Run each verification command separately with a 1 GiB memory / 60-second overall limit for local checks, or 2 GiB / 180 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
+Local tests run serially with a 512 MiB JavaScript heap and the existing 30-second per-test timeout. Run each verification command separately with a 1 GiB memory / 60-second limit for individual local batches (120 seconds for the full `npm run check`, which includes the real command timeout test), or 2 GiB / 180 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
 
 Set `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` to reuse an installed VS Code for `npm test` and `npm run test:ui`; omit it to retain automatic download. Run Electron under `xvfb-run -a` when headless. All tests use isolated user profiles. The real Webview test starts a local mock server and uses a fake key in the native password prompt, then verifies query, selection, persistence, both languages and narrow layouts. It never reads personal credentials; model requests use local mock endpoints and no paid services.
 
 ## Execution verification
 
-Execution tests use temporary repositories, local SSE servers and test credentials. `DUALMIND_TEST_SYSTEMD=1` additionally exercises the real command runner (memory/swap probe, exact arguments, cancellation, timeout and output limit). Run it only inside a bounded user systemd slice; spawned command units inherit that slice, so the overall test budget covers the editor and its commands together. For example, after selecting Node 24:
+Tests use temporary repositories, local SSE servers and test credentials. Real command tests now run in the ordinary `npm run test:local` suite without `DUALMIND_TEST_SYSTEMD` or a user systemd session. They cover exact arguments, working directory, environment isolation, launch errors, nonzero exit, cancellation, timeout, output limits and surviving child cleanup. Failing systemd tool stubs verify that the runner never calls those programs.
 
 ```bash
-systemctl --user set-property --runtime app-dualmind-validation.slice MemoryMax=1G MemorySwapMax=0 CPUQuota=100%
-systemd-run --user --wait --collect --slice=app-dualmind-validation.slice \
-  -p MemoryMax=1G -p MemorySwapMax=0 -p RuntimeMaxSec=60s \
-  --working-directory="$PWD" --setenv="PATH=$PATH" \
-  --setenv=DUALMIND_TEST_SYSTEMD=1 npm run check
+nvm use
+npm run check
+VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm test
+VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 ```
 
-For Electron validation, set the slice and unit to 2G and the unit deadline to 180s. Set `VSCODE_TEST_EXECUTABLE` to reuse the installed editor, and run `xvfb-run -a npm run test:ui` with `ELECTRON_RUN_AS_NODE` unset. The Webview suite enters from the activity bar, configures both protocols and real additional commands, executes a failed-check/revision/approval cycle, and verifies unchanged source files in dedicated mode, direct edits in current/specified modes, and saved branch choices across reload. No package is created or installed by these commands.
+Product commands in these tests have no extension-imposed memory/swap quota. Callers may apply the overall development verification budgets described above externally; directly launched children inherit that outer cgroup without creating new systemd units. For headless Electron, prepend `xvfb-run -a` and unset `ELECTRON_RUN_AS_NODE`. These tests do not create or install a package.
 
-On hosts without the required cgroup v2 memory/swap limits, real UI verification checks both English and Chinese resource errors and finishes the remaining interface checks. Scenarios requiring actual commands are recorded as uncovered: `results.json` has `passed: false` and `interfacePassed: true`, and the command exits with code 2. This is not a complete pass; rerun execution verification on a supported host.
+Real UI verification configures both model protocols and real additional commands, checks failure/revision/approval, bilingual command errors, stopping a running command, unchanged source files in dedicated mode, direct writes in current/specified modes and branch selection restoration. Missing systemd/cgroup no longer selects a skip path: failure of the command cycle fails verification instead of reporting only interface success.
 
 ## Dual-agent cycle validation
 
-Local model fixtures cover Reviewer-first planning, autonomous Worker commands, revised plans after rejection, reading-only acceptance and legacy custom configuration. Contract tests cover nested tool arguments, stable criteria, forged/stale/failed evidence, feedback and newer failures superseding older success. Real UI checks exercise bilingual plans and reading acceptance even when command resource probing fails. Actual command enforcement remains separately reported; missing systemd/cgroup v2 produces partial coverage with exit code 2.
+Local model fixtures cover Reviewer-first planning, autonomous Worker commands, revised plans after rejection, reading-only acceptance and legacy custom configuration. Contract tests cover nested tool arguments, stable criteria, forged/stale/failed evidence, feedback and newer failures superseding older success. Real command runner tests execute by default; reading acceptance remains independently covered.
 
-See the [validation record](./execution-cycle-validation.md) for the actual environment, passes and unverified scenarios.
+See the [validation record](./execution-cycle-validation.md) for actual environments, passes and unverified scenarios.

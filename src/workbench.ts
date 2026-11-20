@@ -6,7 +6,7 @@ import { ModelQueries } from './core/modelQueries';
 import { TaskWorkspaces } from './git/taskWorkspaces';
 import { ExecutionService } from './execution/service';
 import { RunRecords } from './execution/records';
-import { SystemdCommands } from './execution/commands';
+import { LocalCommands } from './execution/commands';
 import type { ExecutionAction, ExecutionUpdate, RunEvent } from './shared/execution';
 import { ModelQueryError } from './providers/models';
 import { t } from './shared/i18n';
@@ -77,7 +77,7 @@ export class Workbench implements vscode.Disposable {
       this.store,
       this.taskWorkspaces,
       new RunRecords(context.workspaceState, () => context.storageUri?.fsPath),
-      new SystemdCommands(),
+      new LocalCommands(),
     );
     this.execution.subscribe((update) => this.executionUpdate(update));
     void this.execution.ready.then(() => this.changes.fire()).catch(() => undefined);

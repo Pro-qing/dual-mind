@@ -33,6 +33,8 @@ The execution flow follows **Generate → Review → Revise → Approve**. Devel
 - **Language selection:** Follow VS Code or choose English / Simplified Chinese without rewriting saved task content.
 - **Example preview:** Explore the intended conversations and parallel-task appearance without creating records or sending requests.
 
+Commands run directly in the task directory without user systemd/cgroup v2 or extension-imposed memory/swap quotas. Timeouts, output limits, stopping and real-evidence acceptance remain in place.
+
 ## Planned capabilities
 
 Independent parallel sessions, automatic editor context and explicit application of reviewed dedicated-worktree results to the original workspace remain under development.

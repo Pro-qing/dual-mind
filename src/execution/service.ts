@@ -54,7 +54,6 @@ interface Active {
   done: Promise<void>;
   pending: Promise<void>;
   bytes: number;
-  commandsReady: boolean;
   evidence: Map<string, CommandEvidence>;
   outputs: Map<string, string>;
   additional: CommandEvidence[];
@@ -66,6 +65,7 @@ export class ExecutionService {
   private starting?: string;
   private readonly listeners = new Set<(update: ExecutionUpdate) => void>();
   private disposed = false;
+  private shutdownUnconfirmed = false;
   constructor(
     private readonly store: LocalStore,
     private readonly workspaces: TaskWorkspaces,
@@ -289,6 +289,9 @@ export class ExecutionService {
     }
   }
   private async start(taskId: string) {
+    if (this.shutdownUnconfirmed) {
+      throw new OperationError('shutdownUnconfirmed');
+    }
     if (this.disposed || this.active || this.starting) {
       throw new OperationError('singleExecution');
     }
@@ -330,7 +333,6 @@ export class ExecutionService {
         done: Promise.resolve(),
         pending: Promise.resolve(),
         bytes: 0,
-        commandsReady: false,
         evidence: new Map(),
         outputs: new Map(),
         additional: [],
@@ -394,10 +396,6 @@ export class ExecutionService {
     let fault: AppError | undefined;
     let fatal: unknown;
     try {
-      if (!a.commandsReady) {
-        await this.commands.available(a.controller.signal);
-        a.commandsReady = true;
-      }
       await this.boundary(a, phase);
       const directory = await a.writer!.commandDirectory(cwd);
       before = await a.reader!.fingerprint();
@@ -405,7 +403,11 @@ export class ExecutionService {
     } catch (error) {
       fault = this.cleanError(a, error);
       result = { ok: false, exitCode: -1, output: '', reason: fault.code };
-      if (!a.commandsReady || error instanceof CommandShutdownError) {
+      if (fault.code === 'commandPlatformUnsupported') {
+        fatal = error;
+      }
+      if (error instanceof CommandShutdownError) {
+        this.shutdownUnconfirmed = true;
         fatal = error;
       }
     }
@@ -807,7 +809,7 @@ export class ExecutionService {
             a.controller.signal.aborted ||
             error instanceof CommandShutdownError ||
             (error instanceof OperationError &&
-              ['systemdLimits', 'systemdRequired', 'workspaceChanged'].includes(error.code))
+              ['commandPlatformUnsupported', 'workspaceChanged'].includes(error.code))
           ) {
             throw error;
           }

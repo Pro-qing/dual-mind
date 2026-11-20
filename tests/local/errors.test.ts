@@ -94,3 +94,11 @@ test('host error formatting redacts all saved connection keys and fails closed i
     code: 'operationFailed',
   });
 });
+
+test('previous systemd errors remain readable after the runner change', () => {
+  const stored = { code: 'systemdLimits', details: 'Historical probe result' };
+  assert.equal(toAppError(stored).code, 'systemdLimits');
+  assert.match(errorText('en', toAppError(stored)), /User systemd/);
+  assert.match(errorText('zh-CN', toAppError(stored)), /用户级 systemd/);
+  assert.match(errorText('zh-CN', toAppError(stored)), /Historical probe result/);
+});

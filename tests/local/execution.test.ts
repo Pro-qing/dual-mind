@@ -11,7 +11,7 @@ import { OperationError } from '../../src/shared/errors';
 import { ExecutionService } from '../../src/execution/service';
 import { RunRecords, validateConfig } from '../../src/execution/records';
 import { terminalStatuses, type RunSummary, type Protocol } from '../../src/shared/execution';
-import type { CommandRunner } from '../../src/execution/commands';
+import { CommandShutdownError, type CommandRunner } from '../../src/execution/commands';
 async function waitUntil(check: () => boolean, max = 15000) {
   const started = Date.now();
   while (!check()) {
@@ -38,6 +38,7 @@ async function setup(
     autonomous?: boolean;
     readingOnly?: boolean;
     unavailable?: boolean;
+    shutdownFailure?: boolean;
   } = {},
 ) {
   const root = await mkdtemp(join(tmpdir(), 'dualmind-execution-test-'));
@@ -305,7 +306,7 @@ async function setup(
       requirements: 'Change file.txt to fixed.',
       worker: { connectionId: worker, model: 'worker-model' },
       reviewer: { connectionId: reviewer, model: 'reviewer-model' },
-      maxRounds: options.approve ? 1 : 3,
+      maxRounds: options.approve || options.unavailable ? 1 : 3,
     }),
   });
   const task = (await f.store.snapshot()).tasks[0];
@@ -319,15 +320,19 @@ async function setup(
     },
     git,
   );
-  let probes = 0;
+  let commands = 0;
   const runner: CommandRunner = {
-    available: async () => {
-      probes++;
-      if (options.unavailable) {
-        throw new OperationError('systemdLimits');
-      }
-    },
     run: async (command, directory, signal) => {
+      commands++;
+      if (options.shutdownFailure) {
+        throw new CommandShutdownError();
+      }
+      if (options.unavailable) {
+        throw new OperationError('commandNotFound', {
+          name: command.name,
+          program: command.program,
+        });
+      }
       if (signal.aborted) {
         throw new Error('Stopped');
       }
@@ -378,7 +383,7 @@ async function setup(
     service,
     records,
     captured,
-    probes: () => probes,
+    commands: () => commands,
     task,
     worker,
     reviewer,
@@ -653,7 +658,7 @@ for (const flip of [false, true]) {
     assert.equal(h.captured[0].agent, 'reviewer');
     assert.equal(run.plan?.version, 2);
     assert.equal(run.review?.planVersion, 2);
-    assert.equal(h.probes(), 1);
+    assert.ok(h.commands() >= 2);
     const events = await h.records.history(run.id);
     assert.equal(events.filter((e) => e.detail?.type === 'plan').length, 2);
     assert.ok(events.some((e) => e.detail?.type === 'command' && e.detail.command.ok));
@@ -666,23 +671,36 @@ for (const flip of [false, true]) {
     }
   });
 }
-test('reading-only acceptance needs no commands or resource probe', async (t) => {
+test('reading-only acceptance needs no command executable', async (t) => {
   const h = await setup(t, { readingOnly: true, unavailable: true });
   await h.service.request({ kind: 'start', taskId: h.task.id });
   await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
   assert.equal(h.records.runs[0].status, 'completed', h.records.runs[0].error);
   assert.equal(h.records.runs[0].round, 1);
-  assert.equal(h.probes(), 0);
+  assert.equal(h.commands(), 0);
 });
-test('resource failures remain structured command evidence and cannot approve execution', async (t) => {
+test('command launch failures remain structured evidence and cannot approve execution', async (t) => {
   const h = await setup(t, { autonomous: true, unavailable: true });
   await h.service.request({ kind: 'start', taskId: h.task.id });
   await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
-  assert.equal(h.records.runs[0].status, 'failed');
-  assert.equal(h.records.runs[0].fault?.code, 'systemdLimits');
+  assert.notEqual(h.records.runs[0].status, 'completed');
+  assert.ok(
+    h.captured.filter((request) => request.agent === 'reviewer').length > 1,
+    'A launch failure is returned to the agents for revision',
+  );
   assert.ok(
     (await h.records.history(h.records.runs[0].id)).some(
-      (e) => e.detail?.type === 'command' && e.detail.command.fault?.code === 'systemdLimits',
+      (e) => e.detail?.type === 'command' && e.detail.command.fault?.code === 'commandNotFound',
     ),
   );
+});
+test('unconfirmed command shutdown prevents further execution', async (t) => {
+  const h = await setup(t, { autonomous: true, shutdownFailure: true });
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+  assert.equal(h.records.runs[0].fault?.code, 'commandShutdown');
+  await assert.rejects(h.service.request({ kind: 'start', taskId: h.task.id }), {
+    code: 'shutdownUnconfirmed',
+  });
+  assert.equal(h.commands(), 1);
 });

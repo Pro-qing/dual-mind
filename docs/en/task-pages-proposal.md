@@ -66,7 +66,7 @@ Below 900 CSS pixels, Worker appears above Reviewer. Home rows, detail controls,
 
 The implementation adds explicit home, task detail, and settings navigation with task IDs and settings return targets. Run records continue to determine visible task status. Preserve the existing `status: 'draft'` storage field for compatibility, with no task migration. Add compatible structured error fields while retaining old-record readability. Update both languages, usage and protocol documentation, and relevant tests during implementation.
 
-Acceptance covers successful and failed creation, cancellation, sidebar navigation, settings return, reload restoration, deletion routing, start prerequisites, bilingual errors, old history, single-task execution controls, and narrow layouts. Run `npm run check`, relevant extension-host tests, real UI verification, and packaging. Actual execution verification requires a working user-level systemd environment.
+Acceptance covers successful and failed creation, cancellation, sidebar navigation, settings return, reload restoration, deletion routing, start prerequisites, bilingual errors, old history, single-task execution controls, and narrow layouts. Run `npm run check`, relevant extension-host tests, real UI verification, and packaging. Actual command verification now uses the local process runner without user-level systemd.
 
 The design stage passed documentation and formatting checks, with each PNG inspected for text, boundaries, and overlap. Runtime verification is recorded separately. Re-render with CairoSVG 2.7.1 in a separate Python environment, preserving the original seven pairs:
 

@@ -121,3 +121,5 @@ Worker 的 finish_work 包含 summary、completedSteps、逐验收项 evidence�
 run_command 接受 name、program、args、可选 cwd（默认 .）、purpose（prepare／verify／explore）、criterionIds 和可选 timeoutSeconds（默认 180）。verify 必须关联当前命令验收项。命令 ID 由宿主生成，与模型工具调用 ID 不同。CommandEvidence 保存实际命令、目录、超时、用途、验收项、方案版本、轮次、前后指纹、结果及可选结构化错误。输出通过同一命令事件的连续文本块保留，read_command_output 支持按字符分页。参数、结果、交接和事件在传输／持久化前脱敏。
 
 RunSummary 可选 plan、submission、review 保存当前展示所需内容。RunEvent 新增 plan／submission 种类及可选 detail 判别联合（plan、submission、review、command），完整历史保留各版本。旧字段及旧记录继续可读；planning 是新增可暂停阶段。各角色仅收到阶段允许的工具，完整工具批次的嵌套类型与限制先校验后执行。
+
+命令启动新增 commandNotFound、commandPermissionDenied、commandStartFailed 和 commandPlatformUnsupported 结构化错误，参数包含适用的命令名称和程序路径；详情沿用脱敏规则。非零退出、超时、输出超限和停止仍使用既有错误标识。旧 systemd 错误表仅用于读取历史记录，不再由新运行器生成。运行响应、方案及证据的存储字段均保持兼容，不迁移数据。

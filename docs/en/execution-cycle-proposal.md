@@ -27,3 +27,5 @@ The default view explains the two roles. Collapsed advanced settings contain an 
 Controls and application states support English and Chinese; user text, model responses and raw output retain their language. Below 900 CSS pixels, plan content, conversations and command forms stack vertically. Long text wraps; output scrolls locally and the page scrolls vertically. Disclosure controls support keyboards, pending saves prevent duplicate submissions, and language changes retain input. Implementation and actual validation are reported separately on delivery.
 
 See the [validation record](./execution-cycle-validation.md), including environment-dependent coverage gaps.
+
+Runner revision (2026-11-20): approved SVG/PNG assets remain as the original design record. Their resource-limit annotation now refers to timeout, output and cancellation behavior; the product no longer requires systemd/cgroup or fixed memory/swap quotas. Layout and interaction are unchanged.

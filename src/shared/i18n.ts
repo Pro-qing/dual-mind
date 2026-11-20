@@ -98,8 +98,8 @@ const messages = {
     'Reviewer 正在制定方案，Worker 等待方案下发。',
   ],
   commandLimits: [
-    'Commands run as your user in the task directory: 1 GiB memory, no swap, 2 MiB output. This is not an OS sandbox.',
-    '命令在任务目录中以当前用户身份运行：内存 1 GiB、禁用交换空间、输出上限 2 MiB；这不是操作系统沙箱。',
+    'Commands run as your user in the task directory, with a timeout and 2 MiB output limit. No memory or swap quota is set by the extension.',
+    '命令在任务目录中以当前用户身份运行，保留超时和 2 MiB 输出上限；扩展不设置内存或交换空间配额。',
   ],
   prepareCommands: ['Preparation commands (optional)', '准备命令（可选）'],
   checkCommands: ['Additional checks (optional)', '附加检查命令（可选）'],

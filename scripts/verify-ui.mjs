@@ -80,7 +80,6 @@ const initialWorktrees = await fixtureGit('worktree', 'list', '--porcelain');
 const environment = { ...process.env };
 delete environment.ELECTRON_RUN_AS_NODE;
 let app;
-let executionUnavailable = false;
 const captures = [];
 const testKey = 'dualmind-local-ui-test-key';
 const modelIds = [
@@ -93,6 +92,7 @@ let responseMode = 'success';
 const inferenceRequests = [];
 let holdWorker = false;
 let readingOnly = false;
+let longCommand = false;
 let workerRequestObserved;
 let workerTurns = 0,
   reviewTurns = 0;
@@ -170,7 +170,7 @@ const server = createServer((request, response) => {
                 name: 'write_file',
                 arguments: JSON.stringify({
                   path: 'result.txt',
-                  content: turn === 1 ? 'bad' : 'fixed',
+                  content: longCommand || turn > 1 ? 'fixed' : 'bad',
                 }),
               }
             : !readingOnly && step === 1
@@ -181,7 +181,9 @@ const server = createServer((request, response) => {
                     program: process.execPath,
                     args: [
                       '-e',
-                      'if(require("node:fs").readFileSync("result.txt","utf8")!=="fixed")process.exit(1)',
+                      longCommand
+                        ? 'require("node:fs").writeFileSync("command-started",String(process.pid));setInterval(()=>{},1000)'
+                        : 'if(require("node:fs").readFileSync("result.txt","utf8")!=="fixed")process.exit(1)',
                     ],
                     purpose: 'verify',
                     criterionIds: ['result'],
@@ -315,30 +317,43 @@ async function launch(folder = workspace) {
   return page;
 }
 async function size(width, height) {
-  const targetWidth = await app.evaluate(
-    async ({ BrowserWindow }, bounds) => {
-      let actualWidth = bounds.width;
-      for (const window of BrowserWindow.getAllWindows()) {
-        if (window.isMaximized()) {
-          await new Promise((resolve) => {
-            window.once('unmaximize', resolve);
-            window.unmaximize();
-          });
-        }
-        const [minimumWidth, minimumHeight] = window.getMinimumSize();
-        actualWidth = Math.max(bounds.width, minimumWidth);
-        window.setSize(actualWidth, Math.max(bounds.height, minimumHeight));
-      }
-      return actualWidth;
-    },
-    { width, height },
-  );
   const page = await app.firstWindow();
-  await page.waitForFunction(
-    (width) => window.innerWidth <= width + 2 && window.innerWidth >= width - 80,
-    targetWidth,
-  );
+  // VS Code restores saved bounds asynchronously during startup. Reapply if that
+  // restoration races our requested size, while still verifying the real viewport.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const targetWidth = await app.evaluate(
+      async ({ BrowserWindow }, bounds) => {
+        let actualWidth = bounds.width;
+        for (const window of BrowserWindow.getAllWindows()) {
+          if (window.isMaximized()) {
+            await new Promise((resolve) => {
+              window.once('unmaximize', resolve);
+              window.unmaximize();
+            });
+          }
+          const [minimumWidth, minimumHeight] = window.getMinimumSize();
+          actualWidth = Math.max(bounds.width, minimumWidth);
+          window.setSize(actualWidth, Math.max(bounds.height, minimumHeight));
+        }
+        return actualWidth;
+      },
+      { width, height },
+    );
+    try {
+      await page.waitForFunction(
+        (width) => window.innerWidth <= width + 2 && window.innerWidth >= width - 80,
+        targetWidth,
+        { timeout: 3000 },
+      );
+      return;
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+    }
+  }
 }
+
 async function command(page, name) {
   await page
     .locator('.menubar-menu-button')
@@ -868,190 +883,206 @@ try {
     .getByRole('status')
     .filter({ hasText: /Completed — acceptance passed|Failed/ })
     .waitFor({ timeout: 60000 });
-  if (await f.locator('[data-error-code="systemdLimits"]').count()) {
-    executionUnavailable = true;
-    await screenshot(page, f, 'en-resource-error');
-    await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
-    await f
-      .getByText(/需要支持 cgroup v2 的用户级 systemd/)
-      .first()
-      .waitFor();
-    await screenshot(page, f, 'zh-resource-error');
-    await f.getByLabel('界面语言', { exact: true }).selectOption('en');
-    await click(f, 'Delete task: Persistent UI task');
-    await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
-    await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
-    assert.equal(
-      inferenceRequests.filter((request) => request.worker).length,
-      0,
-      'Custom preparation must fail before Worker starts; Reviewer planning runs first',
-    );
-  } else {
-    await f.getByRole('status').filter({ hasText: 'Completed — acceptance passed' }).waitFor();
-    assert.equal(workerTurns, 6);
-    assert.equal(reviewTurns, 3);
-    await f.getByText('Tools, checks and review evidence', { exact: true }).click();
-    assert.ok((await f.locator('.execution-evidence').innerText()).includes('FAIL'));
-    assert.ok((await f.locator('.execution-evidence').innerText()).includes('PASS'));
-    await screenshot(page, f, 'en-execution-complete');
-    await size(820, 1040);
-    await screenshot(page, f, 'en-execution-narrow');
-    await size(1600, 1100);
-    const taskWorktrees = await fixtureGit('worktree', 'list', '--porcelain');
-    const taskDirectory = taskWorktrees
-      .split('\n\n')
-      .find((block) => block.includes('refs/heads/dualmind/task/'))
-      .split('\n')[0]
-      .slice('worktree '.length);
-    assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
-    await assert.rejects(readFile(join(workspace, 'result.txt')), { code: 'ENOENT' });
-    assert.equal(await fixtureGit('status', '--porcelain'), '');
-    assert.ok(inferenceRequests.some((request) => request.path.endsWith('/responses')));
-    assert.ok(inferenceRequests.some((request) => request.path.endsWith('/chat/completions')));
-    assert.ok(
-      inferenceRequests
-        .filter((request) => request.worker)
-        .every((request) => !JSON.stringify(request.body).includes('reviewer-private-state')),
-    );
-    await click(f, 'Preview changes');
-    await page.locator('.tab').filter({ hasText: 'Task Changes.diff' }).waitFor();
-    await page.locator('.view-lines').filter({ hasText: 'result.txt' }).first().waitFor();
-    await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
-    f = await frame(page);
-    holdWorker = true;
-    const nextRequest = new Promise((resolve) => {
-      workerRequestObserved = resolve;
-    });
-    await click(f, 'Restart execution');
-    await nextRequest;
-    const requestsBeforeReload = inferenceRequests.length;
-    const executingFrame = f;
-    const executionDetached = page.waitForEvent('framedetached', {
-      predicate: (candidate) => candidate === executingFrame,
-      timeout: 30000,
-    });
-    await command(page, 'Developer: Reload Window');
-    await executionDetached;
-    await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
-    f = await frame(page);
-    await f.getByRole('status').filter({ hasText: 'Interrupted — restart explicitly' }).waitFor();
-    assert.equal(
-      inferenceRequests.length,
-      requestsBeforeReload,
-      'Reload must not replay model requests',
-    );
-    assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
-    await screenshot(page, f, 'en-execution-interrupted');
-    await click(f, 'Delete task: Persistent UI task');
-    await screenshot(page, f, 'en-delete-task');
-    await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
-    await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
-    assert.ok(requests.length >= 6);
-    assert.ok(
-      requests.every(
-        (request) => request.method === 'GET' && request.authorized && !request.hasBody,
-      ),
-    );
-    assert.equal(
-      await readFile(join(taskDirectory, 'result.txt'), 'utf8'),
-      'fixed',
-      'Deleting task records must preserve artifacts',
-    );
-    assert.equal(await fixtureGit('status', '--porcelain'), '');
-    // Direct strategies use only this disposable project, never the development repository.
-    holdWorker = false;
-    for (const mode of ['current', 'branch']) {
-      workerTurns = 0;
-      reviewTurns = 0;
-      const beforeBranches = await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/');
-      const beforeWorktrees = (await fixtureGit('worktree', 'list', '--porcelain')).split(
-        'worktree ',
-      ).length;
-      const name = `Direct ${mode} task`;
-      await click(f, 'New task');
-      await f.getByLabel('Task name', { exact: false }).fill(name);
-      await f
-        .getByLabel('Task requirements', { exact: false })
-        .fill('Write fixed to result.txt and review the checks.');
-      await f.getByRole('radio', { name: /^Bug/ }).check();
-      const strategy = f.getByRole('combobox', { name: 'Development branch', exact: true });
-      assert.equal(await strategy.inputValue(), 'managed');
-      await strategy.selectOption(mode);
-      if (mode === 'branch') {
-        await f
-          .getByRole('option', { name: 'ui-target', exact: true })
-          .waitFor({ state: 'attached' });
-        await f
-          .getByRole('combobox', { name: 'Local branch', exact: true })
-          .selectOption('ui-target');
-        await click(f, 'Refresh branches');
-        await f.getByRole('button', { name: 'Refresh branches', exact: true }).waitFor();
-      }
-      await f
-        .getByLabel('Reviewer Connection', { exact: true })
-        .selectOption({ label: 'UI reviewer endpoint' });
-      await strategy.scrollIntoViewIfNeeded();
-      await screenshot(page, f, `en-git-${mode}`);
-      await size(820, 1040);
-      await strategy.scrollIntoViewIfNeeded();
-      await screenshot(page, f, `en-git-${mode}-narrow`);
-      await size(1600, 1100);
-      assert.equal((await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim(), originalBranch);
-      await click(f, 'Create task');
-      await f.getByRole('dialog').waitFor({ state: 'hidden' });
-      if (mode === 'branch') {
-        const previousFrame = f;
-        const detached = page.waitForEvent('framedetached', {
-          predicate: (candidate) => candidate === previousFrame,
-          timeout: 30000,
-        });
-        await command(page, 'Developer: Reload Window');
-        await detached;
-        await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
-        f = await frame(page);
-        await f.getByRole('heading', { name, exact: true }).waitFor();
-      }
-      await click(f, 'Edit task');
-      assert.equal(
-        await f.getByRole('combobox', { name: 'Development branch', exact: true }).inputValue(),
-        mode,
-      );
-      await click(f, 'Cancel');
-      await click(f, 'Start');
-      await f
-        .getByRole('status')
-        .filter({ hasText: 'Completed — acceptance passed' })
-        .waitFor({ timeout: 60000 });
-      assert.equal(await readFile(join(workspace, 'result.txt'), 'utf8'), 'fixed');
-      assert.equal(
-        (await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim(),
-        mode === 'branch' ? 'ui-target' : originalBranch,
-      );
-      assert.equal(
-        await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/'),
-        beforeBranches,
-      );
-      assert.equal(
-        (await fixtureGit('worktree', 'list', '--porcelain')).split('worktree ').length,
-        beforeWorktrees,
-      );
-      await click(f, 'Edit task');
-      assert.equal(
-        await f.getByRole('combobox', { name: 'Development branch', exact: true }).isDisabled(),
-        true,
-      );
-      await click(f, 'Cancel');
-      await screenshot(page, f, `en-git-${mode}-completed`);
-      await click(f, `Delete task: ${name}`);
-      await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
-      await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
-      assert.equal(await readFile(join(workspace, 'result.txt'), 'utf8'), 'fixed');
-      // Simulate the user's explicit handling of results before the next execution.
-      await fixtureGit('add', 'result.txt');
-      await fixtureGit('commit', '-m', `Preserve direct ${mode} result`);
-    }
+  await f.getByRole('status').filter({ hasText: 'Completed — acceptance passed' }).waitFor();
+  assert.equal(workerTurns, 6);
+  assert.equal(reviewTurns, 3);
+  await f.getByText('Tools, checks and review evidence', { exact: true }).click();
+  assert.ok((await f.locator('.execution-evidence').innerText()).includes('FAIL'));
+  assert.ok((await f.locator('.execution-evidence').innerText()).includes('PASS'));
+  await f.locator('[data-error-code="commandFailed"]').first().waitFor();
+  assert.match(
+    await f.locator('[data-error-code="commandFailed"]').first().innerText(),
+    /Command .+ failed/,
+  );
+  await screenshot(page, f, 'en-command-error-history');
+  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await f
+    .locator('[data-error-code="commandFailed"]')
+    .filter({ hasText: /命令.+执行失败/ })
+    .first()
+    .waitFor();
+  assert.match(
+    await f.locator('[data-error-code="commandFailed"]').first().innerText(),
+    /命令.+执行失败/,
+  );
+  await screenshot(page, f, 'zh-command-error-history');
+  await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+  await screenshot(page, f, 'en-execution-complete');
+  await size(820, 1040);
+  await screenshot(page, f, 'en-execution-narrow');
+  await size(1600, 1100);
+  const taskWorktrees = await fixtureGit('worktree', 'list', '--porcelain');
+  const taskDirectory = taskWorktrees
+    .split('\n\n')
+    .find((block) => block.includes('refs/heads/dualmind/task/'))
+    .split('\n')[0]
+    .slice('worktree '.length);
+  assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
+  await assert.rejects(readFile(join(workspace, 'result.txt')), { code: 'ENOENT' });
+  assert.equal(await fixtureGit('status', '--porcelain'), '');
+  assert.ok(inferenceRequests.some((request) => request.path.endsWith('/responses')));
+  assert.ok(inferenceRequests.some((request) => request.path.endsWith('/chat/completions')));
+  assert.ok(
+    inferenceRequests
+      .filter((request) => request.worker)
+      .every((request) => !JSON.stringify(request.body).includes('reviewer-private-state')),
+  );
+  await click(f, 'Preview changes');
+  await page.locator('.tab').filter({ hasText: 'Task Changes.diff' }).waitFor();
+  await page.locator('.view-lines').filter({ hasText: 'result.txt' }).first().waitFor();
+  await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+  f = await frame(page);
+  longCommand = true;
+  workerTurns = 0;
+  reviewTurns = 0;
+  await click(f, 'Restart execution');
+  await f.getByRole('status').filter({ hasText: 'Worker executing' }).waitFor();
+  const marker = join(taskDirectory, 'command-started');
+  const commandDeadline = Date.now() + 15000;
+  while (!(await readFile(marker, 'utf8').catch(() => ''))) {
+    assert.ok(Date.now() < commandDeadline, 'Worker command must actually start before stopping');
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  // Reading-only acceptance runs on every host, independently of command enforcement.
+  await click(f, 'Stop');
+  await f
+    .getByRole('status')
+    .filter({ hasText: /^Stopped(?: ·|$)/ })
+    .waitFor();
+  const stoppedPid = Number(await readFile(marker, 'utf8'));
+  await assert.rejects(readFile(`/proc/${stoppedPid}/stat`), { code: 'ENOENT' });
+  await screenshot(page, f, 'en-command-stopped');
+  longCommand = false;
+  holdWorker = true;
+  const nextRequest = new Promise((resolve) => {
+    workerRequestObserved = resolve;
+  });
+  await click(f, 'Restart execution');
+  await nextRequest;
+  const requestsBeforeReload = inferenceRequests.length;
+  const executingFrame = f;
+  const executionDetached = page.waitForEvent('framedetached', {
+    predicate: (candidate) => candidate === executingFrame,
+    timeout: 30000,
+  });
+  await command(page, 'Developer: Reload Window');
+  await executionDetached;
+  await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+  f = await frame(page);
+  await f.getByRole('status').filter({ hasText: 'Interrupted — restart explicitly' }).waitFor();
+  assert.equal(
+    inferenceRequests.length,
+    requestsBeforeReload,
+    'Reload must not replay model requests',
+  );
+  assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
+  await screenshot(page, f, 'en-execution-interrupted');
+  await click(f, 'Delete task: Persistent UI task');
+  await screenshot(page, f, 'en-delete-task');
+  await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
+  assert.ok(requests.length >= 6);
+  assert.ok(
+    requests.every((request) => request.method === 'GET' && request.authorized && !request.hasBody),
+  );
+  assert.equal(
+    await readFile(join(taskDirectory, 'result.txt'), 'utf8'),
+    'fixed',
+    'Deleting task records must preserve artifacts',
+  );
+  assert.equal(await fixtureGit('status', '--porcelain'), '');
+  // Direct strategies use only this disposable project, never the development repository.
+  holdWorker = false;
+  for (const mode of ['current', 'branch']) {
+    workerTurns = 0;
+    reviewTurns = 0;
+    const beforeBranches = await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/');
+    const beforeWorktrees = (await fixtureGit('worktree', 'list', '--porcelain')).split(
+      'worktree ',
+    ).length;
+    const name = `Direct ${mode} task`;
+    await click(f, 'New task');
+    await f.getByLabel('Task name', { exact: false }).fill(name);
+    await f
+      .getByLabel('Task requirements', { exact: false })
+      .fill('Write fixed to result.txt and review the checks.');
+    await f.getByRole('radio', { name: /^Bug/ }).check();
+    const strategy = f.getByRole('combobox', { name: 'Development branch', exact: true });
+    assert.equal(await strategy.inputValue(), 'managed');
+    await strategy.selectOption(mode);
+    if (mode === 'branch') {
+      await f
+        .getByRole('option', { name: 'ui-target', exact: true })
+        .waitFor({ state: 'attached' });
+      await f
+        .getByRole('combobox', { name: 'Local branch', exact: true })
+        .selectOption('ui-target');
+      await click(f, 'Refresh branches');
+      await f.getByRole('button', { name: 'Refresh branches', exact: true }).waitFor();
+    }
+    await f
+      .getByLabel('Reviewer Connection', { exact: true })
+      .selectOption({ label: 'UI reviewer endpoint' });
+    await strategy.scrollIntoViewIfNeeded();
+    await screenshot(page, f, `en-git-${mode}`);
+    await size(820, 1040);
+    await strategy.scrollIntoViewIfNeeded();
+    await screenshot(page, f, `en-git-${mode}-narrow`);
+    await size(1600, 1100);
+    assert.equal((await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim(), originalBranch);
+    await click(f, 'Create task');
+    await f.getByRole('dialog').waitFor({ state: 'hidden' });
+    if (mode === 'branch') {
+      const previousFrame = f;
+      const detached = page.waitForEvent('framedetached', {
+        predicate: (candidate) => candidate === previousFrame,
+        timeout: 30000,
+      });
+      await command(page, 'Developer: Reload Window');
+      await detached;
+      await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+      f = await frame(page);
+      await f.getByRole('heading', { name, exact: true }).waitFor();
+    }
+    await click(f, 'Edit task');
+    assert.equal(
+      await f.getByRole('combobox', { name: 'Development branch', exact: true }).inputValue(),
+      mode,
+    );
+    await click(f, 'Cancel');
+    await click(f, 'Start');
+    await f
+      .getByRole('status')
+      .filter({ hasText: 'Completed — acceptance passed' })
+      .waitFor({ timeout: 60000 });
+    assert.equal(await readFile(join(workspace, 'result.txt'), 'utf8'), 'fixed');
+    assert.equal(
+      (await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim(),
+      mode === 'branch' ? 'ui-target' : originalBranch,
+    );
+    assert.equal(
+      await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/'),
+      beforeBranches,
+    );
+    assert.equal(
+      (await fixtureGit('worktree', 'list', '--porcelain')).split('worktree ').length,
+      beforeWorktrees,
+    );
+    await click(f, 'Edit task');
+    assert.equal(
+      await f.getByRole('combobox', { name: 'Development branch', exact: true }).isDisabled(),
+      true,
+    );
+    await click(f, 'Cancel');
+    await screenshot(page, f, `en-git-${mode}-completed`);
+    await click(f, `Delete task: ${name}`);
+    await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+    await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
+    assert.equal(await readFile(join(workspace, 'result.txt'), 'utf8'), 'fixed');
+    // Simulate the user's explicit handling of results before the next execution.
+    await fixtureGit('add', 'result.txt');
+    await fixtureGit('commit', '-m', `Preserve direct ${mode} result`);
+  }
+  // Reading-only acceptance remains independent of command execution.
   readingOnly = true;
   workerTurns = 0;
   reviewTurns = 0;
@@ -1134,16 +1165,12 @@ try {
     JSON.stringify(
       {
         version,
-        passed: !executionUnavailable,
+        passed: true,
         interfacePassed: true,
-        executionUnavailable,
-        skipped: executionUnavailable
-          ? [
-              'real command execution',
-              'command-based execution completion',
-              'direct branch execution',
-            ]
-          : [],
+        commandExecutionPassed: true,
+        commandErrorLocalesPassed: true,
+        commandStopPassed: true,
+        skipped: [],
         screenshots: captures,
         profile,
         workspace,
@@ -1154,20 +1181,14 @@ try {
         inferenceRequests: inferenceRequests.length,
         activityBarEntry: true,
         reloadInterrupted: true,
-        directBranchModes: executionUnavailable ? [] : ['current', 'branch'],
+        directBranchModes: ['current', 'branch'],
       },
       null,
       2,
     ),
   );
-  if (executionUnavailable) {
-    console.warn(
-      'Interface checks passed, including English/Chinese resource errors. Full execution verification is incomplete: cgroup v2 memory/swap limits are unavailable.',
-    );
-    process.exitCode = 2;
-  }
   console.log(
-    `Real Webview UI verification ${executionUnavailable ? 'partially completed' : 'passed'} on VS Code ${version}; ${captures.length} screenshots in ${artifacts}`,
+    `Real Webview UI verification passed on VS Code ${version}; ${captures.length} screenshots in ${artifacts}`,
   );
 } catch (error) {
   if (app) {

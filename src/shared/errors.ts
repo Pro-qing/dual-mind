@@ -139,6 +139,23 @@ export const errorMessages = {
     'Commands need a unique ID, name, executable, argument list and a 10–900 second timeout.',
     '命令须包含唯一 ID、名称、可执行程序、参数列表，以及 10–900 秒的超时时间。',
   ],
+  commandPlatformUnsupported: [
+    'Local task commands currently require Linux.',
+    '本地任务命令目前需要 Linux 环境。',
+  ],
+  commandNotFound: [
+    'Cannot start command {name}: executable {program} was not found.',
+    '无法启动命令“{name}”：未找到可执行程序 {program}。',
+  ],
+  commandPermissionDenied: [
+    'Cannot start command {name}: permission denied for {program}.',
+    '无法启动命令“{name}”：没有执行 {program} 的权限。',
+  ],
+  commandStartFailed: [
+    'Could not start command {name} ({program}).',
+    '无法启动命令“{name}”（{program}）。',
+  ],
+  // Retained for execution history created by the previous runner.
   systemdRequired: [
     'Task execution requires Linux user systemd resource limits.',
     '任务执行需要 Linux 用户级 systemd 资源限制支持。',

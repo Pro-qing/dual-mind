@@ -84,28 +84,27 @@ CI 各组合运行环境及本地存储／React 测试、格式、类型、lint�
 
 ## 限制资源的模型验证
 
-本地测试串行执行，JavaScript 堆上限为 512 MiB，保留单项 30 秒超时。每次独立运行验证命令：本地检查总内存 1 GiB、整体超时 60 秒；Electron 总内存 2 GiB、整体超时 180 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
+本地测试串行执行，JavaScript 堆上限为 512 MiB，保留单项 30 秒超时。每次独立运行验证命令：本地检查总内存 1 GiB、独立批次超时 60 秒，包含真实命令超时测试的综合 `npm run check` 总超时 120 秒；Electron 总内存 2 GiB、整体超时 180 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
 
 设置 `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` 后，`npm test` 与 `npm run test:ui` 复用已安装 VS Code；未设置时保留自动下载。无显示环境使用 `xvfb-run -a`。测试使用隔离用户配置；真实 Webview 测试启动本地模拟服务，在原生密码框输入测试密钥，验证查询、选择、保存重载、中英文及窄窗口布局，不读取个人凭据；模型请求只发往本地模拟端点，不调用付费服务。
 
 ## 执行能力验证
 
-执行测试使用临时仓库、本地 SSE 服务和测试凭据。设置 `DUALMIND_TEST_SYSTEMD=1` 额外验证真实命令运行器：内存／交换空间探测、原样参数、取消、超时和输出限制。应在有总资源限制的用户 systemd slice 内运行；检查命令单元继承该 slice，使总预算同时覆盖编辑器与命令。例如先选择 Node 24，再执行：
+执行测试使用临时仓库、本地 SSE 服务和测试凭据。真实命令测试已纳入常规 `npm run test:local`，无需 `DUALMIND_TEST_SYSTEMD` 或任何用户级 systemd 会话。覆盖原样参数、工作目录、环境隔离、启动错误、非零退出、取消、超时、输出上限及遗留子进程清理；测试将 systemd 工具替换为失败桩，确认运行器不调用它们。
 
 ```bash
-systemctl --user set-property --runtime app-dualmind-validation.slice MemoryMax=1G MemorySwapMax=0 CPUQuota=100%
-systemd-run --user --wait --collect --slice=app-dualmind-validation.slice \
-  -p MemoryMax=1G -p MemorySwapMax=0 -p RuntimeMaxSec=60s \
-  --working-directory="$PWD" --setenv="PATH=$PATH" \
-  --setenv=DUALMIND_TEST_SYSTEMD=1 npm run check
+nvm use
+npm run check
+VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm test
+VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 ```
 
-Electron 验证将 slice 和单元的内存上限设为 2G、单元整体超时设为 180 秒。设置 `VSCODE_TEST_EXECUTABLE` 复用本机编辑器，取消 `ELECTRON_RUN_AS_NODE` 后执行 `xvfb-run -a npm run test:ui`。Webview 测试从活动栏进入，配置两种协议及真实附加自定义命令，验证检查失败／修订／审查通过闭环，以及专用模式源目录保持原样、当前／指定模式直接写入和分支选择的保存重载。这些命令不生成或安装扩展包。
+上述测试中的产品命令不设置内存／交换空间配额。前节的开发验证总资源预算可由调用者在外层施加；直接启动的子进程继承外层 cgroup，不创建新的 systemd 单元。无桌面时为 Electron 命令加 `xvfb-run -a`，并取消 `ELECTRON_RUN_AS_NODE`。测试不生成或安装扩展包。
 
-真实 UI 验证遇到不支持 cgroup v2 内存／交换空间限制的主机时，会验证英文与中文资源错误并完成其余界面检查；依赖真实命令的场景记录为未覆盖，`results.json` 中 `passed` 为 `false`、`interfacePassed` 为 `true`，命令退出码为 2，不计作完整通过。请在符合条件的主机上补跑真实执行验证。
+真实 UI 配置两种模型协议及真实附加命令，验证检查失败／修订／验收通过、双语命令错误、运行中停止、专用模式源目录保持原样，以及当前／指定模式直接写入和分支选择重载。缺少 systemd/cgroup 不再触发跳过分支；命令闭环失败就是测试失败，不能只以界面通过代替。
 
 ## 双 AI 循环验证
 
-本地模拟服务覆盖 Reviewer 首先规划、Worker 自主命令、未通过后的下一轮方案、纯阅读验收，以及旧自定义配置兼容。契约测试覆盖嵌套工具参数、验收项 ID、伪造／过期／失败证据、反馈及最新失败覆盖旧成功。真实 UI 同时验证中英文方案和阅读验收，即使命令资源探测失败也运行无命令闭环。真实命令失败路径和资源限制分别记录，缺少 systemd/cgroup v2 时仍以退出码 2 报告部分覆盖。
+本地模拟服务覆盖 Reviewer 首先规划、Worker 自主命令、未通过后的下一轮方案、纯阅读验收和旧自定义配置。契约测试覆盖嵌套工具参数、验收项 ID、伪造／过期／失败证据、反馈及最新失败覆盖旧成功。真实命令运行器默认接受同一套测试，阅读验收保持独立覆盖。
 
-本次改造的实际环境、通过项与未覆盖项见[验证记录](./execution-cycle-validation.md)。
+实际环境、通过项与未覆盖项见[验证记录](./execution-cycle-validation.md)。
