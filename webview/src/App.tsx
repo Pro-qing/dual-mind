@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { ExecutionSettings } from './Execution';
+import {
+  emptyExecutionConfig,
+  type ExecutionAction,
+  type ExecutionSnapshot,
+  type RunEvent,
+} from '../../src/shared/execution';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   Action,
   AppSnapshot,
@@ -14,7 +21,7 @@ import { Tasks } from './Tasks';
 import { useModelQueries } from './modelQueries';
 
 export interface Navigation {
-  view: 'workbench' | 'api' | 'defaults' | 'roles';
+  view: 'workbench' | 'api' | 'defaults' | 'roles' | 'execution';
 }
 export function App({
   snapshot,
@@ -30,11 +37,82 @@ export function App({
   const [view, setView] = useState<Navigation['view']>(
     initialNavigation?.view === 'api' ||
       initialNavigation?.view === 'defaults' ||
+      initialNavigation?.view === 'execution' ||
       initialNavigation?.view === 'roles'
       ? initialNavigation.view
       : 'workbench',
   );
   const [preview, setPreview] = useState(false);
+  const [newTaskRequest, setNewTaskRequest] = useState<string>();
+  const [execution, setExecution] = useState<ExecutionSnapshot>(
+    () => snapshot.execution || { config: emptyExecutionConfig(), runs: [] },
+  );
+  const [executionEvents, setExecutionEvents] = useState<RunEvent[]>([]);
+  const [executionError, setExecutionError] = useState('');
+  const historicalPage = useRef(false);
+  const historyRequest = useRef(0);
+  useEffect(() => {
+    if (snapshot.execution) {
+      setExecution(snapshot.execution);
+    }
+  }, [snapshot.execution]);
+  useEffect(
+    () =>
+      bridge.onExecution?.((update) => {
+        setExecution(update.state);
+        if (historicalPage.current) {
+          return;
+        }
+        setExecutionEvents((current) => {
+          const combined = [...current];
+          for (const event of update.events) {
+            if (
+              !combined.some(
+                (item) => item.runId === event.runId && item.sequence === event.sequence,
+              )
+            ) {
+              combined.push(event);
+            }
+          }
+          return combined.slice(-80);
+        });
+      }),
+    [bridge],
+  );
+  const execute = useCallback(
+    async (action: ExecutionAction) => {
+      setExecutionError('');
+      const request = action.kind === 'history' ? ++historyRequest.current : 0;
+      if (action.kind === 'history') {
+        historicalPage.current = action.before !== undefined;
+      }
+      try {
+        if (!bridge.execute) {
+          throw new Error('Execution host is unavailable.');
+        }
+        const result = await bridge.execute(action);
+        setExecution(result.state);
+        if (result.events && request === historyRequest.current) {
+          setExecutionEvents(result.events);
+        }
+        return result;
+      } catch (error) {
+        setExecutionError(error instanceof Error ? error.message : 'Execution failed.');
+        throw error;
+      }
+    },
+    [bridge],
+  );
+  useEffect(() => {
+    if (snapshot.navigationRequest) {
+      setView('workbench');
+      setPreview(false);
+      if (snapshot.navigationRequest.newTask) {
+        setNewTaskRequest(snapshot.navigationRequest.id);
+      }
+    }
+  }, [snapshot.navigationRequest?.id]);
+
   const modelQueries = useModelQueries(bridge);
   const [pendingCount, setPendingCount] = useState(0);
   const [notice, setNotice] = useState<{ key: MessageKey; error: boolean } | null>(null);
@@ -80,6 +158,8 @@ export function App({
         'storageFailed',
         'invalidStoredData',
         'unavailable',
+        'executionLocked',
+        'gitLocked',
       ];
       setNotice({ key: known.includes(code) ? code : 'storageFailed', error: true });
       throw error;
@@ -113,6 +193,9 @@ export function App({
     <UIContext.Provider
       value={{
         snapshot,
+        execution,
+        executionEvents,
+        execute,
         pending,
         ...modelQueries,
         run,
@@ -174,6 +257,18 @@ export function App({
             )}
           </div>
         </header>
+        {executionError && (
+          <div className="toast toast-error" role="alert">
+            {tr('executionError')}: {executionError}
+            <button
+              className="icon-button"
+              aria-label={tr('close')}
+              onClick={() => setExecutionError('')}
+            >
+              ×
+            </button>
+          </div>
+        )}
         {notice && (
           <div
             className={`toast ${notice.error ? 'toast-error' : ''}`}
@@ -190,7 +285,13 @@ export function App({
           </div>
         )}
         {view === 'workbench' ? (
-          <Tasks preview={preview} onPreviewChange={setPreview} onSettings={() => setView('api')} />
+          <Tasks
+            preview={preview}
+            onPreviewChange={setPreview}
+            onSettings={() => setView('api')}
+            newTaskRequest={newTaskRequest}
+            onNewTaskHandled={() => setNewTaskRequest(undefined)}
+          />
         ) : (
           <>
             <nav className="settings-tabs" aria-label={tr('settings')}>
@@ -209,6 +310,13 @@ export function App({
                 {tr('defaults')}
               </button>
               <button
+                className={view === 'execution' ? 'active' : ''}
+                aria-current={view === 'execution' ? 'page' : undefined}
+                onClick={() => setView('execution')}
+              >
+                {tr('executionTab')}
+              </button>
+              <button
                 className={view === 'roles' ? 'active' : ''}
                 aria-current={view === 'roles' ? 'page' : undefined}
                 onClick={() => setView('roles')}
@@ -216,7 +324,15 @@ export function App({
                 {tr('rolesTab')}
               </button>
             </nav>
-            {view === 'api' ? <Connections /> : view === 'defaults' ? <Defaults /> : <Roles />}
+            {view === 'api' ? (
+              <Connections />
+            ) : view === 'defaults' ? (
+              <Defaults />
+            ) : view === 'execution' ? (
+              <ExecutionSettings />
+            ) : (
+              <Roles />
+            )}
           </>
         )}
         {languageTarget && (

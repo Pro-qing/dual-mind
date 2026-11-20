@@ -78,6 +78,7 @@ function ConnectionEditor({
     name: record?.name || '',
     baseUrl: record?.baseUrl || 'https://api.openai.com/v1',
     defaultModel: record?.defaultModel || '',
+    protocol: record?.protocol || 'chatCompletions',
   }));
   const [deleting, setDeleting] = useState(false);
   const save = async () => {
@@ -129,6 +130,22 @@ function ConnectionEditor({
               />
             </label>
             <p className="hint">{tr('modelsUrlHint')}</p>
+            <label>
+              {tr('inferenceProtocol')}
+              <select
+                aria-label={tr('inferenceProtocol')}
+                value={input.protocol}
+                onChange={(event) =>
+                  setInput({
+                    ...input,
+                    protocol: event.target.value as 'chatCompletions' | 'responses',
+                  })
+                }
+              >
+                <option value="chatCompletions">Chat Completions</option>
+                <option value="responses">Responses</option>
+              </select>
+            </label>
             <div>
               <span className="field-label">{tr('apiKey')}</span>
               <div className="key-row">

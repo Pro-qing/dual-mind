@@ -4,11 +4,13 @@
 
 ## Current source scope
 
-DualMind 0.0.2 is a local, unpublished source version. Public 0.0.1 artifacts retain historical behavior. API keys enter through the native VS Code password prompt and remain in SecretStorage; the Webview receives only saved status. The host validates messages; the Webview uses nonce-based CSP and disallows direct network access.
+DualMind 0.0.3 is a local, unpublished source version. Public 0.0.1 artifacts retain historical behavior. API keys enter through the native VS Code password prompt and remain in SecretStorage; the Webview receives only saved status. The host validates messages; the Webview uses nonce-based CSP and disallows direct network access.
 
-Explicit model-list queries are host requests with authentication and contain no task requirements, role instructions or workspace content. This version has no inference, runtime conversation history or executor.
+The host sends task requirements, the corresponding role instructions and needed file/tool content to the configured model endpoint. Roles retain separate histories and exchange artifacts/evidence only. Public logs and execution records exclude API keys, but task text and code can contain sensitive information; evaluate the actual endpoint and task scope.
 
-The lazy Git foundation can create dedicated task branches/worktrees and provide Worker write/Reviewer read interfaces. It is not connected to Start. Saving drafts does not prepare branches or modify project files. Path checks and role interfaces are not OS sandboxes or proof of runtime context isolation.
+Worker can modify the selected task directory; Reviewer has only controlled read interfaces. Direct modes modify the opened project, while dedicated mode uses a worktree. Preset programs run with the current user permissions; systemd bounds memory, swap and time. File interfaces and resource limits are not OS sandboxes and cannot constrain arbitrary external processes.
+
+Branch/HEAD and check evidence are validated. Stop cancels requests and terminates command process groups without reverting saved files. Approval does not automatically commit, merge or apply dedicated-directory results.
 
 No long-term preview support or fixed response time is promised. Local source tags do not indicate public distribution.
 

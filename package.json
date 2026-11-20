@@ -2,7 +2,7 @@
   "name": "dual-mind",
   "displayName": "DualMind",
   "description": "%description%",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.100.0",
     "node": ">=24.0.0 <25.0.0"
@@ -16,11 +16,23 @@
       {
         "command": "dualMind.openWorkbench",
         "title": "%openWorkbench%",
-        "category": "DualMind"
+        "category": "DualMind",
+        "icon": "$(open-preview)"
       },
       {
         "command": "dualMind.showStatus",
         "title": "%showStatus%",
+        "category": "DualMind"
+      },
+      {
+        "command": "dualMind.newTask",
+        "title": "%newTaskCommand%",
+        "category": "DualMind",
+        "icon": "$(add)"
+      },
+      {
+        "command": "dualMind.selectTask",
+        "title": "%selectTaskCommand%",
         "category": "DualMind"
       }
     ],
@@ -44,6 +56,49 @@
           "description": "%language%"
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dualMind",
+          "title": "DualMind",
+          "icon": "resources/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "dualMind": [
+        {
+          "id": "dualMind.tasks",
+          "name": "%tasksView%"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "dualMind.tasks",
+        "contents": "%tasksWelcome%"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "dualMind.openWorkbench",
+          "when": "view == dualMind.tasks",
+          "group": "navigation"
+        },
+        {
+          "command": "dualMind.newTask",
+          "when": "view == dualMind.tasks",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "dualMind.selectTask",
+          "when": "false"
+        }
+      ]
     }
   },
   "scripts": {
@@ -118,7 +173,8 @@
     "react-dom": "19.3.1"
   },
   "activationEvents": [
-    "onWebviewPanel:dualMind.workbench"
+    "onWebviewPanel:dualMind.workbench",
+    "onView:dualMind.tasks"
   ],
   "icon": "resources/icon.png",
   "preview": true

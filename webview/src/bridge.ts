@@ -1,3 +1,4 @@
+import type { ExecutionAction, ExecutionReply, ExecutionUpdate } from '../../src/shared/execution';
 import type {
   Action,
   AppSnapshot,
@@ -27,6 +28,15 @@ export function connect(
     string,
     { resolve(state: AppSnapshot): void; reject(error: Error): void }
   >();
+  const executionListeners = new Set<(update: ExecutionUpdate) => void>();
+  const executionPending = new Map<
+    string,
+    {
+      resolve(value: ExecutionReply): void;
+      reject(error: Error): void;
+      timer: ReturnType<typeof setTimeout>;
+    }
+  >();
   const modelListeners = new Set<(connectionId: string) => void>();
   const modelPending = new Map<
     string,
@@ -40,6 +50,24 @@ export function connect(
   const listener = (event: MessageEvent<HostMessage>) => {
     const message = event.data;
     if (!message || typeof message !== 'object') {
+      return;
+    }
+    if (message.type === 'execution.update') {
+      executionListeners.forEach((listener) => listener(message.update));
+      return;
+    }
+    if (message.type === 'execution.result') {
+      const request = executionPending.get(message.requestId);
+      if (!request) {
+        return;
+      }
+      clearTimeout(request.timer);
+      executionPending.delete(message.requestId);
+      if (message.result) {
+        request.resolve(message.result);
+      } else {
+        request.reject(new Error(message.error || 'Execution failed.'));
+      }
       return;
     }
     if (message.type === 'models.invalidated') {
@@ -83,6 +111,25 @@ export function connect(
   };
   window.addEventListener('message', listener);
   return {
+    execute(action: ExecutionAction): Promise<ExecutionReply> {
+      const requestId = crypto.randomUUID();
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          executionPending.delete(requestId);
+          reject(
+            new Error('Execution operation timed out; check its current status before retrying.'),
+          );
+        }, 45000);
+        executionPending.set(requestId, { resolve, reject, timer });
+        api.postMessage({ type: 'execution.request', requestId, action });
+      });
+    },
+    onExecution(listener) {
+      executionListeners.add(listener);
+      return () => {
+        executionListeners.delete(listener);
+      };
+    },
     request(action: Action): Promise<AppSnapshot> {
       const requestId = crypto.randomUUID();
       return new Promise((resolve, reject) => {
@@ -108,6 +155,12 @@ export function connect(
       };
     },
     dispose() {
+      executionPending.forEach((request) => {
+        clearTimeout(request.timer);
+        request.reject(new Error('Workbench closed.'));
+      });
+      executionPending.clear();
+      executionListeners.clear();
       modelPending.forEach((request) => {
         clearTimeout(request.timer);
         request.reject(new RequestError('modelsChanged'));

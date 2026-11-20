@@ -5,5 +5,9 @@
   "language": "DualMind interface language. Built-in Reviewer definitions follow this choice; custom text and task snapshots keep their original content.",
   "languageAuto": "Follow VS Code",
   "languageZh": "Simplified Chinese",
-  "languageEn": "English"
+  "languageEn": "English",
+  "tasksView": "Tasks",
+  "tasksWelcome": "[Open workbench](command:dualMind.openWorkbench)\n[New task](command:dualMind.newTask)",
+  "newTaskCommand": "New Task",
+  "selectTaskCommand": "Select Task"
 }

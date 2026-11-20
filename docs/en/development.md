@@ -2,7 +2,7 @@
 
 [简体中文](../zh/development.md) · [Documentation](./README.md)
 
-**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
 
 ## Environment
 
@@ -86,4 +86,18 @@ Build output, downloaded editors, dependencies, and VSIX files are ignored by Gi
 
 Local tests run serially with a 512 MiB JavaScript heap and the existing 30-second per-test timeout. Run each verification command separately with a 1 GiB memory / 60-second overall limit for local checks, or 2 GiB / 180 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
 
-Set `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` to reuse an installed VS Code for `npm test` and `npm run test:ui`; omit it to retain automatic download. Run Electron under `xvfb-run -a` when headless. All tests use isolated user profiles. The real Webview test starts a local mock server and uses a fake key in the native password prompt, then verifies query, selection, persistence, both languages and narrow layouts. It never reads personal credentials or calls inference endpoints.
+Set `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` to reuse an installed VS Code for `npm test` and `npm run test:ui`; omit it to retain automatic download. Run Electron under `xvfb-run -a` when headless. All tests use isolated user profiles. The real Webview test starts a local mock server and uses a fake key in the native password prompt, then verifies query, selection, persistence, both languages and narrow layouts. It never reads personal credentials; model requests use local mock endpoints and no paid services.
+
+## Execution verification
+
+Execution tests use temporary repositories, local SSE servers and test credentials. `DUALMIND_TEST_SYSTEMD=1` additionally exercises the real command runner (memory/swap probe, exact arguments, cancellation, timeout and output limit). Run it only inside a bounded user systemd slice; spawned command units inherit that slice, so the overall test budget covers the editor and its commands together. For example, after selecting Node 24:
+
+```bash
+systemctl --user set-property --runtime app-dualmind-validation.slice MemoryMax=1G MemorySwapMax=0 CPUQuota=100%
+systemd-run --user --wait --collect --slice=app-dualmind-validation.slice \
+  -p MemoryMax=1G -p MemorySwapMax=0 -p RuntimeMaxSec=60s \
+  --working-directory="$PWD" --setenv="PATH=$PATH" \
+  --setenv=DUALMIND_TEST_SYSTEMD=1 npm run check
+```
+
+For Electron validation, set the slice and unit to 2G and the unit deadline to 180s. Set `VSCODE_TEST_EXECUTABLE` to reuse the installed editor, and run `xvfb-run -a npm run test:ui` with `ELECTRON_RUN_AS_NODE` unset. The Webview suite enters from the activity bar, configures both protocols and real preset commands, executes a failed-check/revision/approval cycle, and verifies unchanged source files in dedicated mode, direct edits in current/specified modes, and saved branch choices across reload. No package is created or installed by these commands.

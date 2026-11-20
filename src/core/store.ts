@@ -41,6 +41,7 @@ export interface StorePorts {
   askKey(name: string, locale: Locale): PromiseLike<string | undefined>;
   openWorkspace(): PromiseLike<unknown>;
   onConnectionChanged?(connectionId: string): void;
+  assertMutable?(action: Action): void;
 }
 export class StoreError extends Error {
   constructor(public readonly code: ErrorCode) {
@@ -98,7 +99,32 @@ function taskInput(value: unknown): TaskInput {
   if (typeof v.maxRounds !== 'number' || !Number.isSafeInteger(v.maxRounds) || v.maxRounds <= 0) {
     throw new StoreError('invalidRounds');
   }
+  const git = v.git === undefined ? undefined : object(v.git);
+  if (
+    git &&
+    (!['managed', 'current', 'branch'].includes(String(git.mode)) ||
+      (git.mode === 'branch' &&
+        (typeof git.branch !== 'string' ||
+          !git.branch ||
+          git.branch.startsWith('-') ||
+          [...git.branch].some(
+            (char) =>
+              char.charCodeAt(0) <= 32 || char.charCodeAt(0) === 127 || '~^:?*[\\'.includes(char),
+          ) ||
+          git.branch.includes('..') ||
+          git.branch.includes('@{'))))
+  ) {
+    throw new StoreError('invalidMessage');
+  }
   return {
+    ...(git
+      ? {
+          git:
+            git.mode === 'branch'
+              ? { mode: 'branch' as const, branch: string(git.branch, true, 1000) }
+              : { mode: git.mode as 'managed' | 'current' },
+        }
+      : {}),
     ...bindings(v),
     name: string(v.name, true, 200, true),
     requirements: string(v.requirements),
@@ -122,7 +148,13 @@ function connectionInput(value: unknown): Omit<ConnectionRecord, 'id'> {
   } catch {
     throw new StoreError('invalidUrl');
   }
+  if (v.protocol !== undefined && v.protocol !== 'chatCompletions' && v.protocol !== 'responses') {
+    throw new StoreError('invalidMessage');
+  }
   return {
+    ...(v.protocol === undefined
+      ? {}
+      : { protocol: v.protocol as 'chatCompletions' | 'responses' }),
     name: string(v.name, true, 200, true),
     baseUrl,
     defaultModel: string(v.defaultModel, false, 500, true),
@@ -293,9 +325,33 @@ export class LocalStore {
       };
     });
   }
+  executionInput(taskId: string) {
+    return this.serialize(async () => {
+      const { global, workspace } = this.read();
+      const task = workspace.tasks.find((item) => item.id === taskId);
+      if (!task || !this.ports.hasWorkspace()) {
+        throw new StoreError('notFound');
+      }
+      const endpoint = async (binding: { connectionId: string; model: string }) => {
+        const c = global.connections.find((item) => item.id === binding.connectionId);
+        const key = c && (await this.ports.secrets.get(secretKey(c.id)));
+        if (!c || !key || !binding.model) {
+          throw new StoreError('required');
+        }
+        return {
+          ...c,
+          model: binding.model,
+          key,
+          protocol: c.protocol || ('chatCompletions' as const),
+        };
+      };
+      return { task, worker: await endpoint(task.worker), reviewer: await endpoint(task.reviewer) };
+    });
+  }
   async dispatch(value: unknown): Promise<void> {
     const action = parseAction(value);
     return this.serialize(async () => {
+      this.ports.assertMutable?.(action);
       const { global, workspace } = this.read();
       const findConnection = (connectionId: string): ConnectionRecord => {
         const c = global.connections.find((item) => item.id === connectionId);
@@ -336,7 +392,15 @@ export class LocalStore {
           }
           validateBindings(action.input, existing);
           const { name, requirements, worker, reviewer, maxRounds } = action.input;
-          const input = { name, requirements, worker, reviewer, maxRounds };
+          const git = action.input.git ?? existing?.git;
+          const input = {
+            name,
+            requirements,
+            worker,
+            reviewer,
+            maxRounds,
+            ...(git ? { git } : {}),
+          };
           const now = new Date().toISOString();
           const task = {
             ...input,
@@ -413,6 +477,7 @@ export class LocalStore {
             c.name,
             resolveLocale(this.ports.getLanguage(), this.ports.editorLanguage()),
           );
+          this.ports.assertMutable?.(action);
           if (entered !== undefined) {
             const key = string(entered, true, 10000, true);
             if (key !== (await this.ports.secrets.get(secretKey(c.id)))) {

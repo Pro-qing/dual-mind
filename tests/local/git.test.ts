@@ -373,3 +373,125 @@ test('does not copy ignored source files and rejects stale role handles after fo
   await assert.rejects(reader.readFile('file.txt'), { code: 'accessDenied' });
   assert.equal(await readFile(join(h.repo, 'generated/output'), 'utf8'), 'source-only');
 });
+
+test('direct current mode stays in the source, freezes each run and requires clean restarts', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  assert.deepEqual(await h.service.branches(), { currentBranch: 'main', branches: ['main'] });
+  const before = await h.run('worktree', 'list', '--porcelain');
+  const first = await h.service.prepare(id, { mode: 'current' });
+  assert.equal(first.directory, h.repo);
+  assert.equal(first.branch, 'main');
+  const writer = await h.service.files(id, 'worker', first);
+  const reader = await h.service.files(id, 'reviewer', first);
+  assert.ok(!('writeFile' in reader));
+  await writer.writeFile('file.txt', 'direct result');
+  assert.match(await reader.diff(), /direct result/);
+  await assert.rejects(h.service.prepare(id, { mode: 'current' }), { code: 'dirtyRepository' });
+  assert.equal(await readFile(join(h.repo, 'file.txt'), 'utf8'), 'direct result');
+  await h.run('add', 'file.txt');
+  await h.run('commit', '-m', 'user commit');
+  await assert.rejects(writer.writeFile('file.txt', 'stale write'), { code: 'workspaceChanged' });
+  const next = await h.service.prepare(id, { mode: 'current' });
+  assert.notEqual(next.baseCommit, first.baseCommit);
+  await assert.rejects(h.service.binding(id, first), { code: 'workspaceChanged' });
+  assert.equal(
+    (await h.run('worktree', 'list', '--porcelain')).split('worktree ').length,
+    before.split('worktree ').length,
+  );
+  assert.equal(await h.run('for-each-ref', '--format=%(refname)', 'refs/heads/dualmind'), '');
+  assert.throws(() => h.service.assertStrategy(id, { mode: 'managed' }), {
+    code: 'workspaceConflict',
+  });
+  await h.f.store.dispatch({ kind: 'task.delete', id, confirmed: true });
+  assert.equal(await readFile(join(h.repo, 'file.txt'), 'utf8'), 'direct result');
+});
+
+test('specified local branches switch safely; readonly access never switches back', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  await h.run('branch', 'feature/test');
+  const original = await h.run('symbolic-ref', '--short', 'HEAD');
+  assert.deepEqual((await h.service.branches()).branches, ['feature/test', 'main']);
+  assert.equal(await h.run('symbolic-ref', '--short', 'HEAD'), original);
+  const binding = await h.service.prepare(id, { mode: 'branch', branch: 'feature/test' });
+  assert.equal(binding.directory, h.repo);
+  assert.equal(binding.branch, 'feature/test');
+  const writer = await h.service.files(id, 'worker', binding);
+  await h.run('switch', 'main');
+  await assert.rejects(writer.writeFile('file.txt', 'wrong branch'), { code: 'workspaceChanged' });
+  await assert.rejects(h.service.binding(id, binding), { code: 'workspaceChanged' });
+  assert.equal(await h.run('symbolic-ref', '--short', 'HEAD'), original);
+  assert.equal(await readFile(join(h.repo, 'file.txt'), 'utf8'), 'baseline\n');
+  await h.service.prepare(id, { mode: 'branch', branch: 'feature/test' });
+  assert.equal((await h.run('symbolic-ref', '--short', 'HEAD')).trim(), 'feature/test');
+});
+
+test('direct mode rejects dirty files, missing or occupied targets, ignored collisions and target submodules', async (t) => {
+  const h = await harness(t);
+  await writeFile(join(h.repo, 'untracked'), 'keep');
+  await assert.rejects(h.service.prepare(await h.task(), { mode: 'current' }), {
+    code: 'dirtyRepository',
+  });
+  await rm(join(h.repo, 'untracked'));
+  await assert.rejects(h.service.prepare(await h.task(), { mode: 'branch', branch: 'missing' }), {
+    code: 'workspaceConflict',
+  });
+  await h.run('branch', 'occupied');
+  await h.run('worktree', 'add', join(h.root, 'occupied'), 'occupied');
+  await assert.rejects(h.service.prepare(await h.task(), { mode: 'branch', branch: 'occupied' }), {
+    code: 'workspaceConflict',
+  });
+  await writeFile(join(h.repo, '.gitignore'), 'collision\n');
+  await h.run('add', '.gitignore');
+  await h.run('commit', '-m', 'ignore');
+  await h.run('switch', '-c', 'target');
+  await writeFile(join(h.repo, 'collision'), 'target tracked');
+  await h.run('add', '-f', 'collision');
+  await h.run('commit', '-m', 'target');
+  await h.run('switch', 'main');
+  await writeFile(join(h.repo, 'collision'), 'user ignored content');
+  await assert.rejects(h.service.prepare(await h.task(), { mode: 'branch', branch: 'target' }), {
+    code: 'gitFailed',
+  });
+  assert.equal(await readFile(join(h.repo, 'collision'), 'utf8'), 'user ignored content');
+  assert.equal((await h.run('symbolic-ref', '--short', 'HEAD')).trim(), 'main');
+  await h.run('switch', '-c', 'submodule-target');
+  const head = (await h.run('rev-parse', 'HEAD')).trim();
+  await h.run('update-index', '--add', '--cacheinfo', `160000,${head},nested`);
+  await h.run('commit', '-m', 'gitlink');
+  await h.run('switch', 'main');
+  await assert.rejects(
+    h.service.prepare(await h.task(), { mode: 'branch', branch: 'submodule-target' }),
+    { code: 'submodulesUnsupported' },
+  );
+  assert.equal((await h.run('symbolic-ref', '--short', 'HEAD')).trim(), 'main');
+});
+
+test('direct registrations recover consistent interrupted switches and preserve failed intent', async (t) => {
+  const h = await harness(t);
+  const id = await h.task();
+  await h.run('branch', 'target');
+  const first = await h.service.prepare(id, { mode: 'branch', branch: 'target' });
+  await h.f.workspace.update(taskGitStorageKey, {
+    version: 1,
+    entries: [{ ...first, phase: 'preparing' }],
+  });
+  const reopened = new TaskWorkspaces(h.ports, h.git);
+  assert.equal((await reopened.prepare(id, { mode: 'branch', branch: 'target' })).phase, 'ready');
+  await h.f.workspace.update(taskGitStorageKey, {
+    version: 1,
+    entries: [{ ...first, phase: 'preparing' }],
+  });
+  await writeFile(join(h.repo, 'file.txt'), 'changed baseline');
+  await h.run('add', 'file.txt');
+  await h.run('commit', '-m', 'external change during interrupted preparation');
+  await assert.rejects(reopened.prepare(id, { mode: 'branch', branch: 'target' }), {
+    code: 'workspaceChanged',
+  });
+  assert.equal(
+    h.f.workspace.get<{ entries: TaskGitWorkspace[] }>(taskGitStorageKey, { entries: [] })
+      .entries[0].baseCommit,
+    first.baseCommit,
+  );
+});

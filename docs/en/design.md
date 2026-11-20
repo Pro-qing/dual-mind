@@ -2,9 +2,9 @@
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
-**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
 
-**All seven scenes are adopted; scenes 6–7 are implemented in the development branch.** Original SVG/PNG files and their historical review labels remain unchanged. Drawings contain illustrative content, not live API results. Published 0.0.1 retains local settings; the development branch adds explicit model-list queries and selection. Model inference and code application remain planned. See [Usage](./usage.md).
+**All seven scenes are adopted; scenes 6–7 are implemented in the development branch.** Original SVG/PNG files and their historical review labels remain unchanged. Drawings contain illustrative content, not live API results. Published 0.0.1 retains local settings; the development branch adds explicit model-list queries and selection. The development branch now also implements single-task execution, streaming and review rounds; original-workspace application and parallel execution remain planned. See [Usage](./usage.md).
 
 Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. English interface labels are explained in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
 
@@ -75,7 +75,7 @@ After deletion, select another remaining task; after the last deletion, show **N
 
 ## Implemented model discovery additions
 
-Scenes 6–7 extend the adopted layout and define the implemented connection and model selection flow. They do not enable task execution, review loops or code application.
+Scenes 6–7 extend the adopted layout and define the implemented connection and model selection flow. These two scenes define model selection, not execution; overall execution capability is documented in the current version notes.
 
 ### 6. API connection and model discovery
 
@@ -132,7 +132,7 @@ Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection setti
 
 The owner has adopted scenes 1–7. The development branch implements explicit API queries and shared model selectors with isolated tests. Historical labels inside the original artwork are preserved; they do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
 
-See [Architecture](./architecture.md) for the planned responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. The implemented local message types and future execution boundary are documented there.
+See [Architecture](./architecture.md) for implemented module responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. Implemented settings/execution messages, role handoffs and file-access boundaries are documented there.
 
 ## Updating and validating previews
 
@@ -147,3 +147,7 @@ npm run format:check
 ```
 
 Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair, requires all seven scenes, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. This design-only delivery does not rebuild or replace a published VSIX. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
+
+## Execution interface in the development branch
+
+The existing drawings remain unchanged references. The actual settings tabs are API Connections, Defaults for new tasks, Task execution and Reviewer Roles. The activity-bar icon opens a native task sidebar and the existing singleton workbench. Execution adds streamed role output, check evidence, pause/continue/stop and manual-result controls to scene 1. One task runs per workspace; examples of parallel execution remain future behavior.

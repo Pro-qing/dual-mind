@@ -2,7 +2,7 @@
 
 [简体中文](../zh/architecture.md) · [Documentation](./README.md)
 
-**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
 
 ## Implemented local workbench
 
@@ -17,8 +17,9 @@ src/extension.ts   Command registration and extension lifecycle
 src/workbench.ts   Webview resources, CSP, message transport and host prompts
 src/core/         Validated local task/configuration store
 src/shared/       Message types, bilingual UI strings and Reviewer definitions
-src/providers/    Model-list adapter; inference remains planned
-src/git/          Lazy task worktree service and role-scoped file access
+src/providers/    Model discovery and streaming inference adapters
+src/execution/    Run state machine, bounded commands and paged event records
+src/git/          Task worktree service and role-scoped file access
 src/editor/       Reserved for context collection and result application
 webview/src/      React workbench, settings, forms, bridge and responsive styles
 resources/        Packaged PNG icon and archived branding source
@@ -69,28 +70,40 @@ Results are held in React memory, never persisted. Successful URL/key changes or
 
 Discovery establishes access to the model-list endpoint only. Unsupported endpoints, empty lists and query failures keep manual input available. The implemented message contract is documented in [Protocol](./protocol.md).
 
-## Future execution
+## Execution in the development branch
 
-The [approved designs](./design.md) also illustrate parallel task execution and review results. Inference adapters, independently cancellable sessions, streaming, pause/stop, feedback, and editor changes remain unimplemented. Future execution events must identify their task and run so output cannot cross between conversations. Reviewer approval must remain distinct from explicit user approval to apply a result.
+The host execution service owns one active run per workspace, independently of the Webview lifetime. It snapshots task/model/role/command configuration, uses the Git task workspace service, runs preparation presets and drives Worker → mandatory checks → Reviewer rounds. Start, pause, continue, stop, restart and paused feedback are separate operations from local settings persistence. Approval requires successful checks and an unchanged artifact fingerprint.
 
-## Role isolation: current boundary and future execution
+`src/providers/inference.ts` adapts streaming Chat Completions and Responses without protocol fallback or automatic retries. Tools execute only after complete validated arguments; each agent retains its own protocol history. Responses reasoning items remain internal to their owning role. File tools are role-scoped, writes use atomic replacement, and Reviewer receives no command or write tools. Commands use frozen preset IDs and resource-limited user systemd units, not model-supplied shell strings.
+
+Run summaries/configuration use independent workspace storage; public event history is journaled outside the repository and paged in groups of 80. Streaming UI updates are batched at 100 ms. Host restarts mark unfinished runs interrupted and never replay tool calls. API credentials remain in SecretStorage and active host memory. Histories, handoffs and command output must not expose them. The activity-bar Tree View subscribes to the same host state and opens the singleton workbench.
+
+Inference requests have a 120-second deadline, 8 MiB response limit and 512 KiB request-context limit. A role has at most 20 model turns per round; public run history is bounded at 64 MiB. Exceeding a limit fails explicitly. Automatic original-workspace application, automatic Git commits/merges and concurrent task execution remain outside this milestone.
+
+## Role isolation: data and execution boundaries
 
 The current implementation separates Worker/Reviewer model bindings, workspace drafts and task-specific Reviewer instruction snapshots. Store tests cover same-connection/same-model bindings, cross-task and cross-workspace edits, preset changes, and mutation of input or returned snapshot objects. Discovery integration tests check that saved task requirements, Reviewer instructions and workspace identifiers do not enter model-list requests. User-scoped settings and connection-scoped model-list caches are intentionally shared; neither is conversation history.
 
-There is no inference request builder, conversation history or runtime context assembler yet. Worker currently has a fixed UI role description, not an implemented system prompt. The two panels and separate model selectors therefore do not establish runtime context isolation. Reviewer snapshots preserve task instructions but are not yet submitted to a model.
+The development branch now constructs separate role histories and actual model requests. Worker receives fixed execution instructions; Reviewer receives the saved task role snapshot. Runtime tests capture requests and verify role isolation, rather than inferring it from the two-column interface.
 
-Future execution must maintain independent histories identified by workspace, task, execution instance and agent. A connection or model ID is never a conversation identity, including when both agents use identical endpoints and models. At execution start, freeze the task requirements, acceptance criteria, role instructions and configuration for that execution. Both agents share the requirements and acceptance criteria; each uses only its own role instructions and history. Later settings changes must not rewrite an active execution.
+Execution maintains independent histories identified by workspace, task, execution instance and agent. A connection or model ID is never a conversation identity, including when both agents use identical endpoints and models. At execution start, freeze the task requirements, acceptance criteria, role instructions and configuration for that execution. Both agents share the requirements and acceptance criteria; each uses only its own role instructions and history. Later settings changes must not rewrite an active execution.
 
-Worker hands over current artifacts and test evidence; Reviewer returns review conclusions, findings and requested changes. Do not copy the other agent's full conversation, internal analysis or unrelated tool records. Treat handed-over content as data, not instructions that can replace the receiving agent's role. The [future protocol boundary](./protocol.md#future-role-handoffs) defines correlation and cancellation requirements. This is a design contract only: no runtime fields, storage migration or execution capability is added here.
+Worker hands over current artifacts and test evidence; Reviewer returns review conclusions, findings and requested changes. Do not copy the other agent's full conversation, internal analysis or unrelated tool records. Treat handed-over content as data, not instructions that can replace the receiving agent's role. The [protocol boundary](./protocol.md#role-handoffs) defines correlation and cancellation requirements. Execution records are separate from version-1 drafts; model IDs and cached lists still do not identify a conversation.
 
 ## Git task workspace foundation (development branch)
 
-`src/git/` implements a lazy host service for the future first execution: one `dualmind/task/<task UUID>/worker` branch and a separate worktree per task, outside the source repository under the extension's workspace storage directory. `Workbench.prepareTaskWorkspace()` is an internal integration point, not a command or Webview action. Opening settings, querying models or saving/deleting drafts does not call it. Start remains disabled; no inference or command executor is added.
+In dedicated mode, `src/git/` implements a lazy host service for the first execution: one `dualmind/task/<task UUID>/worker` branch and a separate worktree per task, outside the source repository under the extension's workspace storage directory. `ExecutionService` calls `TaskWorkspaces.prepare()` before its first model request; `Workbench.prepareTaskWorkspace()` remains a host integration wrapper. Opening settings, querying models or saving drafts does not prepare a workspace.
 
-Preparation requires Git 2.25+, a trusted single-folder workspace opened at the repository root, a named branch, a commit and a clean source directory (including staged, unstaged and non-ignored untracked files). Bare repositories, submodules, detached HEAD and multiple workspace folders are rejected. An existing linked worktree can be the source. The baseline commit is frozen at first preparation; ignored/generated files are not copied. Existing prepared task files are reused even after the source moves or becomes dirty. No source checkout, automatic commit, stash, fetch, merge, push or dependency installation occurs.
+First preparation in dedicated mode requires Git 2.25+, a trusted single-folder workspace opened at the repository root, a named branch, a commit and a clean source directory (including staged, unstaged and non-ignored untracked files). Bare repositories, submodules, detached HEAD and multiple workspace folders are rejected. An existing linked worktree can be the source. The baseline commit is frozen at first preparation; ignored/generated files are not copied. Existing prepared task files are reused even after the source moves or becomes dirty. No source checkout, automatic commit, stash, fetch, merge, push or dependency installation occurs.
 
 A separate `dualMind.git.workspaces.v1` host record holds the task/repository identity, source branch, baseline commit, task branch, directory and `preparing`/`ready` phase. Intent is saved before Git creation; recovery verifies directory ownership, branch, common repository and baseline ancestry. Matching completed creation can recover a failed final state write. Conflicts, missing ready directories and partial checkouts with modifications are preserved for manual inspection. Preparation is serialized per repository and registry in the host; Git branch/path conflicts also prevent another process from overwriting existing work. Draft storage stays version 1 with no migration.
 
 The host binds a Worker or Reviewer file interface. Both can list/read regular files, inspect status and read tracked differences from the baseline; new untracked files are visible through status/list/read. Only Worker receives `writeFile`, including creation of ordinary subdirectories. Each access checks the task still exists, workspace trust, repository binding and worktree ownership. Absolute paths, traversal, symbolic links, hard-linked files and Git metadata are rejected. Git is invoked without a shell and with hooks, external diff, textconv, content filters and filesystem monitors disabled. LFS/filter-generated content is not downloaded or materialized by this service. Commands have a 20-second timeout and 2 MiB output limit; individual file reads/writes are limited to 2 MiB. Exceeding limits returns an error, not truncated evidence.
 
-This is a tool-interface boundary, not an operating-system sandbox: external processes or users with filesystem access can still modify the worktree. Reviewer cannot run tests or arbitrary commands through this interface; future Worker execution will provide test evidence. Read-only file access does not implement independent model histories. The [future context contract](./protocol.md#future-role-handoffs) remains applicable.
+This is a tool-interface boundary, not an operating-system sandbox: external processes or users with filesystem access can still modify the worktree. Reviewer cannot run tests or arbitrary commands through this interface; Worker execution provides test evidence. The separate execution service enforces role histories. The [context contract](./protocol.md#role-handoffs) remains applicable.
+
+## Task Git strategies
+
+Drafts optionally select managed (default), current, or an existing local branch. Managed tasks own an external worktree; direct tasks use the trusted opened repository. Strategies lock when preparation intent is registered. Current mode resolves the branch for each new execution; specified mode keeps its saved branch name. Direct executions require cleanliness every time and freeze the target HEAD as baseline. Preparation is serialized per repository; branch switching disables guessing, overwrite-ignore, hooks and filters, and preserves worktree occupancy checks.
+
+Run summaries retain a complete Git binding (strategy, repository/common directory, working directory, branch, base commit and execution HEAD). Role interfaces and command boundaries verify that binding. Managed baseline reuse remains compatible with old registrations; old absent strategy fields mean managed. No storage version change or bulk migration is needed. The readonly binding lookup used by preview/Explorer never invokes preparation or switches branches. Reviewer permissions and role histories are unaffected. Directories are not OS sandboxes; external changes during an operation cannot be made atomic with arbitrary user processes.

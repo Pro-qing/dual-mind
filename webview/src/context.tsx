@@ -1,3 +1,9 @@
+import type {
+  ExecutionAction,
+  ExecutionReply,
+  ExecutionSnapshot,
+  RunEvent,
+} from '../../src/shared/execution';
 import { createContext, useContext } from 'react';
 import type { Action, AppSnapshot, ModelQueryState } from '../../src/shared/model';
 import { t, type MessageKey } from '../../src/shared/i18n';
@@ -7,6 +13,9 @@ export interface LanguageGuard {
 }
 export interface UIContextValue {
   snapshot: AppSnapshot;
+  execution: ExecutionSnapshot;
+  executionEvents: RunEvent[];
+  execute(action: ExecutionAction): Promise<ExecutionReply>;
   pending: boolean;
   models: Record<string, ModelQueryState>;
   queryModels(connectionId: string): Promise<void>;

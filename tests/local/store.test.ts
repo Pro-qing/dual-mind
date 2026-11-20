@@ -332,3 +332,35 @@ test('editing one role binding, task or workspace cannot rewrite another task or
   );
   assert.deepEqual((await b.store.snapshot()).tasks[0], remote);
 });
+
+test('task Git selection is optional, isolated and preserved by older edit clients', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const old = (await f.store.snapshot()).tasks[0];
+  assert.equal(old.git, undefined);
+  const input = taskInput({ git: { mode: 'branch', branch: 'feature/test' } });
+  await f.store.dispatch({ kind: 'task.save', input });
+  const selected = (await f.store.snapshot()).tasks[0];
+  input.git = { mode: 'current' };
+  await f.store.dispatch({
+    kind: 'task.save',
+    id: selected.id,
+    input: taskInput({ name: 'Edited by old client' }),
+  });
+  assert.deepEqual((await f.store.snapshot()).tasks.find((item) => item.id === selected.id)?.git, {
+    mode: 'branch',
+    branch: 'feature/test',
+  });
+  assert.equal((await f.store.snapshot()).tasks.find((item) => item.id === old.id)?.git, undefined);
+  for (const git of [
+    { mode: 'shell' },
+    { mode: 'branch', branch: '-f' },
+    { mode: 'branch', branch: 'HEAD~1' },
+    { mode: 'branch', branch: '../outside' },
+  ]) {
+    await assert.rejects(
+      f.store.dispatch({ kind: 'task.save', input: { ...taskInput(), git } } as never),
+      { code: 'invalidMessage' },
+    );
+  }
+});

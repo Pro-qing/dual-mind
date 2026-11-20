@@ -1,23 +1,16 @@
-import { createHash } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { constants } from 'node:fs';
-import { lstat, mkdir, open, realpath } from 'node:fs/promises';
+import { lstat, mkdir, open, realpath, rename, unlink, readlink } from 'node:fs/promises';
 import * as path from 'node:path';
+import type { GitStrategy, RepositoryInfo } from '../shared/model';
 import type { StateStorage } from '../core/store';
 import { GitProcess, GitTaskError } from './process';
 
 export const taskGitStorageKey = 'dualMind.git.workspaces.v1';
 const fileLimit = 2 * 1024 * 1024;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export interface TaskGitWorkspace {
-  taskId: string;
-  repository: string;
-  commonDir: string;
-  sourceBranch: string;
-  baseCommit: string;
-  branch: string;
-  directory: string;
-  phase: 'preparing' | 'ready';
-}
+export type { TaskGitWorkspace } from '../shared/execution';
+import type { TaskGitWorkspace } from '../shared/execution';
 interface Registry {
   version: 1;
   entries: TaskGitWorkspace[];
@@ -34,9 +27,11 @@ export interface TaskReader {
   readFile(relativePath: string): Promise<string>;
   status(): Promise<string>;
   diff(): Promise<string>;
+  fingerprint(): Promise<string>;
 }
 export interface TaskWriter extends TaskReader {
   writeFile(relativePath: string, contents: string): Promise<void>;
+  deleteFile(relativePath: string): Promise<void>;
 }
 const queues = new Map<string, Promise<unknown>>();
 async function serialized<T>(key: string, action: () => Promise<T>): Promise<T> {
@@ -96,12 +91,12 @@ export class TaskWorkspaces {
     private readonly git = new GitProcess(),
   ) {}
   private async source(
-    taskId: string,
+    taskId?: string,
   ): Promise<{ repository: string; commonDir: string; storage: string }> {
     if (!this.ports.trusted()) {
       fail('workspaceUntrusted', 'Trust this workspace before preparing development files.');
     }
-    if (!uuid.test(taskId) || !(await this.ports.taskExists(taskId))) {
+    if (taskId !== undefined && (!uuid.test(taskId) || !(await this.ports.taskExists(taskId)))) {
       fail('taskNotFound', 'Save a task before preparing its development workspace.');
     }
     const folders = this.ports.folders();
@@ -158,12 +153,16 @@ export class TaskWorkspaces {
         !['repository', 'commonDir', 'directory'].every(
           (key) =>
             typeof entry[key as keyof TaskGitWorkspace] === 'string' &&
-            path.isAbsolute(entry[key as keyof TaskGitWorkspace]),
+            path.isAbsolute(entry[key as keyof TaskGitWorkspace] as string),
         ) ||
         typeof entry.sourceBranch !== 'string' ||
         !entry.sourceBranch ||
         !/^[0-9a-f]{40,64}$/.test(entry.baseCommit) ||
-        entry.branch !== `dualmind/task/${entry.taskId}/worker` ||
+        (entry.strategy !== undefined &&
+          !['managed', 'current', 'branch'].includes(entry.strategy.mode)) ||
+        ((entry.strategy?.mode ?? 'managed') === 'managed'
+          ? entry.branch !== `dualmind/task/${entry.taskId}/worker`
+          : !entry.branch || entry.directory !== entry.repository) ||
         !['preparing', 'ready'].includes(entry.phase)
       ) {
         fail('storageFailed', 'Invalid task Git registry; existing records were preserved.');
@@ -212,6 +211,15 @@ export class TaskWorkspaces {
     ) {
       fail('workspaceChanged', `Task Git ownership changed at ${directory}; inspect it manually.`);
     }
+    if (
+      record.headCommit &&
+      (await this.git.checked(['rev-parse', 'HEAD'], directory)).trim() !== record.headCommit
+    ) {
+      fail(
+        'workspaceChanged',
+        `Execution HEAD changed at ${directory}; start a new execution after handling changes.`,
+      );
+    }
     const ancestry = await this.git.run(
       ['merge-base', '--is-ancestor', record.baseCommit, 'HEAD'],
       directory,
@@ -235,13 +243,200 @@ export class TaskWorkspaces {
       fail('workspaceChanged', `Git no longer registers the task directory ${directory}.`);
     }
   }
-  async prepare(taskId: string): Promise<TaskGitWorkspace> {
+  preparedTaskIds(): string[] {
+    return this.registry().entries.map((entry) => entry.taskId);
+  }
+  assertStrategy(taskId: string, strategy?: GitStrategy): void {
+    const record = this.registry().entries.find((entry) => entry.taskId === taskId);
+    if (
+      record &&
+      strategy &&
+      JSON.stringify(record.strategy ?? { mode: 'managed' }) !== JSON.stringify(strategy)
+    ) {
+      fail(
+        'workspaceConflict',
+        'Development strategy is locked after preparation; create a new task to change it.',
+      );
+    }
+  }
+  async branches(): Promise<RepositoryInfo> {
+    const { repository } = await this.source();
+    const current = await this.git.run(['symbolic-ref', '--quiet', '--short', 'HEAD'], repository);
+    if (current.code) {
+      fail('detachedHead', 'Check out a named branch first.');
+    }
+    return {
+      currentBranch: current.stdout.trim(),
+      branches: (
+        await this.git.checked(
+          ['for-each-ref', '--format=%(refname:strip=2)', 'refs/heads/'],
+          repository,
+        )
+      )
+        .trim()
+        .split('\n')
+        .filter(Boolean),
+    };
+  }
+  async binding(taskId: string, expected?: TaskGitWorkspace): Promise<TaskGitWorkspace> {
+    const source = await this.source(taskId);
+    const registered = this.registry().entries.find((entry) => entry.taskId === taskId);
+    const record = expected ?? registered;
+    if (
+      !record ||
+      !registered ||
+      record.taskId !== taskId ||
+      record.phase !== 'ready' ||
+      record.repository !== source.repository ||
+      record.commonDir !== source.commonDir ||
+      record.directory !== registered.directory ||
+      JSON.stringify(record.strategy ?? { mode: 'managed' }) !==
+        JSON.stringify(registered.strategy ?? { mode: 'managed' })
+    ) {
+      fail('workspaceChanged', 'Task directory binding is unavailable or changed.');
+    }
+    const directory =
+      (record.strategy?.mode ?? 'managed') === 'managed'
+        ? path.join(
+            source.storage,
+            'task-worktrees',
+            createHash('sha256').update(source.commonDir).digest('hex').slice(0, 16),
+            taskId,
+          )
+        : source.repository;
+    if (record.directory !== directory) {
+      fail('workspaceChanged', 'Task directory changed.');
+    }
+    await this.verify(record);
+    return structuredClone(record);
+  }
+  private async prepareDirect(
+    taskId: string,
+    strategy: GitStrategy,
+    source: { repository: string; commonDir: string },
+  ): Promise<TaskGitWorkspace> {
+    const repository = source.repository;
+    const previous = this.registry().entries.find((entry) => entry.taskId === taskId);
+    if (
+      previous &&
+      (previous.repository !== repository ||
+        previous.commonDir !== source.commonDir ||
+        previous.directory !== repository)
+    ) {
+      fail(
+        'workspaceConflict',
+        `Task is already bound to ${previous.directory}; it cannot be moved automatically.`,
+      );
+    }
+    const head = await this.git.run(['rev-parse', '--verify', 'HEAD^{commit}'], repository);
+    if (head.code) {
+      fail('noCommit', 'Commit the repository before preparing a task.');
+    }
+    const current = await this.git.run(['symbolic-ref', '--quiet', '--short', 'HEAD'], repository);
+    if (current.code) {
+      fail('detachedHead', 'Check out a named branch before starting.');
+    }
+    const clean = async () => {
+      if (
+        await this.git.checked(
+          ['status', '--porcelain=v1', '-z', '--untracked-files=all'],
+          repository,
+        )
+      ) {
+        fail(
+          'dirtyRepository',
+          'Every direct execution requires a clean directory. Commit or handle staged, unstaged and untracked changes manually.',
+        );
+      }
+    };
+    await clean();
+    const branch = strategy.mode === 'branch' ? strategy.branch : current.stdout.trim();
+    if (
+      branch.startsWith('-') ||
+      (await this.git.run(['check-ref-format', `refs/heads/${branch}`], repository)).code
+    ) {
+      fail('workspaceConflict', 'Choose a valid existing local branch.');
+    }
+    const ref = `refs/heads/${branch}`;
+    const target = await this.git.run(['rev-parse', '--verify', `${ref}^{commit}`], repository);
+    if (target.code) {
+      fail('workspaceConflict', `Local branch does not exist: ${branch}`);
+    }
+    if (
+      previous?.phase === 'preparing' &&
+      (previous.branch !== branch ||
+        previous.baseCommit !== target.stdout.trim() ||
+        ![previous.sourceBranch, previous.branch].includes(current.stdout.trim()))
+    ) {
+      fail(
+        'workspaceChanged',
+        `Interrupted preparation no longer matches ${previous.branch} at ${previous.directory}; inspect the retained registration before retrying.`,
+      );
+    }
+    if (
+      (await this.git.checked(['ls-tree', '-r', '-z', target.stdout.trim()], repository))
+        .split('\0')
+        .some((entry) => entry.startsWith('160000 '))
+    ) {
+      fail('submodulesUnsupported', 'The target branch contains unsupported submodules.');
+    }
+    const occupied = (await this.git.checked(['worktree', 'list', '--porcelain'], repository))
+      .split('\n\n')
+      .some(
+        (block) =>
+          block.split('\n').includes(`branch ${ref}`) &&
+          !block.split('\n').includes(`worktree ${repository}`),
+      );
+    if (occupied) {
+      fail('workspaceConflict', `Branch is checked out in another worktree: ${branch}`);
+    }
+    const record: TaskGitWorkspace = {
+      taskId,
+      strategy,
+      repository,
+      commonDir: source.commonDir,
+      directory: repository,
+      branch,
+      sourceBranch: current.stdout.trim(),
+      baseCommit: target.stdout.trim(),
+      headCommit: target.stdout.trim(),
+      phase: 'preparing',
+    };
+    await this.save(record);
+    if (branch !== current.stdout.trim()) {
+      try {
+        await this.git.checked(
+          ['switch', '--no-guess', '--no-overwrite-ignore', '--', branch],
+          repository,
+        );
+      } catch (error) {
+        throw new GitTaskError(
+          error instanceof GitTaskError ? error.code : 'gitFailed',
+          `Cannot switch to ${branch} at ${repository}. Check ignored-file conflicts and branch occupancy; files and preparation intent were preserved.`,
+        );
+      }
+    }
+    await clean();
+    await this.verify(record);
+    record.phase = 'ready';
+    await this.save(record);
+    return structuredClone(record);
+  }
+  async prepare(taskId: string, strategy?: GitStrategy): Promise<TaskGitWorkspace> {
     const source = await this.source(taskId);
     return serialized(`repository:${source.commonDir}`, () =>
       serialized(`registry:${source.storage}`, async () => {
         // Recheck task/trust after waiting, before any filesystem or Git mutation.
         if (!this.ports.trusted() || !(await this.ports.taskExists(taskId))) {
           fail('accessDenied', 'Task or workspace access changed while preparing.');
+        }
+        this.assertStrategy(taskId, strategy);
+        const selected = strategy ??
+          this.registry().entries.find((entry) => entry.taskId === taskId)?.strategy ?? {
+            mode: 'managed' as const,
+          };
+        if (selected.mode !== 'managed') {
+          return this.prepareDirect(taskId, selected, source);
         }
         const directory = path.join(
           source.storage,
@@ -280,7 +475,10 @@ export class TaskWorkspaces {
           }
           record.phase = 'ready';
           await this.save(record);
-          return structuredClone(record);
+          return {
+            ...structuredClone(record),
+            headCommit: (await this.git.checked(['rev-parse', 'HEAD'], directory)).trim(),
+          };
         }
         if (record?.phase === 'ready') {
           fail(
@@ -375,48 +573,42 @@ export class TaskWorkspaces {
         await this.verify(record);
         record.phase = 'ready';
         await this.save(record);
-        return structuredClone(record);
+        return {
+          ...structuredClone(record),
+          headCommit: (await this.git.checked(['rev-parse', 'HEAD'], directory)).trim(),
+        };
       }),
     );
   }
-  files(taskId: string, role: 'worker'): Promise<TaskWriter>;
-  files(taskId: string, role: 'reviewer'): Promise<TaskReader>;
-  async files(taskId: string, role: 'worker' | 'reviewer'): Promise<TaskReader | TaskWriter> {
+  files(taskId: string, role: 'worker', expected?: TaskGitWorkspace): Promise<TaskWriter>;
+  files(taskId: string, role: 'reviewer', expected?: TaskGitWorkspace): Promise<TaskReader>;
+  async files(
+    taskId: string,
+    role: 'worker' | 'reviewer',
+    expected?: TaskGitWorkspace,
+  ): Promise<TaskReader | TaskWriter> {
     if (role !== 'worker' && role !== 'reviewer') {
       fail('accessDenied', 'Unknown task role.');
     }
-    const source = await this.source(taskId);
-    const record = this.registry().entries.find((entry) => entry.taskId === taskId);
-    if (
-      !record ||
-      record.phase !== 'ready' ||
-      record.commonDir !== source.commonDir ||
-      record.repository !== source.repository ||
-      record.directory !==
-        path.join(
-          source.storage,
-          'task-worktrees',
-          createHash('sha256').update(source.commonDir).digest('hex').slice(0, 16),
-          taskId,
-        )
-    ) {
-      fail('workspaceChanged', 'Prepare the saved task before accessing its files.');
-    }
-    await this.verify(record);
+    const record = await this.binding(taskId, expected);
+    const registration = JSON.stringify(
+      this.registry().entries.find((entry) => entry.taskId === taskId),
+    );
     const guard = async () => {
-      if (!this.ports.trusted() || !(await this.ports.taskExists(taskId))) {
-        fail('accessDenied', 'Task access has been revoked.');
-      }
       const folders = this.ports.folders();
-      const current = this.registry().entries.find((entry) => entry.taskId === taskId);
       if (
+        !this.ports.trusted() ||
+        !(await this.ports.taskExists(taskId)) ||
         folders.length !== 1 ||
         !folders[0] ||
         (await realpath(folders[0])) !== record.repository ||
-        !current ||
-        JSON.stringify(current) !== JSON.stringify(record)
+        JSON.stringify(this.registry().entries.find((entry) => entry.taskId === taskId)) !==
+          registration
       ) {
-        fail('accessDenied', 'The task workspace binding changed; obtain a new role interface.');
+        fail(
+          'accessDenied',
+          'Task access or workspace binding changed; obtain a new role interface.',
+        );
       }
       await this.verify(record);
     };
@@ -465,6 +657,68 @@ export class TaskWorkspaces {
       return target;
     };
     const reader: TaskReader = {
+      fingerprint: async () => {
+        await guard();
+        const hash = createHash('sha256');
+        hash.update(
+          await this.git.checked(
+            ['status', '--porcelain=v1', '-z', '--untracked-files=all'],
+            record.directory,
+          ),
+        );
+        const names = [
+          ...new Set(
+            (
+              await this.git.checked(
+                ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+                record.directory,
+              )
+            )
+              .split('\0')
+              .filter(Boolean),
+          ),
+        ].sort();
+        for (const name of names) {
+          hash.update(name);
+          hash.update('\0');
+          let file;
+          try {
+            const target = await safePath(name);
+            file = await open(
+              target,
+              constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+            );
+            const stat = await file.stat();
+            if (!stat.isFile() || stat.nlink > 1) {
+              fail('invalidPath', 'File identity changed while recording evidence.');
+            }
+            hash.update(String(stat.mode));
+            for await (const bytes of file.createReadStream({
+              autoClose: false,
+              highWaterMark: 65536,
+            })) {
+              hash.update(bytes);
+            }
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+              hash.update('missing');
+            } else if (error instanceof GitTaskError) {
+              const link = path.join(record.directory, name);
+              if ((await lstat(link)).isSymbolicLink()) {
+                hash.update(await readlink(link));
+              } else {
+                throw error;
+              }
+            } else {
+              throw error;
+            }
+          } finally {
+            await file?.close();
+          }
+          hash.update('\0');
+        }
+        return hash.digest('hex');
+      },
       listFiles: async () => {
         await guard();
         const files = (
@@ -545,21 +799,31 @@ export class TaskWorkspaces {
         if (typeof contents !== 'string' || Buffer.byteLength(contents) > fileLimit) {
           fail('outputTooLarge', 'Task writes are limited to 2 MiB.');
         }
+        const target = await safePath(relative, true);
+        const temporary = path.join(path.dirname(target), `.dualmind-${randomUUID()}.tmp`);
+        const mode = await lstat(target)
+          .then((stat) => stat.mode & 0o777)
+          .catch(() => 0o600);
         const file = await open(
-          await safePath(relative, true),
-          constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK,
-          0o600,
+          temporary,
+          constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
+          mode,
         );
         try {
-          const stat = await file.stat();
-          if (!stat.isFile() || stat.nlink > 1) {
-            fail('invalidPath', 'Only regular task files are writable.');
-          }
-          await file.truncate(0);
           await file.writeFile(contents, 'utf8');
-        } finally {
+          await file.sync();
           await file.close();
+          await guard();
+          await safePath(relative, true);
+          await rename(temporary, target);
+        } finally {
+          await file.close().catch(() => undefined);
+          await unlink(temporary).catch(() => undefined);
         }
+      },
+      deleteFile: async (relative: string) => {
+        await guard();
+        await unlink(await safePath(relative));
       },
     });
   }

@@ -38,7 +38,7 @@ await writeFile(
     'workbench.colorTheme': 'Dark Modern',
     'window.commandCenter': false,
     'workbench.secondarySideBar.defaultVisibility': 'hidden',
-    'workbench.activityBar.location': 'hidden',
+    'workbench.activityBar.location': 'default',
     'chat.disableAIFeatures': true,
     'git.enabled': false,
     'window.restoreWindows': 'none',
@@ -73,6 +73,8 @@ await fixtureGit('config', 'user.email', 'ui-test@example.invalid');
 await writeFile(join(workspace, 'fixture.txt'), 'Isolated UI fixture.\n');
 await fixtureGit('add', '--', 'fixture.txt');
 await fixtureGit('commit', '-m', 'UI fixture');
+await fixtureGit('branch', 'ui-target');
+const originalBranch = (await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim();
 const initialBranches = await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/');
 const initialWorktrees = await fixtureGit('worktree', 'list', '--porcelain');
 const environment = { ...process.env };
@@ -87,7 +89,91 @@ const modelIds = [
 ];
 const requests = [];
 let responseMode = 'success';
+const inferenceRequests = [];
+let holdWorker = false;
+let workerRequestObserved;
+let workerTurns = 0,
+  reviewTurns = 0;
 const server = createServer((request, response) => {
+  if (
+    request.method === 'POST' &&
+    request.headers.authorization === `Bearer ${testKey}` &&
+    (request.url?.endsWith('/chat/completions') || request.url?.endsWith('/responses'))
+  ) {
+    let raw = '';
+    request.on('data', (chunk) => {
+      raw += String(chunk);
+    });
+    request.on('end', () => {
+      const body = JSON.parse(raw);
+      const worker = body.tools.some((tool) => (tool.function?.name || tool.name) === 'write_file');
+      inferenceRequests.push({ worker, body, path: request.url });
+      const turn = worker ? ++workerTurns : ++reviewTurns;
+      if (worker && holdWorker) {
+        workerRequestObserved?.();
+        return;
+      }
+      const call = worker
+        ? turn % 2
+          ? {
+              name: 'write_file',
+              arguments: JSON.stringify({
+                path: 'result.txt',
+                content: turn === 1 ? 'bad' : 'fixed',
+              }),
+            }
+          : {
+              name: 'finish_work',
+              arguments: JSON.stringify({ summary: 'Updated result.txt for review.' }),
+            }
+        : {
+            name: 'submit_review',
+            arguments: JSON.stringify({
+              verdict: turn === 1 ? 'changes_requested' : 'approve',
+              summary:
+                turn === 1 ? 'Fix the failed artifact check.' : 'Artifact and evidence verified.',
+            }),
+          };
+      const id = `${worker ? 'worker' : 'reviewer'}-${turn}`;
+      response.setHeader('Content-Type', 'text/event-stream');
+      const events = request.url.endsWith('/responses')
+        ? [
+            { type: 'response.output_text.delta', delta: 'Reviewing the task artifact.\n' },
+            {
+              type: 'response.completed',
+              response: {
+                status: 'completed',
+                output: [
+                  { type: 'reasoning', encrypted_content: 'reviewer-private-state' },
+                  { type: 'function_call', id: `item-${id}`, call_id: id, ...call },
+                ],
+              },
+            },
+          ]
+        : [
+            {
+              choices: [
+                {
+                  index: 0,
+                  delta: {
+                    content: 'Working on the isolated task artifact.\n',
+                    tool_calls: [{ index: 0, id, type: 'function', function: call }],
+                  },
+                  finish_reason: 'tool_calls',
+                },
+              ],
+            },
+            '[DONE]',
+          ];
+      response.end(
+        events
+          .map((event) => `data: ${typeof event === 'string' ? event : JSON.stringify(event)}\n\n`)
+          .join(''),
+      );
+    });
+    return;
+  }
+
   requests.push({
     method: request.method,
     url: request.url,
@@ -155,8 +241,11 @@ async function size(width, height) {
   );
 }
 async function command(page, name) {
-  await page.keyboard.press('Escape');
-  await page.keyboard.press('Control+Shift+P');
+  await page
+    .locator('.menubar-menu-button')
+    .filter({ hasText: /^View$/ })
+    .click({ delay: 100 });
+  await page.getByRole('menuitem', { name: /Command Palette/ }).click({ delay: 250 });
   await page.locator('.quick-input-widget input').fill(`>${name}`);
   const item = page.locator('.quick-input-list .monaco-list-row').filter({ hasText: name }).first();
   await item.waitFor();
@@ -178,6 +267,18 @@ async function frame(page) {
   }
   throw new Error('The React workbench did not render.');
 }
+async function taskSidebar(page, visible) {
+  const sidebar = page.locator('.part.sidebar');
+  if (!visible) {
+    await command(page, 'View: Close Primary Side Bar');
+  } else if (!(await sidebar.isVisible())) {
+    await page
+      .locator('.activitybar')
+      .getByRole('tab', { name: /DualMind/ })
+      .click();
+  }
+  await sidebar.waitFor({ state: visible ? 'visible' : 'hidden' });
+}
 async function click(f, name) {
   await f.getByRole('button', { name, exact: true }).first().click();
 }
@@ -185,10 +286,12 @@ async function saved(f, text = 'Saved locally') {
   await f.getByRole('status').filter({ hasText: text }).waitFor();
 }
 async function dismiss(f) {
-  const button = f.locator('.toast .icon-button');
-  if (await button.count()) {
-    await button.click();
-  }
+  // Toasts can expire between locating and clicking; dismiss any current ones atomically.
+  await f.locator('.toast .icon-button').evaluateAll((buttons) => {
+    for (const button of buttons) {
+      button.click();
+    }
+  });
 }
 async function screenshot(page, f, name) {
   await dismiss(f);
@@ -207,6 +310,26 @@ async function screenshot(page, f, name) {
   captures.push(`${name}.png`);
 }
 async function assertMenuBounds(f) {
+  // Positioning is applied after React commits; wait for the visible layout, not its first frame.
+  await f.waitForFunction(
+    () => {
+      const element = document.querySelector('[role="listbox"]');
+      if (!element) {
+        return false;
+      }
+      const bounds = element.getBoundingClientRect();
+      const dialog = element.closest('.dialog-content')?.getBoundingClientRect();
+      return (
+        bounds.left >= 0 &&
+        bounds.right <= window.innerWidth + 2 &&
+        bounds.top >= Math.max(0, dialog?.top ?? 0) - 2 &&
+        bounds.bottom <= Math.min(window.innerHeight, dialog?.bottom ?? window.innerHeight) + 2 &&
+        element.scrollHeight > element.clientHeight
+      );
+    },
+    undefined,
+    { timeout: 3000 },
+  );
   const bounds = await f.getByRole('listbox').evaluate((element) => {
     const menu = element.getBoundingClientRect();
     const dialog = element.closest('.dialog-content')?.getBoundingClientRect();
@@ -236,11 +359,27 @@ async function assertMenuBounds(f) {
 try {
   let page = await launch();
   // Remove the native explorer to give the editor its own wide design canvas.
-  await page.keyboard.press('Control+b');
-  await command(page, 'DualMind: Open Workbench');
+  await page
+    .locator('.activitybar')
+    .getByRole('tab', { name: /DualMind/ })
+    .click();
+  await page.getByRole('button', { name: 'Open workbench', exact: true }).click();
   let f = await frame(page);
   await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
+  await taskSidebar(page, false);
   await screenshot(page, f, 'en-empty');
+  await taskSidebar(page, true);
+  await page.getByRole('button', { name: 'New task', exact: true }).click();
+  await f.getByRole('dialog', { name: 'New task', exact: true }).waitFor();
+  await click(f, 'Cancel');
+  await taskSidebar(page, false);
+  await click(f, 'Settings');
+  await click(f, 'Back to tasks');
+  assert.equal(
+    await f.getByRole('dialog').count(),
+    0,
+    'A consumed sidebar request must not reopen the dialog',
+  );
   await click(f, 'View examples');
   await screenshot(page, f, 'en-workbench');
   assert.equal(await f.locator('.task-item').count(), 4);
@@ -544,6 +683,112 @@ try {
   await command(page, 'DualMind: Open Workbench');
   f = await frame(page);
   await f.getByRole('heading', { name: 'Persistent UI draft', exact: true }).waitFor();
+  assert.equal(
+    await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/'),
+    initialBranches,
+    'Drafts/settings/discovery must not create branches',
+  );
+  assert.equal(await fixtureGit('worktree', 'list', '--porcelain'), initialWorktrees);
+  await click(f, 'Settings');
+  await click(f, 'New connection');
+  await f.getByLabel('Connection name', { exact: false }).fill('UI reviewer endpoint');
+  await f.getByLabel('Base URL', { exact: false }).fill(apiUrl);
+  await f.getByLabel('Inference protocol', { exact: true }).selectOption('responses');
+  await f.getByRole('combobox', { name: /Default model ID/ }).fill('reviewer-model');
+  await click(f, 'Save connection');
+  await saved(f);
+  await click(f, 'Set key');
+  await page.locator('.quick-input-widget input[type="password"]').fill(testKey);
+  await page.locator('.quick-input-widget input[type="password"]').press('Enter');
+  await f.getByRole('button', { name: 'Replace key', exact: true }).waitFor();
+  await click(f, 'Task execution');
+  await click(f, 'Add preparation command');
+  let preset = f.locator('.command-preset').last();
+  await preset.getByLabel('Command name', { exact: true }).fill('Prepare fixture');
+  await preset.getByLabel('Executable', { exact: true }).fill(process.execPath);
+  await preset
+    .getByLabel('Arguments — one per line', { exact: true })
+    .fill('-e\nconsole.log("fixture prepared")');
+  await click(f, 'Add check command');
+  preset = f.locator('.command-preset').last();
+  await preset.getByLabel('Command name', { exact: true }).fill('Check result');
+  await preset.getByLabel('Executable', { exact: true }).fill(process.execPath);
+  await preset
+    .getByLabel('Arguments — one per line', { exact: true })
+    .fill('-e\nif(require("node:fs").readFileSync("result.txt","utf8")!=="fixed")process.exit(1)');
+  await click(f, 'Save execution settings');
+  await screenshot(page, f, 'en-execution-settings');
+  await click(f, 'Back to tasks');
+  await click(f, 'Edit draft');
+  await f
+    .getByLabel('Task requirements', { exact: false })
+    .fill(
+      'Write fixed to result.txt, run the configured check, and independently review the artifact.',
+    );
+  await f
+    .getByLabel('Reviewer Connection', { exact: true })
+    .selectOption({ label: 'UI reviewer endpoint' });
+  await click(f, 'Save draft');
+  await f.getByRole('dialog').waitFor({ state: 'hidden' });
+  await click(f, 'Start');
+  await f
+    .getByRole('status')
+    .filter({ hasText: 'Completed — checks and review passed' })
+    .waitFor({ timeout: 60000 });
+  assert.equal(workerTurns, 4);
+  assert.equal(reviewTurns, 2);
+  await f.getByText('Tools, checks and review evidence', { exact: true }).click();
+  assert.ok((await f.locator('.execution-evidence').innerText()).includes('FAIL'));
+  assert.ok((await f.locator('.execution-evidence').innerText()).includes('PASS'));
+  await screenshot(page, f, 'en-execution-complete');
+  await size(820, 1040);
+  await screenshot(page, f, 'en-execution-narrow');
+  await size(1600, 1100);
+  const taskWorktrees = await fixtureGit('worktree', 'list', '--porcelain');
+  const taskDirectory = taskWorktrees
+    .split('\n\n')
+    .find((block) => block.includes('refs/heads/dualmind/task/'))
+    .split('\n')[0]
+    .slice('worktree '.length);
+  assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
+  await assert.rejects(readFile(join(workspace, 'result.txt')), { code: 'ENOENT' });
+  assert.equal(await fixtureGit('status', '--porcelain'), '');
+  assert.ok(inferenceRequests.some((request) => request.path.endsWith('/responses')));
+  assert.ok(inferenceRequests.some((request) => request.path.endsWith('/chat/completions')));
+  assert.ok(
+    inferenceRequests
+      .filter((request) => request.worker)
+      .every((request) => !JSON.stringify(request.body).includes('reviewer-private-state')),
+  );
+  await click(f, 'Preview draft');
+  await page.locator('.tab').filter({ hasText: 'Task Changes.diff' }).waitFor();
+  await page.locator('.view-lines').filter({ hasText: 'result.txt' }).first().waitFor();
+  await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+  f = await frame(page);
+  holdWorker = true;
+  const nextRequest = new Promise((resolve) => {
+    workerRequestObserved = resolve;
+  });
+  await click(f, 'Restart execution');
+  await nextRequest;
+  const requestsBeforeReload = inferenceRequests.length;
+  const executingFrame = f;
+  const executionDetached = page.waitForEvent('framedetached', {
+    predicate: (candidate) => candidate === executingFrame,
+    timeout: 30000,
+  });
+  await command(page, 'Developer: Reload Window');
+  await executionDetached;
+  await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+  f = await frame(page);
+  await f.getByRole('status').filter({ hasText: 'Interrupted — restart explicitly' }).waitFor();
+  assert.equal(
+    inferenceRequests.length,
+    requestsBeforeReload,
+    'Reload must not replay model requests',
+  );
+  assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
+  await screenshot(page, f, 'en-execution-interrupted');
   await click(f, 'Delete task: Persistent UI draft');
   await screenshot(page, f, 'en-delete-task');
   await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
@@ -553,12 +798,117 @@ try {
     requests.every((request) => request.method === 'GET' && request.authorized && !request.hasBody),
   );
   assert.equal(
-    await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/'),
-    initialBranches,
-    'Drafts, settings and model discovery must not create branches',
+    await readFile(join(taskDirectory, 'result.txt'), 'utf8'),
+    'fixed',
+    'Deleting task records must preserve artifacts',
   );
-  assert.equal(await fixtureGit('worktree', 'list', '--porcelain'), initialWorktrees);
   assert.equal(await fixtureGit('status', '--porcelain'), '');
+  // Direct strategies use only this disposable project, never the development repository.
+  holdWorker = false;
+  for (const mode of ['current', 'branch']) {
+    workerTurns = 0;
+    reviewTurns = 0;
+    const beforeBranches = await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/');
+    const beforeWorktrees = (await fixtureGit('worktree', 'list', '--porcelain')).split(
+      'worktree ',
+    ).length;
+    const name = `Direct ${mode} task`;
+    await click(f, 'New task');
+    await f.getByLabel('Task name', { exact: false }).fill(name);
+    await f
+      .getByLabel('Task requirements', { exact: false })
+      .fill('Write fixed to result.txt and review the checks.');
+    await f.getByRole('radio', { name: /^Bug/ }).check();
+    const strategy = f.getByRole('combobox', { name: 'Development branch', exact: true });
+    assert.equal(await strategy.inputValue(), 'managed');
+    await strategy.selectOption(mode);
+    if (mode === 'branch') {
+      await f
+        .getByRole('option', { name: 'ui-target', exact: true })
+        .waitFor({ state: 'attached' });
+      await f
+        .getByRole('combobox', { name: 'Local branch', exact: true })
+        .selectOption('ui-target');
+      await click(f, 'Refresh branches');
+      await f.getByRole('button', { name: 'Refresh branches', exact: true }).waitFor();
+    }
+    await f
+      .getByLabel('Reviewer Connection', { exact: true })
+      .selectOption({ label: 'UI reviewer endpoint' });
+    await strategy.scrollIntoViewIfNeeded();
+    await screenshot(page, f, `en-git-${mode}`);
+    await size(820, 1040);
+    await strategy.scrollIntoViewIfNeeded();
+    await screenshot(page, f, `en-git-${mode}-narrow`);
+    await size(1600, 1100);
+    assert.equal((await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim(), originalBranch);
+    await click(f, 'Create draft');
+    await f.getByRole('dialog').waitFor({ state: 'hidden' });
+    if (mode === 'branch') {
+      const previousFrame = f;
+      const detached = page.waitForEvent('framedetached', {
+        predicate: (candidate) => candidate === previousFrame,
+        timeout: 30000,
+      });
+      await command(page, 'Developer: Reload Window');
+      await detached;
+      await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+      f = await frame(page);
+      await f.getByRole('heading', { name, exact: true }).waitFor();
+    }
+    await click(f, 'Edit draft');
+    assert.equal(
+      await f.getByRole('combobox', { name: 'Development branch', exact: true }).inputValue(),
+      mode,
+    );
+    await click(f, 'Cancel');
+    await click(f, 'Start');
+    await f
+      .getByRole('status')
+      .filter({ hasText: 'Completed — checks and review passed' })
+      .waitFor({ timeout: 60000 });
+    assert.equal(await readFile(join(workspace, 'result.txt'), 'utf8'), 'fixed');
+    assert.equal(
+      (await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim(),
+      mode === 'branch' ? 'ui-target' : originalBranch,
+    );
+    assert.equal(
+      await fixtureGit('for-each-ref', '--format=%(refname)', 'refs/heads/'),
+      beforeBranches,
+    );
+    assert.equal(
+      (await fixtureGit('worktree', 'list', '--porcelain')).split('worktree ').length,
+      beforeWorktrees,
+    );
+    await click(f, 'Edit draft');
+    assert.equal(
+      await f.getByRole('combobox', { name: 'Development branch', exact: true }).isDisabled(),
+      true,
+    );
+    await click(f, 'Cancel');
+    await screenshot(page, f, `en-git-${mode}-completed`);
+    await click(f, `Delete task: ${name}`);
+    await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+    await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
+    assert.equal(await readFile(join(workspace, 'result.txt'), 'utf8'), 'fixed');
+    // Simulate the user's explicit handling of results before the next execution.
+    await fixtureGit('add', 'result.txt');
+    await fixtureGit('commit', '-m', `Preserve direct ${mode} result`);
+  }
+  await click(f, 'Settings');
+  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await click(f, '返回任务');
+  await click(f, '新建任务');
+  await f.getByRole('combobox', { name: '开发分支', exact: true }).selectOption('branch');
+  await f.getByRole('option', { name: 'ui-target', exact: true }).waitFor({ state: 'attached' });
+  await f.getByRole('combobox', { name: '本地分支', exact: true }).selectOption('ui-target');
+  await screenshot(page, f, 'zh-git-branch');
+  await size(820, 1040);
+  await f.getByRole('combobox', { name: '本地分支', exact: true }).scrollIntoViewIfNeeded();
+  await screenshot(page, f, 'zh-git-branch-narrow');
+  await f.getByRole('combobox', { name: '开发分支', exact: true }).selectOption('current');
+  await screenshot(page, f, 'zh-git-current-narrow');
+  await click(f, '取消');
   await writeFile(
     join(artifacts, 'results.json'),
     JSON.stringify(
@@ -569,7 +919,11 @@ try {
         profile,
         workspace,
         modelQueries: requests.length,
-        taskBranchesCreated: 0,
+        taskBranchesCreated: 1,
+        inferenceRequests: inferenceRequests.length,
+        activityBarEntry: true,
+        reloadInterrupted: true,
+        directBranchModes: ['current', 'branch'],
       },
       null,
       2,

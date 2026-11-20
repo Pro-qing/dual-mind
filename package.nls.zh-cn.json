@@ -5,5 +5,9 @@
   "language": "DualMind 界面语言。内置 Reviewer 定义按此设置显示，自定义内容和任务快照保留原文。",
   "languageAuto": "跟随 VS Code",
   "languageZh": "简体中文",
-  "languageEn": "English"
+  "languageEn": "English",
+  "tasksView": "任务",
+  "tasksWelcome": "[打开工作台](command:dualMind.openWorkbench)\n[新建任务](command:dualMind.newTask)",
+  "newTaskCommand": "新建任务",
+  "selectTaskCommand": "选择任务"
 }

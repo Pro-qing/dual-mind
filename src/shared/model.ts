@@ -1,3 +1,10 @@
+import type {
+  Protocol,
+  ExecutionAction,
+  ExecutionReply,
+  ExecutionUpdate,
+  ExecutionSnapshot,
+} from './execution';
 export type Locale = 'en' | 'zh-CN';
 export type LanguageSetting = 'auto' | Locale;
 export const builtInIds = ['bug', 'feature', 'review', 'refactor'] as const;
@@ -26,6 +33,7 @@ export interface AgentBindings {
   reviewer: ModelBinding;
 }
 export interface ConnectionRecord {
+  protocol?: Protocol;
   id: string;
   name: string;
   baseUrl: string;
@@ -34,7 +42,13 @@ export interface ConnectionRecord {
 export interface ConnectionSummary extends ConnectionRecord {
   hasKey: boolean;
 }
+export type GitStrategy = { mode: 'managed' | 'current' } | { mode: 'branch'; branch: string };
+export interface RepositoryInfo {
+  currentBranch: string;
+  branches: string[];
+}
 export interface TaskInput extends AgentBindings {
+  git?: GitStrategy;
   name: string;
   requirements: string;
   roleId: string;
@@ -62,6 +76,9 @@ export interface WorkspaceData {
   selectedTaskId: string | null;
 }
 export interface AppSnapshot {
+  preparedTaskIds?: string[];
+  execution?: ExecutionSnapshot;
+  navigationRequest?: { id: string; taskId?: string; newTask?: boolean };
   locale: Locale;
   language: LanguageSetting;
   hasWorkspace: boolean;
@@ -95,7 +112,9 @@ export type ErrorCode =
   | 'builtInProtected'
   | 'storageFailed'
   | 'invalidStoredData'
-  | 'unavailable';
+  | 'unavailable'
+  | 'executionLocked'
+  | 'gitLocked';
 export const modelErrorCodes = [
   'invalidMessage',
   'notFound',
@@ -137,16 +156,21 @@ export type ModelQueryResult =
       error: ModelErrorCode;
     };
 export type ClientMessage =
+  | { type: 'execution.request'; requestId: string; action: ExecutionAction }
   | { type: 'models.query'; requestId: string; connectionId: string }
   | { type: 'ready' | 'rendered' }
   | { type: 'request'; requestId: string; action: Action };
 export type HostMessage =
+  | { type: 'execution.update'; update: ExecutionUpdate }
+  | { type: 'execution.result'; requestId: string; result?: ExecutionReply; error?: string }
   | ModelQueryResult
   | { type: 'models.invalidated'; connectionId: string }
   | { type: 'snapshot'; snapshot: AppSnapshot }
   | { type: 'result'; requestId: string; ok: boolean; error?: ErrorCode; snapshot?: AppSnapshot }
   | { type: 'fatal'; error: ErrorCode };
 export interface Bridge {
+  execute?(action: ExecutionAction): Promise<ExecutionReply>;
+  onExecution?(listener: (update: ExecutionUpdate) => void): () => void;
   request(action: Action): Promise<AppSnapshot>;
   queryModels(connectionId: string): Promise<ModelList>;
   onModelsInvalidated(listener: (connectionId: string) => void): () => void;

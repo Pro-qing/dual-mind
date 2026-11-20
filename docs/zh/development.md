@@ -2,7 +2,7 @@
 
 [English](../en/development.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.2 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-20；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.2 版本说明](./release-notes-0.0.2.md)。
+**当前源码版本：0.0.3 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-20；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.3 版本说明](./release-notes-0.0.3.md)。
 
 ## 开发环境
 
@@ -86,4 +86,18 @@ CI 各组合运行环境及本地存储／React 测试、格式、类型、lint�
 
 本地测试串行执行，JavaScript 堆上限为 512 MiB，保留单项 30 秒超时。每次独立运行验证命令：本地检查总内存 1 GiB、整体超时 60 秒；Electron 总内存 2 GiB、整体超时 180 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
 
-设置 `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` 后，`npm test` 与 `npm run test:ui` 复用已安装 VS Code；未设置时保留自动下载。无显示环境使用 `xvfb-run -a`。测试使用隔离用户配置；真实 Webview 测试启动本地模拟服务，在原生密码框输入测试密钥，验证查询、选择、保存重载、中英文及窄窗口布局，不读取个人凭据或调用推理接口。
+设置 `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` 后，`npm test` 与 `npm run test:ui` 复用已安装 VS Code；未设置时保留自动下载。无显示环境使用 `xvfb-run -a`。测试使用隔离用户配置；真实 Webview 测试启动本地模拟服务，在原生密码框输入测试密钥，验证查询、选择、保存重载、中英文及窄窗口布局，不读取个人凭据；模型请求只发往本地模拟端点，不调用付费服务。
+
+## 执行能力验证
+
+执行测试使用临时仓库、本地 SSE 服务和测试凭据。设置 `DUALMIND_TEST_SYSTEMD=1` 额外验证真实命令运行器：内存／交换空间探测、原样参数、取消、超时和输出限制。应在有总资源限制的用户 systemd slice 内运行；检查命令单元继承该 slice，使总预算同时覆盖编辑器与命令。例如先选择 Node 24，再执行：
+
+```bash
+systemctl --user set-property --runtime app-dualmind-validation.slice MemoryMax=1G MemorySwapMax=0 CPUQuota=100%
+systemd-run --user --wait --collect --slice=app-dualmind-validation.slice \
+  -p MemoryMax=1G -p MemorySwapMax=0 -p RuntimeMaxSec=60s \
+  --working-directory="$PWD" --setenv="PATH=$PATH" \
+  --setenv=DUALMIND_TEST_SYSTEMD=1 npm run check
+```
+
+Electron 验证将 slice 和单元的内存上限设为 2G、单元整体超时设为 180 秒。设置 `VSCODE_TEST_EXECUTABLE` 复用本机编辑器，取消 `ELECTRON_RUN_AS_NODE` 后执行 `xvfb-run -a npm run test:ui`。Webview 测试从活动栏进入，配置两种协议及真实预设命令，验证检查失败／修订／审查通过闭环，以及专用模式源目录保持原样、当前／指定模式直接写入和分支选择的保存重载。这些命令不生成或安装扩展包。

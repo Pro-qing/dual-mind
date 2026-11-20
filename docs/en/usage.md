@@ -2,7 +2,7 @@
 
 [简体中文](../zh/usage.md) · [Documentation](./README.md)
 
-**Source version: 0.0.2 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.2 version notes](./release-notes-0.0.2.md).
+**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
 
 ## Requirements
 
@@ -97,6 +97,28 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 ## Current limitations
 
-Model execution, streaming, automatic review loops, feedback submission, pause/stop, editor context collection, and code application are not connected yet. These controls are disabled rather than reporting simulated success. Real task records are drafts; only the isolated examples display running/paused/completed states.
+The development branch executes tasks in dedicated worktrees or directly on a selected local branch with streaming, checks/review rounds and pause/continue/stop. Automatic editor-context collection, parallel execution and applying dedicated-worktree results to the original workspace remain unavailable. Examples remain isolated read-only content.
 
-The seven [adopted design scenes](./design.md) remain in the repository. Their execution states describe intended later behavior. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+The seven [adopted design scenes](./design.md) remain in the repository. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+
+## Execute a task (development branch)
+
+Use the **DualMind activity-bar icon** to open the Tasks sidebar, then **Open workbench** or **New task**. Selecting a sidebar task reveals the same workbench tab. The existing command palette entry still works. These capabilities apply to builds from the development branch, not the unchanged published 0.0.1 artifact.
+
+1. Configure both connections and keys, explicitly selecting **Chat Completions** or **Responses**. Older connections default to Chat Completions. Model-list access does not prove inference or tool support; use a model/service supporting the selected streaming and function-calling protocol.
+2. In **Settings → Task execution**, save workspace commands. Each has a name, executable, one argument per line and a 10–900 second timeout (default 180). At least one check is required. For example, executable `npm` with argument lines `run` and `check` runs `npm run check`. An optional preparation preset with executable `npm` and argument `ci` installs dependencies only because you explicitly configured it.
+3. Open a trusted single-root Git repository with a committed named branch and no staged, unstaged or non-ignored untracked changes. Start the saved draft. The default dedicated mode creates/reuses its own Worker branch and worktree, leaving the original directory untouched. Current/specified branch modes write directly to the opened project; see the branch selection rules below. New worktrees do not copy ignored/generated files such as node_modules.
+4. Worker reads and modifies task files and can run saved checks. After each submission, the host runs every check; Reviewer independently reads artifacts and evidence. Requested changes go back to Worker until all checks pass and Reviewer approves, or the round limit is reached.
+5. Inspect live role output and **Tools, checks and review evidence**. Older records are paged from the host. **Preview draft** includes new files; **Open task directory** opens the worktree in another window. Submit and merge the result yourself; approval never applies or merges code automatically.
+
+Only one execution is active per workspace, including paused tasks. **Pause** takes effect after the current operation; **Continue** resumes it. Feedback can be added while paused. **Stop** cancels requests and stops command process groups before confirming completion. Closing the workbench keeps execution running; reloading/exiting the extension host marks unfinished work interrupted, without replaying actions. **Restart execution** creates a new run and reuses the task worktree, so previously saved artifacts remain. Running/paused tasks cannot be edited; their connection address/protocol/key cannot be changed or deleted. Deleting an active task stops it first and retains Git artifacts.
+
+Commands run as your OS user in the task directory, with 1 GiB memory, no swap and a 2 MiB output limit. Linux user systemd and cgroup v2 limits must work; there is no unrestricted fallback. This is not an OS sandbox. Preparation commands run before every new execution and are never inferred by the model. API secrets are not injected into the command environment.
+
+## Development branch selection (development builds)
+
+New tasks default to **Use a DualMind dedicated branch**. Choose **Use the current branch** to work directly in the opened project on the branch checked out at execution start, or **Use a specified local branch** to select an existing local branch and switch to it before execution. Refreshing the branch list and saving a draft never switch or create branches. No remote fetch or branch creation is performed in direct modes.
+
+Every start/restart in direct mode requires a clean directory, including staged, unstaged and non-ignored untracked files. Commit or otherwise handle previous results yourself before restarting. Branches occupied by another worktree, ignored-file collisions and target submodules block switching. Once preparation has registered a directory, the strategy is locked; create a new task to change it. Old tasks retain dedicated mode.
+
+Direct execution changes your project files. Stop, completion and deletion do not undo changes or switch back. **Show current project files** focuses Explorer; preview uses the execution's fixed branch/HEAD and never switches branches. Each direct run records a fresh baseline from the target HEAD. A branch/HEAD change invalidates further access to that run; use a new execution after handling changes. Dedicated runs keep their existing baseline and retained worktree. Reviewer remains read-only in either mode. These changes are not in the published 0.0.1 artifact.

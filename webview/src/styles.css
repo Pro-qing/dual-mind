@@ -1308,3 +1308,64 @@ label > textarea {
   flex: 1 1 180px;
   align-self: center;
 }
+.execution-panel {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--dm-line);
+  border-radius: 6px;
+}
+.execution-panel > label,
+.execution-panel > details,
+.execution-panel > .button-row {
+  margin: 12px 0;
+}
+.execution-evidence {
+  max-height: 300px;
+  overflow: auto;
+}
+.execution-evidence pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.conversation-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 500px;
+  overflow: auto;
+}
+.execution-config-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.command-group {
+  margin: 22px 0;
+}
+.command-preset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 14px 0;
+  border: 1px solid var(--dm-line);
+  border-radius: 6px;
+}
+@media (max-width: 899px) {
+  .command-preset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.git-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--dm-line);
+  border-radius: 8px;
+}
+.git-choice > button {
+  align-self: flex-start;
+}

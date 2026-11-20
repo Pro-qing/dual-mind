@@ -10,6 +10,12 @@ suite('DualMind extension host', () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(commands.includes('dualMind.showStatus'));
     assert.ok(commands.includes('dualMind.openWorkbench'));
+    assert.ok(commands.includes('dualMind.newTask'));
+    const containers = extension.packageJSON.contributes.viewsContainers.activitybar as {
+      id: string;
+    }[];
+    assert.ok(containers.some((container) => container.id === 'dualMind'));
+    await vscode.commands.executeCommand('dualMind.tasks.focus');
   });
   test('renders the React Webview, reuses its tab, and opens again after closing', async () => {
     const tabs = () =>

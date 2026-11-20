@@ -8,38 +8,40 @@ DualMind 是一个面向 VS Code 的 AI 结对编程插件项目，将任务准�
 
 ## 项目状态
 
-**当前源码 0.0.2 · 本地版本记录 · 尚未发布**
+**当前源码 0.0.3 · 本地版本记录 · 尚未发布**
 
-React 工作台支持本地任务草稿、连接设置、Reviewer 预设和中英文切换。模型执行与代码应用仍为规划能力，可选对话预览明确标注为只读示例。
+React 工作台支持本地任务草稿、连接设置、Reviewer 预设和中英文切换。0.0.3 已提供独立角色历史、Worker 执行、只读 Reviewer 审查和活动栏入口；任务可使用专用 worktree 或直接修改选定本地分支，将专用目录成果应用回原工作区仍待实现，可选示例继续保持只读。
 
 历史发布记录：0.0.1 已于 2026-11-18 上架 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind)，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**，带有 Preview 标记。[GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 同日发布。[发布说明](./docs/zh/release-notes-preview-2.md)。
 
-[0.0.2 版本说明](./docs/zh/release-notes-0.0.2.md)记录本次源码能力与验证；[更新日志](./CHANGELOG.zh.md)区分本地版本和历史公开制品。
+[0.0.3 版本说明](./docs/zh/release-notes-0.0.3.md)记录本次源码能力与验证；[更新日志](./CHANGELOG.zh.md)区分本地版本和历史公开制品。
 
 ## 两种互补角色
 
 - **Worker（执行者）：** 保持通用执行职责，完成任务并根据反馈修改代码。
 - **Reviewer（审查者）：** 按任务选择 Bug、Feature、Review、Refactor 或自定义审查侧重点。每份草稿保留角色指令快照。
 
-预期协作流程为 **生成 → 审查 → 修复 → 通过**。开发者可以介入引导，并决定是否应用经过审查的结果。
+任务执行流程为 **生成 → 审查 → 修复 → 通过**。开发者可以介入引导，并决定是否应用经过审查的结果。
 
 ## 当前本地能力
 
 - **任务工作台：** 在双栏布局中创建、选择、编辑和删除工作区级草稿。
 - **连接设置：** 保存 OpenAI 兼容接口与两个智能体的独立模型默认值，由 VS Code 保存 API 密钥。
+- **模型查询：** 显式查询候选模型，支持搜索、选择与手动输入；查询只验证列表访问。
+- **任务执行：** 在专用 worktree 或选定本地分支中执行 Worker 修改、预设检查和 Reviewer 审查，支持流式输出、暂停／继续／停止及差异预览。可从活动栏图标进入。
 - **Reviewer 预设：** 编辑内置角色的双语指令，或管理保留原文的自定义角色。
 - **语言选择：** 跟随 VS Code，或手动选择简体中文／English，不改写已保存的任务内容。
 - **示例预览：** 查看预期对话及并行任务外观，不创建记录，也不发送请求。
 
 ## 规划能力
 
-模型推理、流式对话、独立并行会话、暂停／停止、自动审查循环、编辑器上下文及明确应用已审核修改，仍待后续开发。
+独立并行会话、编辑器上下文自动收集及将专用 worktree 中已审核的成果明确应用回原工作区，仍待后续开发。
 
 ## 界面设计
 
 ![已审核的 DualMind 并行任务设计参考](./docs/design/dual-mind-workbench.png)
 
-七组已采用 SVG／PNG 保留为设计参考，其中 [API 模型查询](./docs/design/dual-mind-api-model-discovery.png)与[任务模型选择](./docs/design/dual-mind-task-model-selection.png)已在开发分支实现；已发布的 0.0.1 制品保持原有行为。部分执行状态对应后续能力。[工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
+七组已采用 SVG／PNG 保留为设计参考，其中 [API 模型查询](./docs/design/dual-mind-api-model-discovery.png)与[任务模型选择](./docs/design/dual-mind-task-model-selection.png)已在开发分支实现；已发布的 0.0.1 制品保持原有行为。图中的并行执行仍待实现，单任务执行已经接入。[工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
 
 ## 文档与参与贡献
 

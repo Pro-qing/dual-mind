@@ -2,6 +2,18 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.3 — Local source version (unpublished)
+
+Recorded 2026-11-20; local annotated tag `v0.0.3`. This does not indicate a Marketplace update or a GitHub Release.
+
+- Add Chat Completions/Responses streaming inference and tool adapters, independent Worker/Reviewer histories and frozen execution snapshots.
+- Connect preparation commands, Worker edits, all preset checks, Reviewer review and revisions; add round limits, pause/continue/stop, feedback and reload interruption.
+- Add the activity-bar icon, native task sidebar, public streamed output, check evidence, paged records, diff preview and directory access.
+- Tasks choose dedicated, current or a specified existing local branch. Direct runs require cleanliness each time and freeze branch/HEAD; viewing records never switches branches.
+- Reviewer has no writing or command tools. Commands require user-systemd resource limits, with no unrestricted fallback.
+
+See the [0.0.3 version notes](./docs/en/release-notes-0.0.3.md) for scope, limitations and verification.
+
 ## 0.0.2 — Local source version (unpublished)
 
 Recorded 2026-11-20; local annotated tag `v0.0.2`. This does not indicate a Marketplace update or a GitHub Release.

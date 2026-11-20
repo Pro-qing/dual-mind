@@ -43,6 +43,7 @@ async function mount(
   f = fixture(),
   initialNavigation?: Partial<Navigation>,
   onNavigation?: (value: Navigation) => void,
+  bridgeOverrides: Partial<Bridge> = {},
 ) {
   const initial = await f.store.snapshot();
   function Harness() {
@@ -56,6 +57,7 @@ async function mount(
       },
       queryModels: (id) => f.queries.query(id),
       onModelsInvalidated: f.onModelsInvalidated,
+      ...bridgeOverrides,
     }));
     return (
       <App
@@ -740,3 +742,66 @@ test('same-connection same-model defaults and drafts remain independently editab
   assert.equal(snapshot.tasks[0].reviewer.model, 'reviewer-only');
   assert.equal(snapshot.defaults.worker.model, 'worker-only');
 });
+
+for (const locale of ['en', 'zh-CN'] as const) {
+  test(`task branch choice saves and reloads without preparation (${locale})`, async () => {
+    const f = fixture({ editorLanguage: locale });
+    let queries = 0;
+    await mount(f, undefined, undefined, {
+      execute: async (action) => {
+        assert.equal(action.kind, 'git.branches');
+        queries++;
+        return {
+          state: { config: { prepare: [], checks: [] }, runs: [] },
+          repository: { currentBranch: 'main', branches: ['main', 'feature'] },
+        };
+      },
+    });
+    const tr = (key: MessageKey) => t(locale, key);
+    click(tr('newTask'));
+    const ui = rtl.within(rtl.screen.getByRole('dialog'));
+    const strategy = ui.getByRole('combobox', { name: tr('gitStrategy') }) as HTMLSelectElement;
+    assert.equal(strategy.value, 'managed');
+    assert.equal(queries, 0);
+    rtl.fireEvent.change(strategy, { target: { value: 'current' } });
+    assert.ok(ui.getByText(tr('gitDirectHint')));
+    assert.equal(queries, 0);
+    rtl.fireEvent.change(strategy, { target: { value: 'branch' } });
+    await rtl.waitFor(() => assert.ok(ui.queryByRole('option', { name: 'feature' })));
+    rtl.fireEvent.change(ui.getByRole('combobox', { name: tr('localBranch') }), {
+      target: { value: 'feature' },
+    });
+    rtl.fireEvent.click(ui.getByRole('button', { name: tr('refreshBranches') }));
+    await rtl.waitFor(() => assert.equal(queries, 2));
+    rtl.fireEvent.change(ui.getByLabelText(new RegExp(tr('taskName'))), {
+      target: { value: 'Branch draft' },
+    });
+    rtl.fireEvent.change(ui.getByLabelText(new RegExp(tr('requirements'))), {
+      target: { value: 'Branch requirements' },
+    });
+    rtl.fireEvent.click(ui.getAllByRole('radio')[0]);
+    rtl.fireEvent.click(ui.getByRole('button', { name: tr('createDraft') }));
+    await rtl.waitFor(() => assert.ok(!rtl.screen.queryByRole('dialog')));
+    assert.deepEqual((await f.store.snapshot()).tasks[0].git, {
+      mode: 'branch',
+      branch: 'feature',
+    });
+    rtl.cleanup();
+    await mount(f, undefined, undefined, {
+      execute: async () => ({
+        state: { config: { prepare: [], checks: [] }, runs: [] },
+        repository: { currentBranch: 'main', branches: ['main', 'feature'] },
+      }),
+    });
+    click(tr('editTask'));
+    assert.equal(
+      (rtl.screen.getByRole('combobox', { name: tr('localBranch') }) as HTMLSelectElement).value,
+      'feature',
+    );
+    await rtl.waitFor(() =>
+      assert.ok(
+        !rtl.screen.getByRole('button', { name: tr('refreshBranches') }).hasAttribute('disabled'),
+      ),
+    );
+  });
+}
