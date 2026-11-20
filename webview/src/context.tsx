@@ -5,7 +5,7 @@ import type {
   RunEvent,
 } from '../../src/shared/execution';
 import { createContext, useContext } from 'react';
-import type { Action, AppSnapshot, ModelQueryState } from '../../src/shared/model';
+import type { Action, ActionReply, AppSnapshot, ModelQueryState } from '../../src/shared/model';
 import { t, type MessageKey } from '../../src/shared/i18n';
 export interface LanguageGuard {
   save(): Promise<void>;
@@ -19,7 +19,7 @@ export interface UIContextValue {
   pending: boolean;
   models: Record<string, ModelQueryState>;
   queryModels(connectionId: string): Promise<void>;
-  run(action: Action, notice?: MessageKey | false): Promise<AppSnapshot>;
+  run(action: Action, notice?: MessageKey | false): Promise<ActionReply>;
   registerLanguageGuard(guard: LanguageGuard | null): void;
 }
 export const UIContext = createContext<UIContextValue | null>(null);

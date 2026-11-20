@@ -1,3 +1,7 @@
+import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
+import { ErrorNotice } from './ErrorNotice';
+import { restoreNavigation, type Navigation } from './navigation';
+export type { Navigation } from './navigation';
 import { ExecutionSettings } from './Execution';
 import {
   emptyExecutionConfig,
@@ -10,19 +14,16 @@ import type {
   Action,
   AppSnapshot,
   Bridge,
-  ErrorCode,
+  TaskDraft,
   LanguageSetting,
 } from '../../src/shared/model';
 import { t, type MessageKey } from '../../src/shared/i18n';
 import { UIContext, type LanguageGuard } from './context';
 import { Dialog, Icon } from './components';
 import { Connections, Defaults, Roles } from './Settings';
-import { Tasks } from './Tasks';
+import { Tasks, TaskForm } from './Tasks';
 import { useModelQueries } from './modelQueries';
 
-export interface Navigation {
-  view: 'workbench' | 'api' | 'defaults' | 'roles' | 'execution';
-}
 export function App({
   snapshot,
   bridge,
@@ -31,24 +32,21 @@ export function App({
 }: {
   snapshot: AppSnapshot;
   bridge: Bridge;
-  initialNavigation?: Partial<Navigation>;
+  initialNavigation?: unknown;
   onNavigation?(value: Navigation): void;
 }) {
-  const [view, setView] = useState<Navigation['view']>(
-    initialNavigation?.view === 'api' ||
-      initialNavigation?.view === 'defaults' ||
-      initialNavigation?.view === 'execution' ||
-      initialNavigation?.view === 'roles'
-      ? initialNavigation.view
-      : 'workbench',
+  const [navigation, setNavigation] = useState<Navigation>(() =>
+    restoreNavigation(initialNavigation, snapshot.tasks),
   );
+  const view = navigation.view;
+  const settingsView = view !== 'home' && view !== 'task';
   const [preview, setPreview] = useState(false);
-  const [newTaskRequest, setNewTaskRequest] = useState<string>();
+  const [taskForm, setTaskForm] = useState<'new' | TaskDraft | null>(null);
   const [execution, setExecution] = useState<ExecutionSnapshot>(
     () => snapshot.execution || { config: emptyExecutionConfig(), runs: [] },
   );
   const [executionEvents, setExecutionEvents] = useState<RunEvent[]>([]);
-  const [executionError, setExecutionError] = useState('');
+  const [executionError, setExecutionError] = useState<AppError>();
   const historicalPage = useRef(false);
   const historyRequest = useRef(0);
   useEffect(() => {
@@ -81,37 +79,70 @@ export function App({
   );
   const execute = useCallback(
     async (action: ExecutionAction) => {
-      setExecutionError('');
+      setExecutionError(undefined);
       const request = action.kind === 'history' ? ++historyRequest.current : 0;
       if (action.kind === 'history') {
         historicalPage.current = action.before !== undefined;
       }
       try {
         if (!bridge.execute) {
-          throw new Error('Execution host is unavailable.');
+          throw new OperationError('hostUnavailable');
         }
         const result = await bridge.execute(action);
+        if (request && request !== historyRequest.current) {
+          return result;
+        }
         setExecution(result.state);
         if (result.events && request === historyRequest.current) {
           setExecutionEvents(result.events);
         }
         return result;
       } catch (error) {
-        setExecutionError(error instanceof Error ? error.message : 'Execution failed.');
+        if (!request || request === historyRequest.current) {
+          setExecutionError(toAppError(error));
+        }
         throw error;
       }
     },
     [bridge],
   );
+  const navigate = (next: Navigation) => {
+    if (JSON.stringify(next) === JSON.stringify(navigation)) {
+      return;
+    }
+    historyRequest.current++;
+    historicalPage.current = false;
+    setExecutionEvents([]);
+    setExecutionError(undefined);
+    setNavigation(next);
+  };
+  const setView = (view: 'api' | 'defaults' | 'execution' | 'roles') => {
+    setPreview(false);
+    navigate({
+      view,
+      returnTo:
+        navigation.view === 'home' || navigation.view === 'task' ? navigation : navigation.returnTo,
+    });
+  };
   useEffect(() => {
-    if (snapshot.navigationRequest) {
-      setView('workbench');
-      setPreview(false);
-      if (snapshot.navigationRequest.newTask) {
-        setNewTaskRequest(snapshot.navigationRequest.id);
-      }
+    const request = snapshot.navigationRequest;
+    if (!request) {
+      return;
+    }
+    setPreview(false);
+    if (request.newTask) {
+      setTaskForm('new');
+    } else if (request.taskId) {
+      setTaskForm(null);
+      navigate(restoreNavigation({ view: 'task', taskId: request.taskId }, snapshot.tasks));
     }
   }, [snapshot.navigationRequest?.id]);
+  useEffect(() => {
+    const restored = restoreNavigation(navigation, snapshot.tasks);
+    if (JSON.stringify(restored) !== JSON.stringify(navigation)) {
+      navigate(restored);
+    }
+  }, [snapshot.tasks, navigation]);
 
   const modelQueries = useModelQueries(bridge);
   const [pendingCount, setPendingCount] = useState(0);
@@ -131,11 +162,14 @@ export function App({
     document.documentElement.lang = snapshot.locale;
   }, [snapshot.locale]);
   useEffect(() => {
-    onNavigation?.({ view });
-  }, [view, onNavigation]);
+    onNavigation?.(navigation);
+  }, [navigation, onNavigation]);
   const run = async (action: Action, message: MessageKey | false = 'saved') => {
     setPendingCount((count) => count + 1);
     setNotice(null);
+    if (action.kind !== 'language.set') {
+      setExecutionError(undefined);
+    }
     try {
       const next = await bridge.request(action);
       if (message) {
@@ -143,25 +177,7 @@ export function App({
       }
       return next;
     } catch (error) {
-      const code =
-        error && typeof error === 'object' && 'code' in error
-          ? (error as { code: ErrorCode }).code
-          : 'storageFailed';
-      const known: ErrorCode[] = [
-        'invalidMessage',
-        'required',
-        'invalidUrl',
-        'invalidRounds',
-        'notFound',
-        'workspaceRequired',
-        'builtInProtected',
-        'storageFailed',
-        'invalidStoredData',
-        'unavailable',
-        'executionLocked',
-        'gitLocked',
-      ];
-      setNotice({ key: known.includes(code) ? code : 'storageFailed', error: true });
+      setExecutionError(toAppError(error));
       throw error;
     } finally {
       setPendingCount((count) => count - 1);
@@ -207,63 +223,62 @@ export function App({
       <div className="dm-app">
         <header className="app-header">
           <div className="brand">
-            <span className="brand-symbol" aria-hidden="true">
-              〈〉
-            </span>
+            {view === 'task' ? (
+              <button onClick={() => navigate({ view: 'home' })}>
+                <Icon name="arrow" />
+                {tr('backToHome')}
+              </button>
+            ) : (
+              <span className="brand-symbol" aria-hidden="true">
+                〈〉
+              </span>
+            )}
             <div>
               <h1>
-                DualMind
-                {view !== 'workbench' && <span className="breadcrumb"> / {tr('settings')}</span>}
+                {view === 'task' ? tr('taskDetail') : 'DualMind'}
+                {settingsView && <span className="breadcrumb"> / {tr('settings')}</span>}
               </h1>
-              <p>{tr(view === 'workbench' ? 'tagline' : 'settingsHint')}</p>
+              <p>
+                {settingsView
+                  ? tr('settingsHint')
+                  : snapshot.workspaceName || tr('noWorkspaceName')}
+              </p>
             </div>
           </div>
           <div className="header-actions">
-            {view === 'workbench' ? (
-              <>
-                <span className="stage-badge">
-                  {preview ? tr('sampleCounts') : tr('localStage')}
-                </span>
-                <button
-                  onClick={() => {
-                    setPreview(false);
-                    setView('api');
-                  }}
-                >
-                  <Icon name="settings" />
-                  {tr('settings')}
-                </button>
-              </>
+            <label className="language-control">
+              {tr('language')}
+              <select
+                aria-label={tr('language')}
+                value={snapshot.language}
+                disabled={pending}
+                onChange={(event) => changeLanguage(event.target.value as LanguageSetting)}
+              >
+                <option value="auto">{tr('languageAuto')}</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            {navigation.view === 'home' || navigation.view === 'task' ? (
+              <button onClick={() => setView('api')}>
+                <Icon name="settings" />
+                {tr('settings')}
+              </button>
             ) : (
-              <>
-                <label className="language-control">
-                  {tr('language')}
-                  <select
-                    aria-label={tr('language')}
-                    value={snapshot.language}
-                    disabled={pending}
-                    onChange={(event) => changeLanguage(event.target.value as LanguageSetting)}
-                  >
-                    <option value="auto">{tr('languageAuto')}</option>
-                    <option value="zh-CN">简体中文</option>
-                    <option value="en">English</option>
-                  </select>
-                </label>
-                <button onClick={() => setView('workbench')}>
-                  <Icon name="arrow" />
-                  {tr('backToTasks')}
-                </button>
-              </>
+              <button onClick={() => navigate(navigation.returnTo)}>
+                <Icon name="arrow" />
+                {tr(navigation.returnTo.view === 'task' ? 'backToTask' : 'backToHome')}
+              </button>
             )}
           </div>
         </header>
         {executionError && (
-          <div className="toast toast-error" role="alert">
-            {tr('executionError')}: {executionError}
+          <div className="toast toast-error">
+            <ErrorNotice error={executionError} locale={snapshot.locale} />
             <button
               className="icon-button"
               aria-label={tr('close')}
-              onClick={() => setExecutionError('')}
+              onClick={() => setExecutionError(undefined)}
             >
               ×
             </button>
@@ -284,13 +299,20 @@ export function App({
             </button>
           </div>
         )}
-        {view === 'workbench' ? (
+        {!settingsView ? (
           <Tasks
+            taskId={navigation.view === 'task' ? navigation.taskId : undefined}
             preview={preview}
             onPreviewChange={setPreview}
             onSettings={() => setView('api')}
-            newTaskRequest={newTaskRequest}
-            onNewTaskHandled={() => setNewTaskRequest(undefined)}
+            onSelect={(id) => navigate({ view: 'task', taskId: id })}
+            onNewTask={() => setTaskForm('new')}
+            onEditTask={setTaskForm}
+            onDeleted={(id) => {
+              if (navigation.view === 'task' && navigation.taskId === id) {
+                navigate({ view: 'home' });
+              }
+            }}
           />
         ) : (
           <>
@@ -334,6 +356,16 @@ export function App({
               <Roles />
             )}
           </>
+        )}
+        {taskForm && (
+          <TaskForm
+            task={taskForm === 'new' ? undefined : taskForm}
+            onClose={() => setTaskForm(null)}
+            onSaved={(id) => {
+              setTaskForm(null);
+              navigate({ view: 'task', taskId: id });
+            }}
+          />
         )}
         {languageTarget && (
           <Dialog

@@ -100,4 +100,12 @@ systemd-run --user --wait --collect --slice=app-dualmind-validation.slice \
   --setenv=DUALMIND_TEST_SYSTEMD=1 npm run check
 ```
 
-Electron 验证将 slice 和单元的内存上限设为 2G、单元整体超时设为 180 秒。设置 `VSCODE_TEST_EXECUTABLE` 复用本机编辑器，取消 `ELECTRON_RUN_AS_NODE` 后执行 `xvfb-run -a npm run test:ui`。Webview 测试从活动栏进入，配置两种协议及真实预设命令，验证检查失败／修订／审查通过闭环，以及专用模式源目录保持原样、当前／指定模式直接写入和分支选择的保存重载。这些命令不生成或安装扩展包。
+Electron 验证将 slice 和单元的内存上限设为 2G、单元整体超时设为 180 秒。设置 `VSCODE_TEST_EXECUTABLE` 复用本机编辑器，取消 `ELECTRON_RUN_AS_NODE` 后执行 `xvfb-run -a npm run test:ui`。Webview 测试从活动栏进入，配置两种协议及真实附加自定义命令，验证检查失败／修订／审查通过闭环，以及专用模式源目录保持原样、当前／指定模式直接写入和分支选择的保存重载。这些命令不生成或安装扩展包。
+
+真实 UI 验证遇到不支持 cgroup v2 内存／交换空间限制的主机时，会验证英文与中文资源错误并完成其余界面检查；依赖真实命令的场景记录为未覆盖，`results.json` 中 `passed` 为 `false`、`interfacePassed` 为 `true`，命令退出码为 2，不计作完整通过。请在符合条件的主机上补跑真实执行验证。
+
+## 双 AI 循环验证
+
+本地模拟服务覆盖 Reviewer 首先规划、Worker 自主命令、未通过后的下一轮方案、纯阅读验收，以及旧自定义配置兼容。契约测试覆盖嵌套工具参数、验收项 ID、伪造／过期／失败证据、反馈及最新失败覆盖旧成功。真实 UI 同时验证中英文方案和阅读验收，即使命令资源探测失败也运行无命令闭环。真实命令失败路径和资源限制分别记录，缺少 systemd/cgroup v2 时仍以退出码 2 报告部分覆盖。
+
+本次改造的实际环境、通过项与未覆盖项见[验证记录](./execution-cycle-validation.md)。

@@ -117,12 +117,16 @@ Containers are for compatibility regression testing. Normal users install the VS
 
 ## Git task workspace dependency
 
-The checker requires Git 2.25+ on PATH and prints its version, including during preinstall. The lazy runtime task-workspace service checks Git again when preparation is requested. Missing Git does not prevent the installed extension from managing local drafts, connections or model lists. Starting execution invokes the host Git foundation; saving a draft still creates no branch. See [Architecture](./architecture.md#git-task-workspace-foundation-development-branch) for preparation requirements and [Protocol](./protocol.md#internal-git-workspace-service) for retained resources and manual cleanup.
+The checker requires Git 2.25+ on PATH and prints its version, including during preinstall. The lazy runtime task-workspace service checks Git again when preparation is requested. Missing Git does not prevent the installed extension from managing local tasks, connections or model lists. Starting execution invokes the host Git foundation; saving a task still creates no branch. See [Architecture](./architecture.md#git-task-workspace-foundation-development-branch) for preparation requirements and [Protocol](./protocol.md#internal-git-workspace-service) for retained resources and manual cleanup.
 
 ## Execution resource enforcement
 
-Model execution with check commands additionally requires Linux user systemd and cgroup v2 memory/swap enforcement. A real probe verifies 1 GiB `memory.max` and zero `memory.swap.max` before task preparation; no unrestricted fallback exists. Commands have a 10–900 second timeout, 2 MiB output cap and process-group termination. This is separate from the normal VSIX installation baseline: settings and drafts still work when execution resource limits are unavailable. Commands run as the current OS user and are not sandboxed from arbitrary filesystem/network effects of user-configured programs.
+Model execution with check commands additionally requires Linux user systemd and cgroup v2 memory/swap enforcement. A real probe verifies 1 GiB `memory.max` and zero `memory.swap.max` before the first actual command; no unrestricted fallback exists. Commands have a 10–900 second timeout, 2 MiB output cap and process-group termination. This is separate from the normal VSIX installation baseline: settings and tasks still work when execution resource limits are unavailable. Commands run as the current OS user and are not sandboxed from arbitrary filesystem/network effects of user-configured programs.
 
 This version audit uses Ubuntu 24.04.5 amd64, Node.js 24.22.3, Git 2.43.0 and local VS Code 1.141.0. The table describes the configured workflow, not successful remote CI for 0.0.2/0.0.3. Ubuntu 20.04, minimum VS Code 1.100.0 and other matrix combinations were not revalidated in this audit.
 
 The complete execution regression requires a working user systemd session and cgroup v2. The existing Ubuntu 20.04 container job does not configure that session; its execution regression is not claimed to pass unchanged. Validate that CI environment separately before publication.
+
+## Automatic execution and command-free tasks
+
+Reviewer plans first; Worker then prepares project dependencies and runs commands as needed. systemd/cgroup probing happens before the first actual command. Reading-only acceptance requires no command probe. Unavailable limits are recorded as failures with evidence, without unrestricted fallback or automatic system toolchain installation.

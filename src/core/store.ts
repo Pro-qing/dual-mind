@@ -1,3 +1,4 @@
+import { toAppError, redactError, type AppError } from '../shared/errors';
 import { randomUUID } from 'node:crypto';
 import {
   type Action,
@@ -311,6 +312,23 @@ export class LocalStore {
       };
     });
   }
+  /** Sanitize errors in the host without exposing credential values to callers. */
+  async publicError(error: unknown): Promise<AppError> {
+    const fault = toAppError(error);
+    try {
+      const { global } = this.read();
+      const keys = await Promise.all(
+        global.connections.map((c) => this.ports.secrets.get(secretKey(c.id))),
+      );
+      return redactError(
+        fault,
+        keys.filter((key): key is string => Boolean(key)),
+      );
+    } catch {
+      // If secrets cannot be read, avoid returning potentially sensitive details or parameters.
+      return { code: fault.params ? 'operationFailed' : fault.code };
+    }
+  }
   /** Read credentials briefly under the store lock; network work runs outside it. */
   async connectionForQuery(connectionId: string): Promise<{ baseUrl: string; key?: string }> {
     return this.serialize(async () => {
@@ -348,7 +366,7 @@ export class LocalStore {
       return { task, worker: await endpoint(task.worker), reviewer: await endpoint(task.reviewer) };
     });
   }
-  async dispatch(value: unknown): Promise<void> {
+  async dispatch(value: unknown): Promise<string | undefined> {
     const action = parseAction(value);
     return this.serialize(async () => {
       this.ports.assertMutable?.(action);
@@ -418,7 +436,7 @@ export class LocalStore {
             : [task, ...workspace.tasks];
           workspace.selectedTaskId = task.id;
           await this.ports.workspace.update(workspaceStorageKey, workspace);
-          break;
+          return task.id;
         }
         case 'task.select':
           if (!workspace.tasks.some((task) => task.id === action.id)) {
@@ -541,6 +559,7 @@ export class LocalStore {
           await this.ports.openWorkspace();
           break;
       }
+      return undefined;
     });
   }
 }

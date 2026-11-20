@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">DualMind — 独立任务详情提案，已审核</title>
+  <desc id="description">创建成功后的独立任务详情。任务处于待执行状态，显示需求、角色、Git 策略、模型配置和空对话，用户手动开始。返回主页和设置入口始终可达。</desc>
+  <style>text { font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif; } .mono { font-family: "DejaVu Sans Mono", monospace; }</style>
+  <rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22" />
+  <rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b" />
+  <rect x="0" y="0" width="224" height="40" rx="0" fill="#191c22" />
+  <rect x="0" y="0" width="224" height="2" rx="0" fill="#91bbff" />
+  <rect x="22" y="12" width="14" height="16" rx="3" fill="#2b4161" />
+  <text x="46" y="26" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">DualMind</text>
+  <path d="M198 15 L208 25 M208 15 L198 25" fill="none" stroke="#b1bdce" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1408" y="26" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">界面提案 · 已审核 / 09</text>
+  <line x1="0" y1="40" x2="1440" y2="40" stroke="#394352"/>
+  <rect x="32" y="68" width="128" height="36" rx="5" fill="#191c22" stroke="#394352" />
+  <text x="96.0" y="91.0" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="middle">← 返回主页</text>
+  <text x="182" y="91" font-size="14" fill="#b1bdce" font-weight="400" text-anchor="start">任务详情</text>
+  <rect x="1152" y="68" width="132" height="36" rx="5" fill="#191c22" stroke="#394352" />
+  <text x="1218.0" y="91.0" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="middle">简体中文</text>
+  <path d="M1260 83 l5 5 l5 -5" fill="none" stroke="#b1bdce" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="1296" y="68" width="112" height="36" rx="5" fill="#252c37" stroke="#394352" />
+  <text x="1352.0" y="91.0" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="middle">设置</text>
+  <rect x="48" y="134" width="1344" height="186" rx="6" fill="#20242c" stroke="#394352" />
+  <text x="72" y="164" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">当前任务</text>
+  <rect x="1268" y="150" width="100" height="26" rx="13" fill="#25364e" />
+  <text x="1318.0" y="168" font-size="12" fill="#91bbff" font-weight="500" text-anchor="middle">待执行</text>
+  <text x="72" y="202" font-size="26" fill="#e4e8f0" font-weight="600" text-anchor="start">完善导出功能</text>
+  <text x="72" y="238" font-size="15" fill="#e4e8f0" font-weight="400" text-anchor="start">为项目增加导出入口，允许导出当前配置。</text>
+  <text x="72" y="265" font-size="14" fill="#b1bdce" font-weight="400" text-anchor="start">验收：输出包含必需字段；取消操作不产生文件；补充对应的回归检查。</text>
+  <rect x="72" y="282" width="164" height="26" rx="13" fill="#25364e" />
+  <text x="154.0" y="300" font-size="12" fill="#91bbff" font-weight="500" text-anchor="middle">Reviewer：Feature</text>
+  <text x="254" y="300" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">Git 策略：专用 worktree</text>
+  <text x="1368" y="300" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">最多 5 轮</text>
+  <rect x="48" y="342" width="114" height="40" rx="5" fill="#305981" stroke="#527fb0" />
+  <text x="105.0" y="367.0" font-size="13" fill="#eff5ff" font-weight="400" text-anchor="middle">▷ 开始</text>
+  <rect x="174" y="342" width="88" height="40" rx="5" fill="#242a34" stroke="#343e4d" />
+  <text x="218.0" y="367.0" font-size="13" fill="#8390a3" font-weight="400" text-anchor="middle">暂停</text>
+  <rect x="274" y="342" width="88" height="40" rx="5" fill="#242a34" stroke="#343e4d" />
+  <text x="318.0" y="367.0" font-size="13" fill="#8390a3" font-weight="400" text-anchor="middle">继续</text>
+  <rect x="374" y="342" width="88" height="40" rx="5" fill="#242a34" stroke="#343e4d" />
+  <text x="418.0" y="367.0" font-size="13" fill="#8390a3" font-weight="400" text-anchor="middle">停止</text>
+  <text x="486" y="367" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">模型配置完整 · 已配置 1 项检查命令</text>
+  <rect x="1160" y="342" width="110" height="40" rx="5" fill="#252c37" stroke="#394352" />
+  <text x="1215.0" y="367.0" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="middle">编辑任务</text>
+  <rect x="1282" y="342" width="110" height="40" rx="5" fill="#302326" stroke="#684047" />
+  <text x="1337.0" y="367.0" font-size="13" fill="#ffb4b4" font-weight="400" text-anchor="middle">删除任务</text>
+  <rect x="48" y="408" width="660" height="340" rx="6" fill="#20242c" stroke="#394352" />
+  <rect x="64" y="424" width="36" height="36" rx="6" fill="#25364e" />
+  <text x="82" y="449" font-size="18" fill="#91bbff" font-weight="600" text-anchor="middle">W</text>
+  <text x="114" y="447" font-size="19" fill="#e4e8f0" font-weight="600" text-anchor="start">Worker</text>
+  <text x="688" y="446" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">待执行</text>
+  <line x1="64" y1="477" x2="692" y2="477" stroke="#394352"/>
+  <text x="72" y="506" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">Local gateway / example-worker</text>
+  <text x="378" y="588" font-size="17" fill="#e4e8f0" font-weight="500" text-anchor="middle">等待开始执行</text>
+  <text x="378" y="620" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="middle">点击“开始”后，Worker 将依据任务需求开展工作。</text>
+  <line x1="64" y1="688" x2="692" y2="688" stroke="#394352"/>
+  <path d="M74 707 l5 5 l-5 5" fill="none" stroke="#b1bdce" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="90" y="719" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">角色说明</text>
+  <rect x="732" y="408" width="660" height="340" rx="6" fill="#20242c" stroke="#394352" />
+  <rect x="748" y="424" width="36" height="36" rx="6" fill="#223931" />
+  <text x="766" y="449" font-size="18" fill="#93dfcd" font-weight="600" text-anchor="middle">R</text>
+  <text x="798" y="447" font-size="19" fill="#e4e8f0" font-weight="600" text-anchor="start">Reviewer</text>
+  <text x="1372" y="446" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">待执行</text>
+  <line x1="748" y1="477" x2="1376" y2="477" stroke="#394352"/>
+  <text x="756" y="506" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">Team API / example-reviewer</text>
+  <text x="1062" y="588" font-size="17" fill="#e4e8f0" font-weight="500" text-anchor="middle">等待 Worker 的首轮产出</text>
+  <text x="1062" y="620" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="middle">Reviewer 将按 Feature 角色检查需求和验收条件。</text>
+  <line x1="748" y1="688" x2="1376" y2="688" stroke="#394352"/>
+  <path d="M758 707 l5 5 l-5 5" fill="none" stroke="#b1bdce" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="774" y="719" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">Reviewer 角色快照 · Feature</text>
+  <text x="48" y="789" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">开始后在本页查看对话、检查结果和执行历史；返回主页不会停止任务。</text>
+  <line x1="32" y1="841" x2="1408" y2="841" stroke="#394352"/>
+  <text x="32" y="864" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">配置未齐时保留任务，说明缺少的配置并禁用开始；进入设置后返回此任务。</text>
+  <text x="32" y="885" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="start">静态设计提案 · 内容与运行结果均为示例 · 已审核 · 实现参考</text>
+  <text x="1408" y="885" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">1440 × 900 · 可编辑 SVG</text>
+</svg>

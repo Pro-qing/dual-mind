@@ -1,8 +1,10 @@
+import { type AppError } from '../../src/shared/errors';
+import { ErrorNotice } from './ErrorNotice';
 import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App, type Navigation } from './App';
 import { connect, type VSCodeApi } from './bridge';
-import type { AppSnapshot, ErrorCode, Locale } from '../../src/shared/model';
+import type { AppSnapshot, Locale } from '../../src/shared/model';
 import { t } from '../../src/shared/i18n';
 import './styles.css';
 
@@ -10,7 +12,7 @@ declare function acquireVsCodeApi(): VSCodeApi;
 const api = acquireVsCodeApi();
 function Root() {
   const [snapshot, setSnapshot] = useState<AppSnapshot | null>(null);
-  const [error, setError] = useState<ErrorCode | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [bridge] = useState(() =>
     connect(
       api,
@@ -32,7 +34,10 @@ function Root() {
     if (snapshot) {
       return;
     }
-    const timer = window.setTimeout(() => setError((current) => current || 'unavailable'), 20000);
+    const timer = window.setTimeout(
+      () => setError((current) => current || { code: 'hostUnavailable' }),
+      20000,
+    );
     return () => clearTimeout(timer);
   }, [snapshot]);
   useEffect(() => {
@@ -47,7 +52,11 @@ function Root() {
     return (
       <div className="boot-message">
         <h1>DualMind</h1>
-        <p role={error ? 'alert' : 'status'}>{t(locale, error || 'loading')}</p>
+        {error ? (
+          <ErrorNotice error={error} locale={locale} />
+        ) : (
+          <p role="status">{t(locale, 'loading')}</p>
+        )}
         {error && (
           <button
             onClick={() => {
@@ -63,12 +72,15 @@ function Root() {
   }
   const previous = api.getState() as Partial<Navigation> | undefined;
   return (
-    <App
-      snapshot={snapshot}
-      bridge={bridge}
-      initialNavigation={previous}
-      onNavigation={(value) => api.setState(value)}
-    />
+    <>
+      {error && <ErrorNotice error={error} locale={locale} />}
+      <App
+        snapshot={snapshot}
+        bridge={bridge}
+        initialNavigation={previous}
+        onNavigation={(value) => api.setState(value)}
+      />
+    </>
   );
 }
 createRoot(document.getElementById('root')!).render(<Root />);

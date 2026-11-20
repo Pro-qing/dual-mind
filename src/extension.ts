@@ -9,6 +9,8 @@ export function activate(context: vscode.ExtensionContext): void {
   const workbench = new Workbench(context);
   current = workbench;
   const sidebar = new TaskSidebar(workbench);
+  const handle = (action: () => Promise<unknown>) =>
+    action().catch((error: unknown) => workbench.reportError(error));
   context.subscriptions.push(
     workbench,
     sidebar,
@@ -16,9 +18,13 @@ export function activate(context: vscode.ExtensionContext): void {
       treeDataProvider: sidebar,
       showCollapseAll: false,
     }),
-    vscode.commands.registerCommand('dualMind.newTask', () => workbench.navigate(undefined, true)),
-    vscode.commands.registerCommand('dualMind.selectTask', (id: string) => workbench.navigate(id)),
-    vscode.commands.registerCommand('dualMind.openWorkbench', () => workbench.open()),
+    vscode.commands.registerCommand('dualMind.newTask', () =>
+      handle(() => workbench.navigate(undefined, true)),
+    ),
+    vscode.commands.registerCommand('dualMind.selectTask', (id: string) =>
+      handle(() => workbench.navigate(id)),
+    ),
+    vscode.commands.registerCommand('dualMind.openWorkbench', () => handle(() => workbench.open())),
     vscode.commands.registerCommand('dualMind.showStatus', () => {
       void vscode.window.showInformationMessage(
         t(resolveLocale(getLanguage(), vscode.env.language), 'statusReady'),

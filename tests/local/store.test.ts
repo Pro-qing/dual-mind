@@ -364,3 +364,24 @@ test('task Git selection is optional, isolated and preserved by older edit clien
     );
   }
 });
+
+test('a task save returns its own ID even when another selection is queued', async () => {
+  const f = fixture();
+  const input = {
+    name: 'Task',
+    requirements: 'Check',
+    roleId: 'bug',
+    maxRounds: 5,
+    worker: { connectionId: '', model: '' },
+    reviewer: { connectionId: '', model: '' },
+  };
+  const originalId = await f.store.dispatch({ kind: 'task.save', input });
+  assert.ok(originalId);
+  const saved = f.store.dispatch({ kind: 'task.save', input: { ...input, name: 'New task' } });
+  const selection = f.store.dispatch({ kind: 'task.select', id: originalId });
+  const savedTaskId = await saved;
+  await selection;
+  const snapshot = await f.store.snapshot();
+  assert.equal(snapshot.selectedTaskId, originalId);
+  assert.equal(snapshot.tasks.find((task) => task.id === savedTaskId)?.name, 'New task');
+});

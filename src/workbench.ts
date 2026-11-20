@@ -1,3 +1,4 @@
+import { OperationError, errorText } from './shared/errors';
 import * as vscode from 'vscode';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { LocalStore, StoreError } from './core/store';
@@ -88,7 +89,16 @@ export class Workbench implements vscode.Disposable {
     );
     context.subscriptions.push(
       vscode.workspace.registerTextDocumentContentProvider('dualmind-diff', {
-        provideTextDocumentContent: (uri) => this.execution.preview(uri.authority),
+        provideTextDocumentContent: async (uri) => {
+          try {
+            return await this.execution.preview(uri.authority);
+          } catch (error) {
+            return errorText(
+              resolveLocale(getLanguage(), vscode.env.language),
+              await this.store.publicError(error),
+            );
+          }
+        },
       }),
       vscode.workspace.onDidChangeConfiguration((event) => {
         if (event.affectsConfiguration('dualMind.language')) {
@@ -137,6 +147,11 @@ export class Workbench implements vscode.Disposable {
       navigationRequest: this.navigationRequest,
     };
   }
+  async reportError(error: unknown): Promise<void> {
+    const locale = resolveLocale(getLanguage(), vscode.env.language);
+    const fault = await this.store.publicError(error);
+    void vscode.window.showErrorMessage(errorText(locale, fault));
+  }
   async navigate(taskId?: string, newTask = false) {
     if (taskId) {
       await this.store.dispatch({ kind: 'task.select', id: taskId });
@@ -180,7 +195,7 @@ export class Workbench implements vscode.Disposable {
     });
     void this.ready.catch(() => undefined);
     this.readyTimeout = setTimeout(() => {
-      this.rejectReady?.(new Error(t(resolveLocale(getLanguage(), vscode.env.language), 'fatal')));
+      this.rejectReady?.(new OperationError('workbenchTimeout'));
     }, 20000);
     this.panelDisposables = [
       panel.onDidDispose(() => {
@@ -189,7 +204,7 @@ export class Workbench implements vscode.Disposable {
           this.panel = undefined;
         }
         clearTimeout(this.readyTimeout);
-        this.rejectReady?.(new Error('Workbench closed'));
+        this.rejectReady?.(new OperationError('workbenchClosed'));
         this.resolveReady = undefined;
         this.rejectReady = undefined;
         this.panelDisposables.forEach((disposable) => disposable.dispose());
@@ -219,6 +234,7 @@ export class Workbench implements vscode.Disposable {
       await this.post({
         type: 'fatal',
         error: error instanceof StoreError ? error.code : 'storageFailed',
+        fault: await this.store.publicError(error),
       });
     }
   }
@@ -271,12 +287,7 @@ export class Workbench implements vscode.Disposable {
         await this.post({
           type: 'execution.result',
           requestId: message.requestId,
-          error:
-            error instanceof StoreError
-              ? t(resolveLocale(getLanguage(), vscode.env.language), error.code)
-              : error instanceof Error
-                ? error.message
-                : 'Execution operation failed.',
+          fault: await this.store.publicError(error),
         });
       }
       return;
@@ -342,6 +353,7 @@ export class Workbench implements vscode.Disposable {
     try {
       const action = message.action as
         { kind?: string; id?: string; confirmed?: boolean } | undefined;
+      let savedTaskId: string | undefined;
       if (
         action?.kind === 'task.delete' &&
         action.confirmed === true &&
@@ -349,7 +361,7 @@ export class Workbench implements vscode.Disposable {
       ) {
         await this.execution.deleteTask(action.id);
       } else {
-        await this.store.dispatch(message.action);
+        savedTaskId = await this.store.dispatch(message.action);
       }
       this.changes.fire();
       await this.post({
@@ -357,10 +369,17 @@ export class Workbench implements vscode.Disposable {
         requestId: message.requestId,
         ok: true,
         snapshot: await this.snapshot(),
+        savedTaskId,
       });
     } catch (error) {
       const code: ErrorCode = error instanceof StoreError ? error.code : 'storageFailed';
-      await this.post({ type: 'result', requestId: message.requestId, ok: false, error: code });
+      await this.post({
+        type: 'result',
+        requestId: message.requestId,
+        ok: false,
+        error: code,
+        fault: await this.store.publicError(error),
+      });
     }
   }
   dispose(): void {

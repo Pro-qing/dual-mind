@@ -1,3 +1,4 @@
+import { OperationError } from '../shared/errors';
 import type { Protocol } from '../shared/execution';
 import { modelsUrl } from './models';
 export interface Endpoint {
@@ -22,7 +23,7 @@ export interface ModelTurn {
   calls: ToolCall[];
   output: History;
 }
-export class InferenceError extends Error {}
+export class InferenceError extends OperationError {}
 interface WireEvent {
   error?: unknown;
   type?: string;
@@ -43,7 +44,7 @@ interface WireEvent {
   }[];
   response?: { status: string; output: History };
 }
-const invalid = () => new InferenceError('Invalid or unsupported model response.');
+const invalid = () => new InferenceError('inferenceInvalid');
 export class Inference {
   constructor(
     private readonly limits = {
@@ -81,7 +82,7 @@ export class Inference {
     };
     const encoded = JSON.stringify(body);
     if (Buffer.byteLength(encoded) > this.limits.contextBytes) {
-      throw new InferenceError('Context exceeds 512 KiB; start a smaller task.');
+      throw new InferenceError('inferenceContext');
     }
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -110,7 +111,8 @@ export class Inference {
       if (!response.ok) {
         await response.body?.cancel();
         throw new InferenceError(
-          `Model request failed (HTTP ${response.status}); verify the selected protocol, model and tool support.`,
+          response.status === 401 || response.status === 403 ? 'inferenceAuth' : 'inferenceHttp',
+          { status: response.status },
         );
       }
       if (!response.headers.get('content-type')?.includes('text/event-stream') || !response.body) {
@@ -150,9 +152,7 @@ export class Inference {
           event.error ||
           ['error', 'response.failed', 'response.incomplete'].includes(event.type || '')
         ) {
-          throw new InferenceError(
-            'The model could not complete this turn; no automatic retry was made.',
-          );
+          throw new InferenceError('inferenceIncomplete');
         }
         if (chat) {
           if (!Array.isArray(event.choices)) {
@@ -208,9 +208,7 @@ export class Inference {
           }
           if (choice.finish_reason) {
             if (!['tool_calls', 'stop'].includes(choice.finish_reason)) {
-              throw new InferenceError(
-                'Model output was incomplete; no partial tool call was executed.',
-              );
+              throw new InferenceError('inferencePartial');
             }
             finished = true;
           }
@@ -267,7 +265,7 @@ export class Inference {
         }
         total += next.value.byteLength;
         if (total > this.limits.maxBytes) {
-          throw new InferenceError('Model response exceeds the size limit.');
+          throw new InferenceError('inferenceLimit');
         }
         buffer += decoder.decode(next.value, { stream: true });
         let match: RegExpExecArray | null;
@@ -283,7 +281,7 @@ export class Inference {
         }
       }
       if (!done) {
-        throw new InferenceError('Model stream ended without completion.');
+        throw new InferenceError('inferenceEnded');
       }
       const list = [...calls.values()];
       if (
@@ -325,15 +323,15 @@ export class Inference {
       return { text, calls: list, output };
     } catch (error) {
       if (signal.aborted) {
-        throw new InferenceError('Execution stopped.');
+        throw new InferenceError('executionStopped');
       }
       if (timedOut) {
-        throw new InferenceError('Model request timed out.');
+        throw new InferenceError('inferenceTimeout');
       }
       if (error instanceof InferenceError) {
         throw error;
       }
-      throw new InferenceError('Model network request failed.');
+      throw new InferenceError('inferenceNetwork');
     } finally {
       clearTimeout(timer);
       signal.removeEventListener('abort', abort);

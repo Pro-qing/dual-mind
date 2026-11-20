@@ -10,7 +10,7 @@
 | 0.0.2             | Local source version, unpublished         | Model discovery, separate defaults, role data isolation and Git preparation              |
 | 0.0.3             | Current local source version, unpublished | Dual-protocol streamed execution, review loops, activity bar and three branch strategies |
 
-0.0.3 implements preparation, Worker edits, preset checks, read-only Reviewer decisions, revisions, pause/continue/stop, reload interruption, diff preview and local branch selection. One task runs per workspace. Direct modes modify the opened project and require a clean directory at every start.
+0.0.3 implements Reviewer planning, autonomous Worker implementation and verification, read-only Reviewer acceptance and revised plans, pause/continue/stop, reload interruption, diff preview and local branch selection. One task runs per workspace. Direct modes modify the opened project and require a clean directory at every start.
 
 Still planned: parallel tasks, automatic editor-context collection and explicit application of dedicated-worktree results to the original workspace. Approval never automatically commits, merges or pushes.
 

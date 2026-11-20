@@ -2,6 +2,9 @@
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
+**New approved revision:** [Dual-agent planning and acceptance](./execution-cycle-proposal.md), approved 2026-11-20; implemented; see [validation coverage](./execution-cycle-validation.md).
+**Approved and implemented revision:** [Task home, detail, and errors](./task-pages-proposal.md) adds scenes 8–11 for separate home/detail pages, manual start after creation, and consistent bilingual errors. Scenes 8–11 were approved on 2026-11-20 and implemented; scenes 1–7 and their historical descriptions below are preserved.
+
 **Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
 
 **All seven scenes are adopted; scenes 6–7 are implemented in the development branch.** Original SVG/PNG files and their historical review labels remain unchanged. Drawings contain illustrative content, not live API results. Published 0.0.1 retains local settings; the development branch adds explicit model-list queries and selection. The development branch now also implements single-task execution, streaming and review rounds; original-workspace application and parallel execution remain planned. See [Usage](./usage.md).

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>双 AI 方案与验收循环 — 已审核</title><desc>任务详情展示 Reviewer 的当前方案、Worker 执行、验收与下一轮方案，以及证据和历史。</desc><style>text {font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif;}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22" stroke="#191c22"/>
+<rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b" stroke="#13161b"/>
+<text x="28" y="26" font-size="14" fill="#e4e8f0" font-weight="400">DualMind</text>
+<text x="1100" y="26" font-size="12" fill="#b1bdce" font-weight="400">界面修订提案 · 已审核 · 2026-11-20</text>
+<rect x="32" y="62" width="130" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="46" y="85" font-size="13" fill="#e4e8f0" font-weight="400">← 返回任务</text>
+<rect x="1150" y="62" width="130" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="1164" y="85" font-size="13" fill="#e4e8f0" font-weight="400">简体中文</text>
+<rect x="1296" y="62" width="112" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="1310" y="85" font-size="13" fill="#e4e8f0" font-weight="400">设置</text>
+<text x="32" y="133" font-size="25" fill="#e4e8f0" font-weight="600">完善导出功能</text>
+<text x="32" y="163" font-size="14" fill="#b1bdce" font-weight="400">需求：导出当前配置；取消操作不生成文件；补充回归验证。</text>
+<rect x="32" y="184" width="90" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="46" y="207" font-size="13" fill="#e4e8f0" font-weight="400">暂停</text>
+<rect x="134" y="184" width="90" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="148" y="207" font-size="13" fill="#e4e8f0" font-weight="400">继续</text>
+<rect x="236" y="184" width="90" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="250" y="207" font-size="13" fill="#e4e8f0" font-weight="400">停止</text>
+<text x="350" y="208" font-size="14" fill="#91bbff" font-weight="400">Worker 执行中 · 第 2 / 5 轮 · 方案 v2</text>
+<rect x="32" y="240" width="1376" height="292" rx="6" fill="#20242c" stroke="#394352"/>
+<text x="52" y="272" font-size="18" fill="#e4e8f0" font-weight="600">Reviewer 执行方案 · v2</text>
+<text x="1010" y="271" font-size="13" fill="#91bbff" font-weight="400">查看前一轮：v1 · 验收未通过</text>
+<text x="52" y="306" font-size="14" fill="#e4e8f0" font-weight="400">本轮目标：补齐取消路径，保留已完成的导出能力。</text>
+<text x="52" y="336" font-size="14" fill="#ffce8b" font-weight="400">修订原因：上一轮导出结果正确，但取消后仍生成空文件。</text>
+<text x="52" y="370" font-size="14" fill="#e4e8f0" font-weight="600">工作步骤</text>
+<text x="52" y="399" font-size="14" fill="#e4e8f0" font-weight="400">1. 调整取消路径，确保写文件前判断用户选择。</text>
+<text x="52" y="427" font-size="14" fill="#e4e8f0" font-weight="400">2. 增加回归验证并提交结果。</text>
+<text x="760" y="370" font-size="14" fill="#e4e8f0" font-weight="600">验收条件</text>
+<text x="760" y="399" font-size="14" fill="#e4e8f0" font-weight="400">A1  输出包含必需字段 · 命令验证</text>
+<text x="760" y="427" font-size="14" fill="#e4e8f0" font-weight="400">A2  取消不产生文件 · 命令验证</text>
+<text x="760" y="455" font-size="14" fill="#e4e8f0" font-weight="400">A3  使用说明与实际行为一致 · 阅读审查</text>
+<text x="52" y="502" font-size="13" fill="#b1bdce" font-weight="400">方案由 Reviewer 下发，Worker 按方案实施；验收未通过后自动进入下一轮。</text>
+<rect x="32" y="552" width="676" height="190" rx="6" fill="#20242c" stroke="#394352"/>
+<text x="52" y="583" font-size="17" fill="#91bbff" font-weight="600">Worker · 执行与成果提交</text>
+<rect x="732" y="552" width="676" height="190" rx="6" fill="#20242c" stroke="#394352"/>
+<text x="752" y="583" font-size="17" fill="#93dfcd" font-weight="600">Reviewer · 规划与验收</text>
+<text x="52" y="619" font-size="14" fill="#e4e8f0" font-weight="400">已修改取消路径，正在运行相关回归检查。</text>
+<text x="52" y="651" font-size="13" fill="#b1bdce" font-weight="400">准备环境、修改与验证均记录在执行历史中。</text>
+<text x="52" y="718" font-size="13" fill="#91bbff" font-weight="400">› 命令记录 · 查看实际命令、输出和退出状态</text>
+<text x="752" y="619" font-size="14" fill="#e4e8f0" font-weight="400">第 1 轮：未通过，已下发方案 v2。</text>
+<text x="752" y="651" font-size="13" fill="#b1bdce" font-weight="400">第 2 轮：等待 Worker 提交成果。</text>
+<text x="752" y="718" font-size="13" fill="#b1bdce" font-weight="400">验收通过后完成；达到轮次上限时保留剩余问题。</text>
+<rect x="32" y="765" width="180" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="46" y="788" font-size="13" fill="#e4e8f0" font-weight="400">方案与验收历史</text>
+<rect x="226" y="765" width="150" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="240" y="788" font-size="13" fill="#e4e8f0" font-weight="400">预览修改</text>
+<text x="412" y="789" font-size="13" fill="#b1bdce" font-weight="400">纯文档任务可采用阅读审查，明确记录依据。</text>
+<text x="32" y="875" font-size="12" fill="#b1bdce" font-weight="400">静态设计提案 · 示例内容 · 已审核；原有设计保留</text>
+</svg>

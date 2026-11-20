@@ -1,5 +1,5 @@
 # React workbench / React 工作台
 
-The approved design is implemented as a local React/TypeScript Webview. `src/` contains the workbench, settings, forms, typed bridge and responsive styles. The host owns persistence and credentials. Model execution is deferred; the example preview is read-only and isolated from saved tasks. See [Usage](../docs/en/usage.md), [Architecture](../docs/en/architecture.md), and the retained [design gallery](../docs/en/design.md).
+The React/TypeScript Webview has separate task home and detail pages, shared task forms, settings, a typed bridge, and responsive styles. Creation opens a pending task; execution starts manually. The host owns persistence, credentials, model requests, and the execution loop. Structured errors are formatted in the current language; original details and command output remain available. Read-only examples are isolated from saved tasks. See [Usage](../docs/en/usage.md), [Architecture](../docs/en/architecture.md), and [Designs](../docs/en/design.md).
 
-已审核设计现已实现为本地 React／TypeScript Webview，`src/` 包含工作台、设置、表单、类型化通信和自适应样式。宿主负责持久化及凭据，模型执行留待后续，只读示例与任务存储隔离。参见[使用说明](../docs/zh/usage.md)、[架构说明](../docs/zh/architecture.md)和保留的[设计稿](../docs/zh/design.md)。
+React／TypeScript Webview 包含独立任务主页、任务详情、共用表单、设置、类型化通信和自适应样式。创建后进入待执行任务，由用户手动开始。宿主负责持久化、凭据、模型请求和执行循环。结构化错误按当前语言显示，原始详情和命令输出仍可查看。只读示例与任务存储隔离。参见[使用说明](../docs/zh/usage.md)、[架构说明](../docs/zh/architecture.md)和[设计稿](../docs/zh/design.md)。

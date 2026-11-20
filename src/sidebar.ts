@@ -13,7 +13,13 @@ export class TaskSidebar implements vscode.TreeDataProvider<vscode.TreeItem>, vs
     return item;
   }
   async getChildren(): Promise<vscode.TreeItem[]> {
-    const snapshot = await this.workbench.snapshot();
+    let snapshot: Awaited<ReturnType<Workbench['snapshot']>>;
+    try {
+      snapshot = await this.workbench.snapshot();
+    } catch (error) {
+      await this.workbench.reportError(error);
+      return [];
+    }
     return snapshot.tasks.map((task) => {
       const run = snapshot.execution.runs.find((item) => item.taskId === task.id);
       const item = new vscode.TreeItem(task.name);
@@ -21,9 +27,7 @@ export class TaskSidebar implements vscode.TreeDataProvider<vscode.TreeItem>, vs
       item.tooltip = task.requirements;
       item.description = run
         ? `${t(snapshot.locale, `run_${run.status}`)} · ${run.round}/${run.maxRounds}`
-        : snapshot.locale === 'zh-CN'
-          ? '草稿'
-          : 'Draft';
+        : t(snapshot.locale, 'pendingTask');
       item.iconPath = new vscode.ThemeIcon(
         run
           ? terminalStatuses.includes(run.status)

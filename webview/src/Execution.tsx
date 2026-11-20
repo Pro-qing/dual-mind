@@ -1,20 +1,68 @@
+import { ExecutionDetailView } from './RunDetail';
+import { toAppError } from '../../src/shared/errors';
+import { ErrorNotice } from './ErrorNotice';
 import { useEffect, useState } from 'react';
 import {
   terminalStatuses,
   type ExecutionConfig,
   type PresetCommand,
   type RunSummary,
+  type RunEvent,
   type RunStatus,
 } from '../../src/shared/execution';
 import { useUI } from './context';
 export function statusKey(status: RunStatus) {
   return `run_${status}` as const;
 }
+function ExecutionEvidenceItem({ event }: { event: RunEvent }) {
+  const { snapshot } = useUI();
+  let fault = event.fault ? toAppError(event.fault) : undefined;
+  if (!fault && event.kind === 'error') {
+    fault = toAppError(event.text, 'legacyExecution');
+  }
+  if (!fault && event.kind === 'tool') {
+    try {
+      const old = JSON.parse(event.text) as { result?: { error?: unknown } } | null;
+      if (typeof old?.result?.error === 'string') {
+        fault = toAppError(old.result.error, 'legacyExecution');
+      }
+    } catch {
+      /* Tool names and chunked output are also valid event text. */
+    }
+  }
+  if (event.detail) {
+    return (
+      <div className="execution-detail">
+        <ExecutionDetailView detail={event.detail} />
+        {event.detail.type === 'command' && <pre>{event.text}</pre>}
+      </div>
+    );
+  }
+  if (fault) {
+    return (
+      <ErrorNotice
+        error={
+          event.kind === 'check' || event.kind === 'tool'
+            ? { ...fault, details: event.text }
+            : fault
+        }
+        locale={snapshot.locale}
+      />
+    );
+  }
+  return (
+    <pre>
+      {event.kind}: {event.text}
+    </pre>
+  );
+}
 export function ExecutionSettings() {
   const { execution, execute, tr, snapshot } = useUI();
   const [config, setConfig] = useState<ExecutionConfig>(() => structuredClone(execution.config));
   const [busy, setBusy] = useState(false);
-  const group = (key: keyof ExecutionConfig) => (
+  const enabled =
+    config.customCommandsEnabled ?? Boolean(config.prepare.length || config.checks.length);
+  const group = (key: 'prepare' | 'checks') => (
     <section className="command-group">
       <h3>{tr(key === 'prepare' ? 'prepareCommands' : 'checkCommands')}</h3>
       {config[key].map((command, index) => {
@@ -116,8 +164,34 @@ export function ExecutionSettings() {
         }}
       >
         <fieldset disabled={busy || !snapshot.hasWorkspace} className="execution-config-fields">
-          {group('prepare')}
-          {group('checks')}
+          <div className="execution-flow">
+            <h3>{tr('automaticCollaboration')}</h3>
+            <p>{tr('executionCycle')}</p>
+            <p>{tr('executionCycleHint')}</p>
+          </div>
+          <details className="advanced-execution">
+            <summary>{tr('advancedSettings')}</summary>
+            <label className="command-toggle">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(event) =>
+                  setConfig((current) => ({
+                    ...current,
+                    customCommandsEnabled: event.target.checked,
+                  }))
+                }
+              />
+              {tr('enableCustomCommands')}
+            </label>
+            <p className="hint">{tr('customCommandsHint')}</p>
+            {enabled && (
+              <>
+                {group('prepare')}
+                {group('checks')}
+              </>
+            )}
+          </details>
           <div className="form-actions">
             <button className="primary">{tr('saveExecution')}</button>
           </div>
@@ -130,20 +204,32 @@ export function ExecutionControls({
   taskId,
   run,
   mode = 'controls',
+  onSettings,
 }: {
   taskId: string;
   run?: RunSummary;
   mode?: 'controls' | 'details';
+  onSettings?(): void;
 }) {
   const { execution, execute, tr, executionEvents, snapshot } = useUI();
   const task = snapshot.tasks.find((item) => item.id === taskId);
-  const configured =
-    task &&
-    [task.worker, task.reviewer].every(
-      (binding) =>
-        binding.model &&
-        snapshot.connections.some((c) => c.id === binding.connectionId && c.hasKey),
-    );
+  const missing = task
+    ? (['worker', 'reviewer'] as const).flatMap((agent) => {
+        const binding = task[agent];
+        const connection = snapshot.connections.find((c) => c.id === binding.connectionId);
+        const items = [];
+        if (!connection) {
+          items.push(tr('missingConnection'));
+        } else if (!connection.hasKey) {
+          items.push(tr('missingKey'));
+        }
+        if (!binding.model) {
+          items.push(tr('missingModel'));
+        }
+        return items.map((text) => `${tr(agent)}: ${text}`);
+      })
+    : [];
+  const configured = Boolean(task && !missing.length);
   const [feedback, setFeedback] = useState('');
   const [busy, setBusy] = useState(false);
   const active = execution.runs.find((item) => !terminalStatuses.includes(item.status));
@@ -167,7 +253,7 @@ export function ExecutionControls({
           <div className="button-row">
             <button
               className="primary"
-              disabled={busy || Boolean(active) || !configured || !execution.config.checks.length}
+              disabled={busy || Boolean(active) || !configured}
               onClick={() => call({ kind: run ? 'restart' : 'start', taskId })}
             >
               {tr(run ? 'restartRun' : 'start')}
@@ -176,7 +262,7 @@ export function ExecutionControls({
               disabled={
                 busy ||
                 !running ||
-                !['preparing', 'worker', 'checking', 'reviewer'].includes(run!.status)
+                !['planning', 'preparing', 'worker', 'checking', 'reviewer'].includes(run!.status)
               }
               onClick={() => call({ kind: 'pause', runId: run!.id })}
             >
@@ -200,11 +286,26 @@ export function ExecutionControls({
               </span>
             )}
           </div>
-          {!execution.config.checks.length && <p className="hint">{tr('checksRequired')}</p>}
-          {run?.error && (
-            <p className="warning-text" role="alert">
-              {tr('executionError')}: {run.error}
-            </p>
+          {missing.length > 0 && (
+            <div className="execution-prerequisites">
+              {missing.map((text) => (
+                <p className="hint" key={text}>
+                  {text}
+                </p>
+              ))}
+              {onSettings && (
+                <button className="text-button" onClick={onSettings}>
+                  {tr('openSettings')}
+                </button>
+              )}
+            </div>
+          )}
+          {active && active.taskId !== taskId && <p className="hint">{tr('otherTaskActive')}</p>}
+          {(run?.fault || run?.error) && (
+            <ErrorNotice
+              error={toAppError(run.fault || run.error, 'legacyExecution')}
+              locale={snapshot.locale}
+            />
           )}
         </>
       )}
@@ -215,9 +316,7 @@ export function ExecutionControls({
             {events
               .filter((event) => event.kind !== 'text')
               .map((event) => (
-                <pre key={event.sequence}>
-                  {event.kind}: {event.text}
-                </pre>
+                <ExecutionEvidenceItem key={event.sequence} event={event} />
               ))}
           </details>
           <div className="button-row">
@@ -262,7 +361,7 @@ export function ExecutionControls({
                 disabled={!run.directory}
                 onClick={() => call({ kind: 'preview', runId: run.id })}
               >
-                {tr('previewDraft')}
+                {tr('previewChanges')}
               </button>
               <button
                 disabled={!run.directory}

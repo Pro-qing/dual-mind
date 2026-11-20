@@ -1,3 +1,4 @@
+import { OperationError } from '../shared/errors';
 import { randomUUID, createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, realpath, rename, unlink, readlink } from 'node:fs/promises';
@@ -30,6 +31,7 @@ export interface TaskReader {
   fingerprint(): Promise<string>;
 }
 export interface TaskWriter extends TaskReader {
+  commandDirectory(relativePath: string): Promise<string>;
   writeFile(relativePath: string, contents: string): Promise<void>;
   deleteFile(relativePath: string): Promise<void>;
 }
@@ -794,6 +796,35 @@ export class TaskWorkspaces {
     }
     return Object.freeze({
       ...reader,
+      commandDirectory: async (relative: string) => {
+        await guard();
+        if (
+          !relative ||
+          relative.includes('\0') ||
+          relative.includes('\\') ||
+          path.isAbsolute(relative) ||
+          path.win32.isAbsolute(relative)
+        ) {
+          throw new OperationError('commandDirectoryInvalid');
+        }
+        const parts = relative === '.' ? [] : relative.split('/');
+        if (
+          parts.some(
+            (part) => !part || part === '.' || part === '..' || part.toLowerCase() === '.git',
+          )
+        ) {
+          throw new OperationError('commandDirectoryInvalid');
+        }
+        let directory = record.directory;
+        for (const part of parts) {
+          directory = path.join(directory, part);
+          const stat = await lstat(directory).catch(() => undefined);
+          if (!stat?.isDirectory() || stat.isSymbolicLink()) {
+            throw new OperationError('commandDirectoryInvalid');
+          }
+        }
+        return directory;
+      },
       writeFile: async (relative: string, contents: string) => {
         await guard();
         if (typeof contents !== 'string' || Buffer.byteLength(contents) > fileLimit) {

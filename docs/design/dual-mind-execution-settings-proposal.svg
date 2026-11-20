@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>任务执行设置 — 高级附加命令 — 已审核</title><desc>默认展示 Reviewer 与 Worker 职责，命令表单移入高级设置并通过开关启用。</desc><style>text {font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif;}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22" stroke="#191c22"/>
+<rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b" stroke="#13161b"/>
+<text x="28" y="26" font-size="14" fill="#e4e8f0" font-weight="400">DualMind</text>
+<text x="1100" y="26" font-size="12" fill="#b1bdce" font-weight="400">界面修订提案 · 已审核 · 2026-11-20</text>
+<rect x="32" y="62" width="130" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="46" y="85" font-size="13" fill="#e4e8f0" font-weight="400">← 返回任务</text>
+<rect x="1150" y="62" width="130" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="1164" y="85" font-size="13" fill="#e4e8f0" font-weight="400">简体中文</text>
+<rect x="1296" y="62" width="112" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="1310" y="85" font-size="13" fill="#e4e8f0" font-weight="400">设置</text>
+<text x="32" y="136" font-size="25" fill="#e4e8f0" font-weight="600">设置 · 任务执行</text>
+<rect x="32" y="162" width="950" height="166" rx="6" fill="#20242c" stroke="#394352"/>
+<text x="52" y="194" font-size="19" fill="#e4e8f0" font-weight="600">默认：双 AI 自动协作</text>
+<text x="52" y="230" font-size="15" fill="#91bbff" font-weight="400">Reviewer 拆解需求与下发方案 → Worker 实施与验证 → Reviewer 验收</text>
+<text x="52" y="266" font-size="14" fill="#e4e8f0" font-weight="400">未通过时，Reviewer 下发下一轮方案，Worker 继续执行。</text>
+<text x="52" y="300" font-size="13" fill="#b1bdce" font-weight="400">无需填写命令；开始后由 Worker 按方案准备依赖、选择具体操作。</text>
+<rect x="32" y="350" width="950" height="466" rx="6" fill="#20242c" stroke="#394352"/>
+<text x="52" y="383" font-size="18" fill="#e4e8f0" font-weight="600">⌄ 高级设置</text>
+<rect x="52" y="405" width="20" height="20" rx="6" fill="#305981" stroke="#394352"/>
+<text x="55" y="422" font-size="14" fill="#e4e8f0" font-weight="400">✓</text>
+<text x="86" y="422" font-size="15" fill="#e4e8f0" font-weight="400">启用附加自定义命令</text>
+<text x="52" y="457" font-size="13" fill="#b1bdce" font-weight="400">可选约束：准备命令在方案形成后执行；检查命令在每轮提交后执行。</text>
+<text x="52" y="494" font-size="15" fill="#e4e8f0" font-weight="400">› 准备命令（可选）</text>
+<text x="52" y="532" font-size="15" fill="#e4e8f0" font-weight="400">⌄ 附加检查命令（可选）</text>
+<text x="52" y="567" font-size="12" fill="#b1bdce" font-weight="400">命令名称</text>
+<rect x="52" y="581" width="236" height="74" rx="6" fill="#191c22" stroke="#394352"/>
+<text x="64" y="608" font-size="14" fill="#e4e8f0" font-weight="400">项目检查</text>
+<text x="304" y="567" font-size="12" fill="#b1bdce" font-weight="400">程序</text>
+<rect x="304" y="581" width="230" height="74" rx="6" fill="#191c22" stroke="#394352"/>
+<text x="316" y="608" font-size="14" fill="#e4e8f0" font-weight="400">npm</text>
+<text x="550" y="567" font-size="12" fill="#b1bdce" font-weight="400">参数（每行一个）</text>
+<rect x="550" y="581" width="220" height="74" rx="6" fill="#191c22" stroke="#394352"/>
+<text x="562" y="608" font-size="14" fill="#e4e8f0" font-weight="400">run</text>
+<text x="786" y="567" font-size="12" fill="#b1bdce" font-weight="400">超时（秒）</text>
+<rect x="786" y="581" width="170" height="74" rx="6" fill="#191c22" stroke="#394352"/>
+<text x="798" y="608" font-size="14" fill="#e4e8f0" font-weight="400">180</text>
+<text x="562" y="635" font-size="14" fill="#e4e8f0" font-weight="400">check</text>
+<rect x="52" y="677" width="150" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="66" y="700" font-size="13" fill="#e4e8f0" font-weight="400">添加检查命令</text>
+<rect x="720" y="750" width="236" height="34" rx="6" fill="#252c37" stroke="#394352"/>
+<text x="734" y="773" font-size="13" fill="#e4e8f0" font-weight="400">保存执行设置</text>
+<text x="52" y="736" font-size="13" fill="#b1bdce" font-weight="400">关闭开关保留填写内容，已开始的执行保持原配置。</text>
+<rect x="1006" y="162" width="402" height="654" rx="6" fill="#20242c" stroke="#394352"/>
+<text x="1026" y="198" font-size="18" fill="#e4e8f0" font-weight="600">状态与窄窗口约定</text>
+<text x="1026" y="240" font-size="14" fill="#b1bdce" font-weight="400">新工作区：开关默认关闭。</text>
+<text x="1026" y="282" font-size="14" fill="#b1bdce" font-weight="400">旧配置有命令：默认启用。</text>
+<text x="1026" y="324" font-size="14" fill="#b1bdce" font-weight="400">关闭时：隐藏命令编辑区。</text>
+<text x="1026" y="366" font-size="14" fill="#b1bdce" font-weight="400">保存失败：保留输入并显示错误。</text>
+<text x="1026" y="408" font-size="14" fill="#b1bdce" font-weight="400">无自定义检查也可开始任务。</text>
+<text x="1026" y="476" font-size="14" fill="#b1bdce" font-weight="400">窄窗口表单按单列排列，</text>
+<text x="1026" y="505" font-size="14" fill="#b1bdce" font-weight="400">说明、按钮与参数允许换行，</text>
+<text x="1026" y="534" font-size="14" fill="#b1bdce" font-weight="400">页面可滚动，保存入口保持可达。</text>
+<text x="1026" y="602" font-size="14" fill="#b1bdce" font-weight="400">中英文共用布局。</text>
+<text x="1026" y="644" font-size="14" fill="#b1bdce" font-weight="400">命令输出保持原文。</text>
+<text x="1026" y="686" font-size="14" fill="#b1bdce" font-weight="400">命令运行沿用已有资源限制。</text>
+<text x="32" y="875" font-size="12" fill="#b1bdce" font-weight="400">静态设计提案 · 示例内容 · 已审核；原有设计保留</text>
+</svg>

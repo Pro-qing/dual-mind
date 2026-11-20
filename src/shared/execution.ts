@@ -1,3 +1,4 @@
+import type { AppError } from './errors';
 import type { GitStrategy, RepositoryInfo } from './model';
 export interface TaskGitWorkspace {
   strategy?: GitStrategy;
@@ -16,6 +17,7 @@ export type Protocol = 'chatCompletions' | 'responses';
 export type Agent = 'worker' | 'reviewer';
 export type RunStatus =
   | 'preparing'
+  | 'planning'
   | 'worker'
   | 'checking'
   | 'reviewer'
@@ -42,10 +44,72 @@ export interface PresetCommand {
   timeoutSeconds: number;
 }
 export interface ExecutionConfig {
+  customCommandsEnabled?: boolean;
   prepare: PresetCommand[];
   checks: PresetCommand[];
 }
 export const emptyExecutionConfig = (): ExecutionConfig => ({ prepare: [], checks: [] });
+export interface AcceptanceCriterion {
+  id: string;
+  description: string;
+  verification: 'command' | 'reading';
+  evidence: string;
+  reason: string;
+}
+export interface PlanInput {
+  objective: string;
+  requirements: string;
+  steps: string[];
+  criteria: AcceptanceCriterion[];
+  revisionReason: string;
+}
+export interface TaskPlan extends PlanInput {
+  version: number;
+}
+export interface CriterionEvidence {
+  criterionId: string;
+  commandIds: string[];
+  evidence: string;
+}
+export interface WorkSubmission {
+  summary: string;
+  completedSteps: string[];
+  evidence: CriterionEvidence[];
+  unresolved: string[];
+  planVersion: number;
+  revision: string;
+}
+export interface ReviewResult {
+  verdict: 'approve' | 'changes_requested';
+  summary: string;
+  acceptance: (CriterionEvidence & { passed: boolean })[];
+  nextPlan?: PlanInput;
+  planVersion: number;
+}
+export interface CommandEvidence {
+  id: string;
+  name: string;
+  program: string;
+  args: string[];
+  cwd: string;
+  purpose: 'prepare' | 'verify' | 'explore';
+  criterionIds: string[];
+  timeoutSeconds: number;
+  planVersion: number;
+  round: number;
+  before: string;
+  after: string;
+  ok: boolean;
+  exitCode: number;
+  reason?: string;
+  fault?: AppError;
+  presetId?: string;
+}
+export type ExecutionDetail =
+  | { type: 'plan'; plan: TaskPlan }
+  | { type: 'submission'; submission: WorkSubmission }
+  | { type: 'review'; review: ReviewResult }
+  | { type: 'command'; command: CommandEvidence };
 export interface RunSummary {
   id: string;
   taskId: string;
@@ -59,7 +123,11 @@ export interface RunSummary {
   branch?: string;
   models?: Record<Agent, { connectionName: string; model: string; protocol: Protocol }>;
   error?: string;
+  fault?: AppError;
   sequence: number;
+  plan?: TaskPlan;
+  submission?: WorkSubmission;
+  review?: ReviewResult;
 }
 export interface RunEvent {
   runId: string;
@@ -67,8 +135,12 @@ export interface RunEvent {
   agent?: Agent;
   requestId?: string;
   sequence: number;
-  kind: 'text' | 'tool' | 'check' | 'review' | 'feedback' | 'state' | 'error';
+  kind:
+    'text' | 'tool' | 'check' | 'review' | 'feedback' | 'state' | 'error' | 'plan' | 'submission';
+  detail?: ExecutionDetail;
+  commandId?: string;
   text: string;
+  fault?: AppError;
   time: string;
 }
 export interface ExecutionSnapshot {

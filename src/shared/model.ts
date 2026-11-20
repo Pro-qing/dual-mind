@@ -1,3 +1,4 @@
+import type { AppError } from './errors';
 import type {
   Protocol,
   ExecutionAction,
@@ -89,6 +90,9 @@ export interface AppSnapshot {
   tasks: TaskDraft[];
   selectedTaskId: string | null;
 }
+export interface ActionReply extends AppSnapshot {
+  savedTaskId?: string;
+}
 export type Action =
   | { kind: 'task.save'; id?: string; input: TaskInput }
   | { kind: 'task.select'; id: string }
@@ -162,16 +166,30 @@ export type ClientMessage =
   | { type: 'request'; requestId: string; action: Action };
 export type HostMessage =
   | { type: 'execution.update'; update: ExecutionUpdate }
-  | { type: 'execution.result'; requestId: string; result?: ExecutionReply; error?: string }
+  | {
+      type: 'execution.result';
+      requestId: string;
+      result?: ExecutionReply;
+      error?: string;
+      fault?: AppError;
+    }
   | ModelQueryResult
   | { type: 'models.invalidated'; connectionId: string }
   | { type: 'snapshot'; snapshot: AppSnapshot }
-  | { type: 'result'; requestId: string; ok: boolean; error?: ErrorCode; snapshot?: AppSnapshot }
-  | { type: 'fatal'; error: ErrorCode };
+  | {
+      type: 'result';
+      requestId: string;
+      ok: boolean;
+      error?: ErrorCode;
+      fault?: AppError;
+      snapshot?: AppSnapshot;
+      savedTaskId?: string;
+    }
+  | { type: 'fatal'; error: ErrorCode; fault?: AppError };
 export interface Bridge {
   execute?(action: ExecutionAction): Promise<ExecutionReply>;
   onExecution?(listener: (update: ExecutionUpdate) => void): () => void;
-  request(action: Action): Promise<AppSnapshot>;
+  request(action: Action): Promise<ActionReply>;
   queryModels(connectionId: string): Promise<ModelList>;
   onModelsInvalidated(listener: (connectionId: string) => void): () => void;
 }

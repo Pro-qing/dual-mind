@@ -1369,3 +1369,187 @@ label > textarea {
 .git-choice > button {
   align-self: flex-start;
 }
+
+/* Home and detail are separate pages inside the singleton workbench. */
+.task-home {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.task-home .section-heading {
+  margin-bottom: 0;
+}
+.task-counts,
+.task-metadata,
+.home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  color: var(--dm-muted);
+  font-size: 12px;
+}
+.task-counts > span {
+  padding: 5px 16px;
+  background: var(--dm-panel);
+  border: 1px solid var(--dm-line);
+  border-radius: 18px;
+}
+.task-home .task-list {
+  display: grid;
+  gap: 16px;
+}
+.task-home .task-item {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  background: var(--dm-panel);
+  padding: 12px 16px;
+  min-width: 0;
+}
+.task-home .task-select {
+  flex: 1;
+  min-width: 0;
+  padding: 4px;
+}
+.task-home .task-select strong {
+  font-size: 17px;
+}
+.task-home .task-delete {
+  position: static;
+  flex-shrink: 0;
+}
+.task-excerpt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--dm-muted);
+  margin: 8px 0 12px;
+}
+.task-home .task-state {
+  margin: 0;
+  max-width: 280px;
+  flex-shrink: 0;
+  white-space: normal;
+}
+.task-metadata > span {
+  overflow-wrap: anywhere;
+}
+.home-footer {
+  justify-content: space-between;
+}
+.task-controls {
+  align-items: flex-start;
+}
+.task-controls > .execution-panel {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.task-controls > .execution-panel > .button-row {
+  margin: 0;
+}
+.task-edit-actions {
+  margin-left: auto;
+}
+.execution-prerequisites {
+  margin-top: 12px;
+}
+.error-notice {
+  color: var(--dm-warning);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.error-notice > p {
+  margin: 0 0 8px;
+}
+.error-notice pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 240px;
+  overflow: auto;
+}
+.error-notice summary {
+  cursor: pointer;
+}
+.toast .error-notice {
+  flex: 1;
+}
+@media (max-width: 900px) {
+  .task-home .task-item {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .task-home .task-select {
+    flex-basis: 100%;
+  }
+  .task-home .task-state {
+    max-width: calc(100% - 48px);
+  }
+  .task-home .task-delete {
+    margin-left: auto;
+  }
+  .task-controls > .execution-panel {
+    flex-basis: 100%;
+  }
+  .task-edit-actions {
+    margin-left: 0;
+  }
+  .task-excerpt {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+.plan-card,
+.handoff-card,
+.execution-flow {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 16px;
+  margin-block: 12px;
+  overflow-wrap: anywhere;
+}
+.plan-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+}
+.plan-columns li {
+  margin-block: 8px;
+}
+.evidence-method {
+  display: block;
+  color: var(--vscode-descriptionForeground);
+  margin-block: 6px;
+}
+.command-toggle {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  margin-block: 16px;
+}
+.command-toggle input {
+  margin-top: 0;
+  width: auto;
+}
+.advanced-execution > summary {
+  cursor: pointer;
+  padding-block: 12px;
+}
+.command-evidence,
+.execution-detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .plan-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

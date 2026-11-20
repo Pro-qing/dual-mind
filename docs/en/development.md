@@ -100,4 +100,12 @@ systemd-run --user --wait --collect --slice=app-dualmind-validation.slice \
   --setenv=DUALMIND_TEST_SYSTEMD=1 npm run check
 ```
 
-For Electron validation, set the slice and unit to 2G and the unit deadline to 180s. Set `VSCODE_TEST_EXECUTABLE` to reuse the installed editor, and run `xvfb-run -a npm run test:ui` with `ELECTRON_RUN_AS_NODE` unset. The Webview suite enters from the activity bar, configures both protocols and real preset commands, executes a failed-check/revision/approval cycle, and verifies unchanged source files in dedicated mode, direct edits in current/specified modes, and saved branch choices across reload. No package is created or installed by these commands.
+For Electron validation, set the slice and unit to 2G and the unit deadline to 180s. Set `VSCODE_TEST_EXECUTABLE` to reuse the installed editor, and run `xvfb-run -a npm run test:ui` with `ELECTRON_RUN_AS_NODE` unset. The Webview suite enters from the activity bar, configures both protocols and real additional commands, executes a failed-check/revision/approval cycle, and verifies unchanged source files in dedicated mode, direct edits in current/specified modes, and saved branch choices across reload. No package is created or installed by these commands.
+
+On hosts without the required cgroup v2 memory/swap limits, real UI verification checks both English and Chinese resource errors and finishes the remaining interface checks. Scenarios requiring actual commands are recorded as uncovered: `results.json` has `passed: false` and `interfacePassed: true`, and the command exits with code 2. This is not a complete pass; rerun execution verification on a supported host.
+
+## Dual-agent cycle validation
+
+Local model fixtures cover Reviewer-first planning, autonomous Worker commands, revised plans after rejection, reading-only acceptance and legacy custom configuration. Contract tests cover nested tool arguments, stable criteria, forged/stale/failed evidence, feedback and newer failures superseding older success. Real UI checks exercise bilingual plans and reading acceptance even when command resource probing fails. Actual command enforcement remains separately reported; missing systemd/cgroup v2 produces partial coverage with exit code 2.
+
+See the [validation record](./execution-cycle-validation.md) for the actual environment, passes and unverified scenarios.

@@ -1,3 +1,5 @@
+import { OperationError } from '../../src/shared/errors';
+import type { RunSummary, RunEvent } from '../../src/shared/execution';
 import { t, type MessageKey } from '../../src/shared/i18n';
 import { ModelQueryError } from '../../src/providers/models';
 import { modelServer } from './modelServer';
@@ -41,7 +43,7 @@ afterEach(() => rtl.cleanup());
 after(() => dom.window.close());
 async function mount(
   f = fixture(),
-  initialNavigation?: Partial<Navigation>,
+  initialNavigation?: unknown,
   onNavigation?: (value: Navigation) => void,
   bridgeOverrides: Partial<Bridge> = {},
 ) {
@@ -50,10 +52,10 @@ async function mount(
     const [snapshot, setSnapshot] = useState(initial);
     const [bridge] = useState<Bridge>(() => ({
       request: async (action: Action) => {
-        await f.store.dispatch(action);
+        const savedTaskId = await f.store.dispatch(action);
         const state = await f.store.snapshot();
         setSnapshot(state);
-        return state;
+        return { ...state, savedTaskId };
       },
       queryModels: (id) => f.queries.query(id),
       onModelsInvalidated: f.onModelsInvalidated,
@@ -102,7 +104,7 @@ test('creates and deletes a real draft through accessible dialogs', async () => 
   });
   rtl.fireEvent.click(ui.getByRole('radio', { name: /^Bug/ }));
   assert.ok(ui.getByText(/API setup is incomplete/));
-  rtl.fireEvent.click(ui.getByRole('button', { name: 'Create draft' }));
+  rtl.fireEvent.click(ui.getByRole('button', { name: 'Create task' }));
   await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
   assert.equal((await f.store.snapshot()).tasks[0].name, 'UI-created task');
   assert.equal(
@@ -208,7 +210,7 @@ test('displays the saved snapshot after its preset is edited and the UI language
     input: { name: 'Bug', purpose: '', instructions: 'A different future preset.' },
   });
   await f.store.dispatch({ kind: 'language.set', value: 'zh-CN' });
-  await mount(f);
+  await mount(f, { view: 'task', taskId: (await f.store.snapshot()).tasks[0].id });
   assert.equal(document.querySelector('.instruction-snapshot')?.textContent, original);
   assert.ok(rtl.screen.queryByText('A different future preset.') === null);
 });
@@ -501,11 +503,11 @@ test('drafts inherit independent defaults, keep absent IDs, and Escape closes su
     target: { value: 'Keep saved models.' },
   });
   rtl.fireEvent.click(rtl.screen.getByRole('radio', { name: /^Bug/ }));
-  click('Create draft');
+  click('Create task');
   await rtl.waitFor(() =>
     assert.ok(rtl.screen.queryByRole('dialog') === null, 'The dialog should be closed'),
   );
-  click('Edit draft');
+  click('Edit task');
   assert.equal(modelInput('Worker Model ID').value, 'legacy-a');
   rtl.fireEvent.keyDown(modelInput('Worker Model ID'), { key: 'Escape' });
   assert.ok(rtl.screen.queryByRole('dialog') === null, 'The dialog should be closed');
@@ -523,7 +525,7 @@ test('defaults have a separate tab, share cached models, persist explicitly and 
   const b = await configured(f, 'B', 'https://example.test/b');
   await f.store.dispatch({ kind: 'task.save', input: taskInput() });
   const originalTask = (await f.store.snapshot()).tasks[0];
-  let navigation: Navigation = { view: 'workbench' };
+  let navigation: Navigation = { view: 'home' };
   await mount(f, undefined, (value) => {
     navigation = value;
   });
@@ -570,7 +572,7 @@ test('defaults have a separate tab, share cached models, persist explicitly and 
   rtl.fireEvent.change(rtl.screen.getByLabelText('Language'), { target: { value: 'zh-CN' } });
   await rtl.screen.findByRole('heading', { name: '新任务的默认配置' });
   assert.ok(rtl.screen.getByRole('button', { name: '保存默认值' }));
-  click('返回任务');
+  click('返回主页');
   click('新建任务');
   assert.equal(modelInput('Worker（执行者） 模型 ID').value, 'cached-model');
   assert.equal(modelInput('Reviewer（审查者） 模型 ID').value, 'manual-reviewer');
@@ -696,7 +698,7 @@ for (const locale of ['en', 'zh-CN'] as const) {
       await f.store.dispatch({ kind: 'connection.delete', id: connectionId, confirmed: true });
     });
     rtl.cleanup();
-    await mount(f);
+    await mount(f, { view: 'task', taskId: (await f.store.snapshot()).tasks[0].id });
     click(tr('editTask'));
     const saved = modelInput(workerLabel);
     rtl.fireEvent.focus(saved);
@@ -722,7 +724,7 @@ test('same-connection same-model defaults and drafts remain independently editab
   await rtl.waitFor(async () =>
     assert.equal((await f.store.snapshot()).defaults.reviewer.model, 'reviewer-only'),
   );
-  click('Back to tasks');
+  click('Back to home');
   click('New task');
   assert.equal(modelInput('Worker Model ID').value, 'worker-only');
   assert.equal(modelInput('Reviewer Model ID').value, 'reviewer-only');
@@ -735,7 +737,7 @@ test('same-connection same-model defaults and drafts remain independently editab
     target: { value: 'Keep both bindings independent.' },
   });
   rtl.fireEvent.click(rtl.screen.getByRole('radio', { name: /^Bug/ }));
-  click('Create draft');
+  click('Create task');
   await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
   const snapshot = await f.store.snapshot();
   assert.equal(snapshot.tasks[0].worker.model, 'draft-worker');
@@ -780,14 +782,14 @@ for (const locale of ['en', 'zh-CN'] as const) {
       target: { value: 'Branch requirements' },
     });
     rtl.fireEvent.click(ui.getAllByRole('radio')[0]);
-    rtl.fireEvent.click(ui.getByRole('button', { name: tr('createDraft') }));
+    rtl.fireEvent.click(ui.getByRole('button', { name: tr('createTask') }));
     await rtl.waitFor(() => assert.ok(!rtl.screen.queryByRole('dialog')));
     assert.deepEqual((await f.store.snapshot()).tasks[0].git, {
       mode: 'branch',
       branch: 'feature',
     });
     rtl.cleanup();
-    await mount(f, undefined, undefined, {
+    await mount(f, { view: 'task', taskId: (await f.store.snapshot()).tasks[0].id }, undefined, {
       execute: async () => ({
         state: { config: { prepare: [], checks: [] }, runs: [] },
         repository: { currentBranch: 'main', branches: ['main', 'feature'] },
@@ -805,3 +807,443 @@ for (const locale of ['en', 'zh-CN'] as const) {
     );
   });
 }
+
+test('home and task detail are separate, settings return to their origin, and navigation restores safely', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput({ name: 'First task' }) });
+  await f.store.dispatch({ kind: 'task.save', input: taskInput({ name: 'Second task' }) });
+  const first = (await f.store.snapshot()).tasks.find((task) => task.name === 'First task')!;
+  let navigation: Navigation = { view: 'home' };
+  await mount(f, { view: 'workbench' }, (next) => {
+    navigation = next;
+  });
+  assert.ok(rtl.screen.getByRole('main', { name: 'Home' }));
+  assert.equal(document.querySelector('.agent-grid'), null);
+  click('Open task: First task');
+  await rtl.screen.findByRole('heading', { name: 'First task' });
+  assert.deepEqual(navigation, { view: 'task', taskId: first.id });
+  assert.equal(document.querySelector('.task-list'), null);
+  await settings();
+  assert.deepEqual(navigation, { view: 'api', returnTo: { view: 'task', taskId: first.id } });
+  rtl.cleanup();
+  await mount(f, navigation, (next) => {
+    navigation = next;
+  });
+  click('Back to task');
+  await rtl.screen.findByRole('heading', { name: 'First task' });
+  rtl.cleanup();
+  await mount(f, navigation);
+  assert.ok(rtl.screen.getByRole('heading', { name: 'First task' }));
+  click('Delete task: First task');
+  rtl.fireEvent.click(
+    rtl.within(rtl.screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }),
+  );
+  await rtl.screen.findByRole('main', { name: 'Home' });
+  assert.ok(rtl.screen.getByRole('button', { name: 'Open task: Second task' }));
+  rtl.cleanup();
+  await mount(f, { view: 'task', taskId: first.id });
+  assert.ok(rtl.screen.getByRole('main', { name: 'Home' }));
+});
+
+test('creating a task navigates using its saved ID without executing; a failed creation keeps input', async () => {
+  const f = fixture();
+  const operations: string[] = [];
+  let navigation: Navigation = { view: 'home' };
+  await mount(
+    f,
+    undefined,
+    (next) => {
+      navigation = next;
+    },
+    {
+      execute: async (action) => {
+        operations.push(action.kind);
+        return { state: { config: { prepare: [], checks: [] }, runs: [] } };
+      },
+    },
+  );
+  click('New task');
+  const form = rtl.within(rtl.screen.getByRole('dialog'));
+  rtl.fireEvent.change(form.getByLabelText(/Task name/), {
+    target: { value: 'Keep this new task' },
+  });
+  rtl.fireEvent.change(form.getByLabelText(/Task requirements/), {
+    target: { value: 'Keep the requirements.' },
+  });
+  rtl.fireEvent.click(form.getByRole('radio', { name: /^Bug/ }));
+  f.workspace.fail = true;
+  rtl.fireEvent.click(form.getByRole('button', { name: 'Create task' }));
+  await form.findByRole('alert');
+  assert.equal((form.getByLabelText(/Task name/) as HTMLInputElement).value, 'Keep this new task');
+  assert.equal(navigation.view, 'home');
+  assert.equal((await f.store.snapshot()).tasks.length, 0);
+  f.workspace.fail = false;
+  rtl.fireEvent.click(form.getByRole('button', { name: 'Create task' }));
+  await rtl.screen.findByRole('heading', { name: 'Keep this new task' });
+  const task = (await f.store.snapshot()).tasks[0];
+  assert.deepEqual(navigation, { view: 'task', taskId: task.id });
+  assert.deepEqual(operations, []);
+  assert.equal(task.status, 'draft', 'Old storage format stays compatible');
+  assert.ok(!document.body.textContent?.includes('draft'));
+  assert.ok(rtl.screen.getByRole('button', { name: 'Start' }).hasAttribute('disabled'));
+});
+
+test('native task selection and creation requests respect task routes and cancellation', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot();
+  const task = snapshot.tasks[0];
+  const bridge: Bridge = {
+    request: async () => snapshot,
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+  };
+  const result = rtl.render(
+    <App
+      snapshot={{ ...snapshot, navigationRequest: { id: 'select', taskId: task.id } }}
+      bridge={bridge}
+    />,
+  );
+  assert.ok(rtl.screen.getByRole('heading', { name: task.name }));
+  await settings();
+  result.rerender(
+    <App
+      snapshot={{ ...snapshot, navigationRequest: { id: 'new', newTask: true } }}
+      bridge={bridge}
+    />,
+  );
+  assert.ok(rtl.screen.getByRole('dialog', { name: 'New task' }));
+  click('Cancel');
+  assert.equal(
+    rtl.screen.getByRole('button', { name: 'API Connections' }).getAttribute('aria-current'),
+    'page',
+  );
+  click('Back to task');
+  assert.ok(rtl.screen.getByRole('heading', { name: task.name }));
+  result.rerender(
+    <App
+      snapshot={{ ...snapshot, navigationRequest: { id: 'missing', taskId: 'removed' } }}
+      bridge={bridge}
+    />,
+  );
+  assert.ok(rtl.screen.getByRole('main', { name: 'Home' }));
+});
+
+test('operation failures and historical errors reformat when the user changes language', async () => {
+  const f = fixture();
+  await f.store.dispatch({
+    kind: 'task.save',
+    input: taskInput({ git: { mode: 'branch', branch: 'main' } }),
+  });
+  const task = (await f.store.snapshot()).tasks[0];
+  await mount(f, { view: 'task', taskId: task.id }, undefined, {
+    execute: async () => {
+      throw new OperationError('gitUnavailable');
+    },
+  });
+  click('Edit task');
+  await rtl.within(rtl.screen.getByRole('dialog')).findByText(/Git is unavailable/);
+  click('Cancel');
+  rtl.fireEvent.change(rtl.screen.getByLabelText('Language'), { target: { value: 'zh-CN' } });
+  await rtl.screen.findByText(/Git 不可用/);
+  rtl.cleanup();
+  const snapshot = await f.store.snapshot();
+  const run: RunSummary = {
+    id: 'run',
+    taskId: task.id,
+    status: 'failed',
+    round: 1,
+    maxRounds: 5,
+    sequence: 1,
+    createdAt: '',
+    updatedAt: '',
+    error: 'Model request timed out.',
+    fault: { code: 'inferenceTimeout' },
+  };
+  const events: RunEvent[] = [
+    {
+      runId: run.id,
+      taskId: task.id,
+      sequence: 1,
+      kind: 'error',
+      text: 'Legacy external failure.',
+      time: '',
+    },
+    {
+      runId: run.id,
+      taskId: task.id,
+      sequence: 2,
+      kind: 'check',
+      text: 'check FAIL\nORIGINAL COMMAND OUTPUT',
+      fault: { code: 'commandTimeout', params: { name: 'Check build' } },
+      time: '',
+    },
+    {
+      runId: run.id,
+      taskId: task.id,
+      sequence: 3,
+      kind: 'tool',
+      text: JSON.stringify({ tool: 'read_file', result: { error: 'Legacy tool error' } }),
+      time: '',
+    },
+  ];
+  const bridge: Bridge = {
+    request: async () => snapshot,
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+    execute: async () => ({ state: { config: { prepare: [], checks: [] }, runs: [run] }, events }),
+  };
+  const result = rtl.render(
+    <App
+      snapshot={{ ...snapshot, execution: { config: { prepare: [], checks: [] }, runs: [run] } }}
+      bridge={bridge}
+      initialNavigation={{ view: 'task', taskId: task.id }}
+    />,
+  );
+  await rtl.screen.findByText(/模型请求超时/);
+  await rtl.waitFor(() => assert.equal(rtl.screen.getAllByText(/该次运行失败/).length, 2));
+  assert.ok(rtl.screen.getByText(/命令“Check build”执行超时/));
+  assert.ok(rtl.screen.getByText(/ORIGINAL COMMAND OUTPUT/));
+  assert.ok(rtl.screen.getByText('Legacy external failure.'));
+  result.rerender(<App snapshot={{ ...snapshot, locale: 'en', language: 'en' }} bridge={bridge} />);
+  await rtl.screen.findByText('Model request timed out.');
+  assert.ok(rtl.screen.getByText('Command Check build timed out.'));
+});
+
+test('execution bridge preserves structured errors, times out safely and rejects requests on close', async (context) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const sent: ClientMessage[] = [];
+  const bridge = connect(
+    {
+      postMessage: (message) => sent.push(message),
+      getState: () => null,
+      setState: () => undefined,
+    },
+    () => undefined,
+    () => undefined,
+  );
+  const pending = bridge.execute!({ kind: 'start', taskId: 'task' });
+  const failure = assert.rejects(pending, { code: 'dirtyRepository' });
+  const request = sent.at(-1)!;
+  assert.equal(request.type, 'execution.request');
+  window.dispatchEvent(
+    new dom.window.MessageEvent('message', {
+      data: {
+        type: 'execution.result',
+        requestId: request.requestId,
+        fault: { code: 'dirtyRepository' },
+      },
+    }),
+  );
+  await failure;
+  const timed = assert.rejects(bridge.execute!({ kind: 'stop', runId: 'run' }), {
+    code: 'operationTimeout',
+  });
+  context.mock.timers.tick(45000);
+  await timed;
+  const closed = assert.rejects(bridge.execute!({ kind: 'history', runId: 'run' }), {
+    code: 'workbenchClosed',
+  });
+  const localClosed = assert.rejects(bridge.request({ kind: 'workspace.open' }), {
+    code: 'workbenchClosed',
+  });
+  bridge.dispose();
+  await closed;
+  await localClosed;
+  context.mock.timers.reset();
+});
+
+test('saving the current task preserves loaded conversation history', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const task = (await f.store.snapshot()).tasks[0];
+  const run: RunSummary = {
+    id: 'run',
+    taskId: task.id,
+    status: 'completed',
+    round: 1,
+    maxRounds: 5,
+    createdAt: '',
+    updatedAt: '',
+    sequence: 1,
+  };
+  const execution = { config: { prepare: [], checks: [] }, runs: [run] };
+  const initial = { ...(await f.store.snapshot()), execution };
+  let navigationRequests = 0;
+  function Harness() {
+    const [snapshot, setSnapshot] = useState(initial);
+    const [bridge] = useState<Bridge>(() => ({
+      queryModels: async () => ({ models: [], fetchedAt: '' }),
+      onModelsInvalidated: () => () => undefined,
+      request: async (action) => {
+        await f.store.dispatch(action);
+        const next = { ...(await f.store.snapshot()), execution };
+        setSnapshot(next);
+        return next;
+      },
+      execute: async () => {
+        navigationRequests++;
+        return {
+          state: execution,
+          events: [
+            {
+              runId: run.id,
+              taskId: task.id,
+              sequence: 1,
+              kind: 'text',
+              agent: 'worker',
+              text: 'Preserved worker conversation',
+              time: '',
+            },
+          ],
+        };
+      },
+    }));
+    return (
+      <App
+        snapshot={snapshot}
+        bridge={bridge}
+        initialNavigation={{ view: 'task', taskId: task.id }}
+      />
+    );
+  }
+  rtl.render(<Harness />);
+  await rtl.screen.findByText('Preserved worker conversation');
+  click('Edit task');
+  click('Save task');
+  await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
+  assert.ok(rtl.screen.getByText('Preserved worker conversation'));
+  assert.equal(navigationRequests, 1);
+});
+
+test('automatic execution starts without presets; advanced commands retain disabled values', async () => {
+  const f = fixture();
+  const connectionId = await configured(f);
+  await f.store.dispatch({
+    kind: 'task.save',
+    input: taskInput({
+      worker: { connectionId, model: 'worker' },
+      reviewer: { connectionId, model: 'reviewer' },
+    }),
+  });
+  const task = (await f.store.snapshot()).tasks[0];
+  let config: import('../../src/shared/execution').ExecutionConfig = { prepare: [], checks: [] };
+  const actions: string[] = [];
+  await mount(f, { view: 'task', taskId: task.id }, undefined, {
+    execute: async (action) => {
+      actions.push(action.kind);
+      if (action.kind === 'config.save') {
+        config = action.config;
+      }
+      return { state: { config, runs: [] } };
+    },
+  });
+  assert.equal(
+    (rtl.screen.getByRole('button', { name: 'Start' }) as HTMLButtonElement).disabled,
+    false,
+  );
+  assert.deepEqual(actions, []);
+  click('Start');
+  await rtl.waitFor(() => assert.deepEqual(actions, ['start']));
+  click('Settings');
+  click('Task execution');
+  assert.ok(rtl.screen.getByText('Automatic collaboration'));
+  rtl.fireEvent.click(rtl.screen.getByText('Advanced settings'));
+  const toggle = rtl.screen.getByLabelText('Enable additional custom commands');
+  assert.equal((toggle as HTMLInputElement).checked, false);
+  rtl.fireEvent.click(toggle);
+  click('Add check command');
+  rtl.fireEvent.change(rtl.screen.getByLabelText('Command name'), {
+    target: { value: 'Extra validation' },
+  });
+  rtl.fireEvent.change(rtl.screen.getByLabelText('Executable'), { target: { value: 'npm' } });
+  rtl.fireEvent.change(rtl.screen.getByLabelText('Arguments — one per line'), {
+    target: { value: 'run\ncheck' },
+  });
+  rtl.fireEvent.click(toggle);
+  assert.equal(rtl.screen.queryByLabelText('Executable'), null);
+  click('Save execution settings');
+  await rtl.waitFor(() => assert.equal(config.checks.length, 1));
+  assert.equal(config.customCommandsEnabled, false);
+  assert.deepEqual(config.checks[0].args, ['run', 'check']);
+  rtl.fireEvent.click(toggle);
+  assert.equal((rtl.screen.getByLabelText('Executable') as HTMLInputElement).value, 'npm');
+});
+
+test('plan, acceptance, planning controls and history restore in both languages', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot(),
+    task = snapshot.tasks[0];
+  const plan = {
+    version: 2,
+    objective: 'Fix cancellation',
+    requirements: 'No output on cancel',
+    steps: ['Repair and verify'],
+    criteria: [
+      {
+        id: 'doc',
+        description: 'Document behavior',
+        verification: 'reading' as const,
+        evidence: 'Read the updated guide',
+        reason: 'Documentation only',
+      },
+    ],
+    revisionReason: 'Address first-round findings',
+  };
+  const run: RunSummary = {
+    id: 'run-plan',
+    taskId: task.id,
+    status: 'planning',
+    round: 0,
+    maxRounds: 5,
+    createdAt: '',
+    updatedAt: '',
+    sequence: 1,
+    plan,
+  };
+  const execution = { config: { prepare: [], checks: [] }, runs: [run] };
+  const bridge: Bridge = {
+    request: async () => snapshot,
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+    execute: async () => ({
+      state: execution,
+      events: [
+        {
+          runId: run.id,
+          taskId: task.id,
+          sequence: 1,
+          kind: 'plan',
+          time: '',
+          text: 'Fix cancellation',
+          detail: { type: 'plan', plan },
+        },
+      ],
+    }),
+  };
+  const ui = rtl.render(
+    <App
+      snapshot={{ ...snapshot, execution }}
+      bridge={bridge}
+      initialNavigation={{ view: 'task', taskId: task.id }}
+    />,
+  );
+  await rtl.screen.findByRole('status');
+  assert.match(rtl.screen.getByRole('status').textContent!, /Planning/);
+  assert.ok(rtl.screen.getAllByText('Waiting for Reviewer plan').length > 0);
+  assert.equal(
+    (rtl.screen.getByRole('button', { name: 'Pause' }) as HTMLButtonElement).disabled,
+    false,
+  );
+  await rtl.waitFor(() => assert.equal(rtl.screen.getAllByText('Reading review').length, 2));
+  ui.rerender(
+    <App
+      snapshot={{ ...snapshot, execution, locale: 'zh-CN', language: 'zh-CN' }}
+      bridge={bridge}
+    />,
+  );
+  assert.match(rtl.screen.getByRole('status').textContent!, /制定方案中/);
+  assert.equal(rtl.screen.getAllByText('阅读审查').length, 2);
+  assert.ok(rtl.screen.getAllByText('Documentation only').length > 0);
+});

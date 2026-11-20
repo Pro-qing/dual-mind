@@ -212,6 +212,13 @@ test('rejects path traversal, links and Git metadata and revokes role access wit
   const writer = await h.service.files(id, 'worker'),
     reader = await h.service.files(id, 'reviewer');
   await symlink(h.repo, join(prepared.directory, 'escape'));
+  assert.equal(await writer.commandDirectory('.'), prepared.directory);
+  await mkdir(join(prepared.directory, 'nested'));
+  assert.equal(await writer.commandDirectory('nested'), join(prepared.directory, 'nested'));
+  assert.ok(!('commandDirectory' in reader));
+  for (const directory of ['..', '/tmp', '.git', 'escape', 'nested/../', 'file.txt', 'missing']) {
+    await assert.rejects(writer.commandDirectory(directory), { code: 'commandDirectoryInvalid' });
+  }
   for (const name of [
     '../source/file.txt',
     '/etc/passwd',

@@ -1,6 +1,8 @@
+import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
 import type { ExecutionAction, ExecutionReply, ExecutionUpdate } from '../../src/shared/execution';
 import type {
   Action,
+  ActionReply,
   AppSnapshot,
   Bridge,
   ClientMessage,
@@ -14,19 +16,20 @@ export interface VSCodeApi {
   getState(): unknown;
   setState(state: unknown): void;
 }
-export class RequestError extends Error {
-  constructor(public readonly code: ErrorCode | ModelErrorCode) {
-    super(code);
+export class RequestError extends OperationError {
+  constructor(code: ErrorCode | ModelErrorCode | AppError) {
+    const fault = typeof code === 'string' ? { code } : code;
+    super(fault.code, fault.params, fault.details);
   }
 }
 export function connect(
   api: VSCodeApi,
   onSnapshot: (state: AppSnapshot) => void,
-  onFatal: (error: ErrorCode) => void,
+  onFatal: (error: AppError) => void,
 ): Bridge & { dispose(): void } {
   const pending = new Map<
     string,
-    { resolve(state: AppSnapshot): void; reject(error: Error): void }
+    { resolve(state: ActionReply): void; reject(error: Error): void }
   >();
   const executionListeners = new Set<(update: ExecutionUpdate) => void>();
   const executionPending = new Map<
@@ -66,7 +69,7 @@ export function connect(
       if (message.result) {
         request.resolve(message.result);
       } else {
-        request.reject(new Error(message.error || 'Execution failed.'));
+        request.reject(new RequestError(toAppError(message.fault || message.error)));
       }
       return;
     }
@@ -94,7 +97,7 @@ export function connect(
     } else if (message.type === 'snapshot') {
       onSnapshot(message.snapshot);
     } else if (message.type === 'fatal') {
-      onFatal(message.error);
+      onFatal(toAppError(message.fault || { code: message.error }));
     } else if (message.type === 'result') {
       const request = pending.get(message.requestId);
       if (!request) {
@@ -103,9 +106,9 @@ export function connect(
       pending.delete(message.requestId);
       if (message.ok && message.snapshot) {
         onSnapshot(message.snapshot);
-        request.resolve(message.snapshot);
+        request.resolve({ ...message.snapshot, savedTaskId: message.savedTaskId });
       } else {
-        request.reject(new RequestError(message.error || 'storageFailed'));
+        request.reject(new RequestError(message.fault || message.error || 'storageFailed'));
       }
     }
   };
@@ -116,9 +119,7 @@ export function connect(
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
           executionPending.delete(requestId);
-          reject(
-            new Error('Execution operation timed out; check its current status before retrying.'),
-          );
+          reject(new OperationError('operationTimeout'));
         }, 45000);
         executionPending.set(requestId, { resolve, reject, timer });
         api.postMessage({ type: 'execution.request', requestId, action });
@@ -130,7 +131,7 @@ export function connect(
         executionListeners.delete(listener);
       };
     },
-    request(action: Action): Promise<AppSnapshot> {
+    request(action: Action): Promise<ActionReply> {
       const requestId = crypto.randomUUID();
       return new Promise((resolve, reject) => {
         pending.set(requestId, { resolve, reject });
@@ -157,7 +158,7 @@ export function connect(
     dispose() {
       executionPending.forEach((request) => {
         clearTimeout(request.timer);
-        request.reject(new Error('Workbench closed.'));
+        request.reject(new OperationError('workbenchClosed'));
       });
       executionPending.clear();
       executionListeners.clear();
@@ -168,7 +169,7 @@ export function connect(
       modelPending.clear();
       modelListeners.clear();
       window.removeEventListener('message', listener);
-      pending.forEach((request) => request.reject(new RequestError('unavailable')));
+      pending.forEach((request) => request.reject(new OperationError('workbenchClosed')));
       pending.clear();
     },
   };

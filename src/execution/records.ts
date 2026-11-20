@@ -1,3 +1,4 @@
+import { OperationError, errorText } from '../shared/errors';
 import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
@@ -20,18 +21,19 @@ export class RunRecords {
       { version: 1, config: emptyExecutionConfig(), runs: [] },
     );
     if (stored.version !== 1 || !Array.isArray(stored.runs)) {
-      throw new Error('Invalid execution storage; records were preserved.');
+      throw new OperationError('executionStorageInvalid');
     }
     this.config = validateConfig(stored.config);
     this.runs = structuredClone(stored.runs);
     for (const run of this.runs) {
       if (!/^[0-9a-f-]{36}$/.test(run.id) || !Number.isSafeInteger(run.sequence)) {
-        throw new Error('Invalid execution record.');
+        throw new OperationError('executionRecordInvalid');
       }
       if (!terminalStatuses.includes(run.status)) {
         run.status = 'interrupted';
         run.updatedAt = new Date().toISOString();
-        run.error = 'Execution was interrupted by host shutdown; restart explicitly.';
+        run.fault = { code: 'executionInterrupted' };
+        run.error = errorText('en', run.fault);
       }
     }
     await this.save();
@@ -48,7 +50,7 @@ export class RunRecords {
   metadata(runId: string, value: unknown): Promise<void> {
     const root = this.root();
     if (!root || !/^[0-9a-f-]{36}$/.test(runId)) {
-      return Promise.reject(new Error('Execution storage is unavailable.'));
+      return Promise.reject(new OperationError('executionStorageUnavailable'));
     }
     const next = this.chain.then(async () => {
       await mkdir(join(root, 'runs'), { recursive: true, mode: 0o700 });
@@ -63,7 +65,7 @@ export class RunRecords {
   event(event: RunEvent): Promise<void> {
     const folder = this.root();
     if (!folder) {
-      return Promise.reject(new Error('Open a workspace to store execution history.'));
+      return Promise.reject(new OperationError('historyWorkspaceRequired'));
     }
     const next = this.chain.then(async () => {
       const directory = join(folder, 'runs');
@@ -79,7 +81,7 @@ export class RunRecords {
     const run = this.runs.find((item) => item.id === runId);
     const root = this.root();
     if (!run || !root || !Number.isSafeInteger(before) || before < 1) {
-      throw new Error('Execution history is unavailable.');
+      throw new OperationError('historyUnavailable');
     }
     await this.chain;
     const result: RunEvent[] = [];
@@ -117,13 +119,13 @@ export class RunRecords {
 }
 export function validateConfig(value: unknown): ExecutionConfig {
   if (!value || typeof value !== 'object') {
-    throw new Error('Invalid command configuration.');
+    throw new OperationError('commandConfigInvalid');
   }
   const config = value as ExecutionConfig;
   const ids = new Set<string>();
   const commands = (items: unknown): ExecutionConfig['checks'] => {
     if (!Array.isArray(items) || items.length > 20) {
-      throw new Error('Use at most 20 commands per group.');
+      throw new OperationError('commandGroupLimit');
     }
     return items.map((item) => {
       if (
@@ -149,9 +151,7 @@ export function validateConfig(value: unknown): ExecutionConfig {
         item.timeoutSeconds < 10 ||
         item.timeoutSeconds > 900
       ) {
-        throw new Error(
-          'Commands need a unique ID, name, executable, argument list and a 10–900 second timeout.',
-        );
+        throw new OperationError('commandInvalid');
       }
       ids.add(item.id);
       return {
@@ -163,5 +163,17 @@ export function validateConfig(value: unknown): ExecutionConfig {
       };
     });
   };
-  return { prepare: commands(config.prepare), checks: commands(config.checks) };
+  if (
+    config.customCommandsEnabled !== undefined &&
+    typeof config.customCommandsEnabled !== 'boolean'
+  ) {
+    throw new OperationError('commandConfigInvalid');
+  }
+  const prepare = commands(config.prepare),
+    checks = commands(config.checks);
+  return {
+    prepare,
+    checks,
+    customCommandsEnabled: config.customCommandsEnabled ?? Boolean(prepare.length || checks.length),
+  };
 }

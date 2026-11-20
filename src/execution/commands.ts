@@ -1,8 +1,13 @@
+import { OperationError } from '../shared/errors';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type { PresetCommand } from '../shared/execution';
-export class CommandShutdownError extends Error {}
+export class CommandShutdownError extends OperationError {
+  constructor() {
+    super('commandShutdown');
+  }
+}
 export interface CheckResult {
   id: string;
   name: string;
@@ -23,7 +28,7 @@ export interface CommandRunner {
 export class SystemdCommands implements CommandRunner {
   async available(signal: AbortSignal): Promise<void> {
     if (process.platform !== 'linux') {
-      throw new Error('Task execution requires Linux user systemd resource limits.');
+      throw new OperationError('systemdRequired');
     }
     const probe = `const fs=require('node:fs');const c=fs.readFileSync('/proc/self/cgroup','utf8').split('\\n').find(x=>x.startsWith('0::'));if(!c)process.exit(1);const p='/sys/fs/cgroup'+c.slice(3);if(fs.readFileSync(p+'/memory.max','utf8').trim()!=='1073741824'||fs.readFileSync(p+'/memory.swap.max','utf8').trim()!=='0')process.exit(1);`;
     const check = await this.run(
@@ -38,9 +43,7 @@ export class SystemdCommands implements CommandRunner {
       signal,
     );
     if (!check.ok) {
-      throw new Error(
-        'User systemd with cgroup v2, MemoryMax=1 GiB and MemorySwapMax=0 is required. No unrestricted fallback is used.',
-      );
+      throw new OperationError('systemdLimits');
     }
   }
   async run(
@@ -50,7 +53,7 @@ export class SystemdCommands implements CommandRunner {
     output?: (text: string) => void,
   ): Promise<CheckResult> {
     if (signal.aborted) {
-      throw new Error('Execution stopped.');
+      throw new OperationError('executionStopped');
     }
     const unit = `dualmind-run-${randomUUID()}`;
     // Keep test commands inside their enclosing bounded slice; production inherits app.slice.
@@ -69,7 +72,7 @@ export class SystemdCommands implements CommandRunner {
       'NVM_DIR',
     ].flatMap((key) => (process.env[key] ? [`${key}=${process.env[key]}`] : []));
     if (signal.aborted) {
-      throw new Error('Execution stopped.');
+      throw new OperationError('executionStopped');
     }
     return new Promise((resolve, reject) => {
       const child = spawn(
@@ -139,7 +142,7 @@ export class SystemdCommands implements CommandRunner {
             }
             await new Promise((resolve) => setTimeout(resolve, 50));
           } while (Date.now() < deadline);
-          throw new CommandShutdownError('Could not confirm command shutdown.');
+          throw new CommandShutdownError();
         })();
         void stopping.catch(() => undefined);
       };
@@ -174,7 +177,7 @@ export class SystemdCommands implements CommandRunner {
       child.on('error', () => {
         clearTimeout(timer);
         signal.removeEventListener('abort', abort);
-        reject(new Error('User systemd command runner is unavailable.'));
+        reject(new OperationError('systemdUnavailable'));
       });
       child.on('close', (code) => {
         clearTimeout(timer);

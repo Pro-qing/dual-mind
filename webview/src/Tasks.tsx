@@ -1,3 +1,7 @@
+import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
+import { ErrorNotice } from './ErrorNotice';
+import type { ReactNode } from 'react';
+import { RunOverview } from './RunDetail';
 import { ExecutionControls, statusKey } from './Execution';
 import { terminalStatuses } from '../../src/shared/execution';
 import { useEffect, useState } from 'react';
@@ -16,7 +20,15 @@ type TaskView = Omit<TaskDraft, 'status'> & {
   status: 'draft' | 'reviewing' | 'working' | 'paused' | 'completed';
   round?: number;
 };
-function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
+export function TaskForm({
+  task,
+  onClose,
+  onSaved,
+}: {
+  task?: TaskDraft;
+  onClose(): void;
+  onSaved(id: string): void;
+}) {
   const { snapshot, tr, run, pending, execute, execution } = useUI();
   const [input, setInput] = useState<TaskInput>(() => ({
     git: task?.git ?? { mode: 'managed' },
@@ -28,7 +40,8 @@ function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
     reviewer: { ...(task?.reviewer || snapshot.defaults.reviewer) },
   }));
   const [repository, setRepository] = useState<RepositoryInfo>();
-  const [branchError, setBranchError] = useState('');
+  const [branchError, setBranchError] = useState<AppError>();
+  const [saveError, setSaveError] = useState<AppError>();
   const [loadingBranches, setLoadingBranches] = useState(false);
   const strategyLocked = Boolean(
     task &&
@@ -38,11 +51,11 @@ function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
   );
   const refreshBranches = async () => {
     setLoadingBranches(true);
-    setBranchError('');
+    setBranchError(undefined);
     try {
       setRepository((await execute({ kind: 'git.branches' })).repository);
     } catch (error) {
-      setBranchError(error instanceof Error ? error.message : String(error));
+      setBranchError(toAppError(error));
     } finally {
       setLoadingBranches(false);
     }
@@ -60,8 +73,17 @@ function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
       !snapshot.connections.some((c) => c.id === binding.connectionId && c.hasKey),
   );
   const save = async () => {
-    await run({ kind: 'task.save', id: task?.id, input });
-    onClose();
+    setSaveError(undefined);
+    try {
+      const next = await run({ kind: 'task.save', id: task?.id, input });
+      const id = next.savedTaskId || task?.id || next.selectedTaskId;
+      if (!id) {
+        throw new OperationError('notFound');
+      }
+      onSaved(id);
+    } catch (error) {
+      setSaveError(toAppError(error));
+    }
   };
   return (
     <Dialog
@@ -69,7 +91,7 @@ function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
       onClose={onClose}
       footer={
         <>
-          <span className="footer-hint">{tr('draftHint')}</span>
+          <span className="footer-hint">{tr('taskSaveHint')}</span>
           <button disabled={pending} onClick={onClose}>
             {tr('cancel')}
           </button>
@@ -79,7 +101,7 @@ function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
             form="task-form"
             disabled={pending || (input.git?.mode === 'branch' && !input.git.branch)}
           >
-            {tr(task ? 'saveDraft' : 'createDraft')}
+            {tr(task ? 'saveTask' : 'createTask')}
           </button>
         </>
       }
@@ -93,6 +115,7 @@ function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
           void save().catch(() => undefined);
         }}
       >
+        {saveError && <ErrorNotice error={saveError} locale={snapshot.locale} />}
         <label>
           {tr('taskName')} <span className="required">*</span>
           <input
@@ -160,11 +183,7 @@ function TaskForm({ task, onClose }: { task?: TaskDraft; onClose(): void }) {
                   {tr('gitCurrentBranch')}: {repository.currentBranch}
                 </p>
               )}
-              {branchError && (
-                <p role="alert" className="notice warning">
-                  {branchError}
-                </p>
-              )}
+              {branchError && <ErrorNotice error={branchError} locale={snapshot.locale} />}
             </>
           )}
         </fieldset>
@@ -275,6 +294,16 @@ function AgentPanel({
         : binding.connectionId
           ? `${connection?.name || tr('missingConnection')} / ${binding.model || tr('noBinding')}`
           : tr('noBinding');
+  const waitingKey =
+    !example && runtime && !terminalStatuses.includes(runtime.status)
+      ? runtime.status === 'planning' && agent === 'worker'
+        ? 'awaitingPlan'
+        : ['preparing', 'worker', 'checking'].includes(runtime.status) && agent === 'reviewer'
+          ? 'awaitingSubmission'
+          : runtime.status === 'reviewer' && agent === 'worker'
+            ? 'awaitingAcceptance'
+            : undefined
+      : undefined;
   return (
     <section className={`agent-panel ${agent}`} aria-label={tr(agent)}>
       <header className="agent-header">
@@ -287,8 +316,11 @@ function AgentPanel({
           {example
             ? tr(agent === 'worker' ? 'working' : 'reviewing')
             : runtime
-              ? tr(runtime.status === 'completed' ? 'completed' : statusKey(runtime.status))
-              : tr('draft')}
+              ? tr(
+                  waitingKey ??
+                    (runtime.status === 'completed' ? 'completed' : statusKey(runtime.status)),
+                )
+              : tr('pendingTask')}
         </span>
       </header>
       <div className="agent-body">
@@ -319,7 +351,12 @@ function AgentPanel({
         ) : (
           <div className="conversation-empty">
             <h3>{tr('noConversation')}</h3>
-            <p>{tr('draftConversation')}</p>
+            <p>
+              {tr(
+                waitingKey ??
+                  (runtime?.status === 'planning' ? 'planningHint' : 'pendingConversation'),
+              )}
+            </p>
           </div>
         )}
         {agent === 'reviewer' && (
@@ -344,31 +381,249 @@ function AgentPanel({
     </section>
   );
 }
+function TaskHome({
+  tasks,
+  preview,
+  onSelect,
+  onDelete,
+  newButton,
+  onPreview,
+}: {
+  tasks: TaskView[];
+  preview: boolean;
+  onSelect(task: TaskView): void;
+  onDelete(task: TaskDraft): void;
+  newButton: ReactNode;
+  onPreview(): void;
+}) {
+  const { snapshot, execution, tr, pending } = useUI();
+  const state = (task: TaskView) => execution.runs.find((run) => run.taskId === task.id);
+  const active = tasks.filter((task) =>
+    preview
+      ? ['working', 'reviewing', 'paused'].includes(task.status)
+      : state(task) && !terminalStatuses.includes(state(task)!.status),
+  ).length;
+  const waiting = tasks.filter((task) => (preview ? task.status === 'draft' : !state(task))).length;
+  const completed = tasks.filter((task) =>
+    preview ? task.status === 'completed' : state(task)?.status === 'completed',
+  ).length;
+  return (
+    <main className="task-home" aria-label={tr('home')}>
+      <header className="section-heading">
+        <div>
+          <h2>{tr('workspaceTasks')}</h2>
+          <p>{tr('homeHint')}</p>
+        </div>
+        {newButton}
+      </header>
+      {tasks.length ? (
+        <>
+          <div className="task-counts" aria-label={tr('workspaceTasks')}>
+            <span>
+              {tr('allTasks')} {tasks.length}
+            </span>
+            <span>
+              {tr('activeTasks')} {active}
+            </span>
+            <span>
+              {tr('pendingTask')} {waiting}
+            </span>
+            <span>
+              {tr('completed')} {completed}
+            </span>
+          </div>
+          <div className="task-list">
+            {tasks.map((task) => {
+              const run = !preview ? state(task) : undefined;
+              return (
+                <article className="task-item" key={task.id}>
+                  <button
+                    className="task-select"
+                    onClick={() => onSelect(task)}
+                    aria-label={task.name}
+                  >
+                    <strong>{task.name}</strong>
+                    <p className="task-excerpt">{task.requirements}</p>
+                    <span className="task-metadata">
+                      <span className={`role-badge ${task.role.id}`}>{task.role.name}</span>
+                      <span>
+                        {tr(
+                          task.git?.mode === 'current'
+                            ? 'gitCurrent'
+                            : task.git?.mode === 'branch'
+                              ? 'gitBranch'
+                              : 'gitManaged',
+                        )}
+                        {task.git?.mode === 'branch' && `: ${task.git.branch}`}
+                      </span>
+                      <span>
+                        {tr('maximumRounds')} {task.maxRounds}
+                      </span>
+                    </span>
+                  </button>
+                  <span className="task-state status-badge">
+                    {run
+                      ? tr(statusKey(run.status))
+                      : tr(task.status === 'draft' ? 'pendingTask' : task.status)}
+                    {run ? ` · ${run.round}/${run.maxRounds}` : ''}
+                  </span>
+                  <button
+                    onClick={() => onSelect(task)}
+                    aria-label={`${tr('openTask')}: ${task.name}`}
+                  >
+                    {tr('openTask')}
+                  </button>
+                  <button
+                    className="icon-button task-delete"
+                    aria-label={`${tr('deleteTask')}: ${task.name}`}
+                    title={tr(preview ? 'readonly' : 'deleteTask')}
+                    disabled={preview || pending}
+                    onClick={() => onDelete(task as TaskDraft)}
+                  >
+                    <Icon name="trash" />
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <section className="empty-workbench">
+          <span className="empty-symbol">+</span>
+          <h2>{tr('noTasks')}</h2>
+          <p>{tr(snapshot.hasWorkspace ? 'emptyDescription' : 'noWorkspace')}</p>
+          <div className="empty-role-pair">
+            <div className="worker">
+              <h3>{tr('worker')}</h3>
+              <p>{tr('workerRole')}</p>
+            </div>
+            <div className="reviewer">
+              <h3>{tr('reviewer')}</h3>
+              <p>{tr('reviewerRole')}</p>
+            </div>
+          </div>
+        </section>
+      )}
+      <footer className="home-footer">
+        <p>{tr('homeExecutionHint')}</p>
+        {!preview && (
+          <button className="text-button" onClick={onPreview}>
+            {tr('samplePreview')}
+          </button>
+        )}
+      </footer>
+    </main>
+  );
+}
+function TaskDetail({
+  task,
+  preview,
+  onEdit,
+  onDelete,
+  onSettings,
+}: {
+  task: TaskView;
+  preview: boolean;
+  onEdit(task: TaskDraft): void;
+  onDelete(task: TaskDraft): void;
+  onSettings(): void;
+}) {
+  const { execution, tr, pending } = useUI();
+  const currentRun = !preview ? execution.runs.find((item) => item.taskId === task.id) : undefined;
+  const locked = currentRun && !terminalStatuses.includes(currentRun.status);
+  return (
+    <main className="task-content" aria-label={tr('taskDetail')}>
+      <section className="task-summary">
+        <div className="summary-top">
+          <span className="eyebrow">{tr('selectedTask')}</span>
+          <span className="status-badge">
+            {currentRun
+              ? tr(statusKey(currentRun.status))
+              : tr(task.status === 'draft' ? 'pendingTask' : task.status)}
+          </span>
+        </div>
+        <h1>{task.name}</h1>
+        <p className="task-requirements">{task.requirements}</p>
+        <div className="task-metadata">
+          <span className={`role-badge ${task.role.id}`}>
+            {tr('reviewer')}: {task.role.name}
+          </span>
+          <span>
+            {tr('gitStrategy')}:{' '}
+            {currentRun?.branch ||
+              (task.git?.mode === 'branch'
+                ? task.git.branch
+                : tr(task.git?.mode === 'current' ? 'gitCurrent' : 'gitManaged'))}
+          </span>
+          <span>
+            {tr('maximumRounds')} {task.maxRounds}
+          </span>
+        </div>
+      </section>
+      <div className="task-controls">
+        {preview ? (
+          <div className="button-row">
+            {(['start', 'pause', 'stop'] as const).map((key) => (
+              <button key={key} disabled>
+                {tr(key)}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <ExecutionControls taskId={task.id} run={currentRun} onSettings={onSettings} />
+        )}
+        <div className="button-row task-edit-actions">
+          <button
+            disabled={preview || pending || Boolean(locked)}
+            onClick={() => onEdit(task as TaskDraft)}
+          >
+            <Icon name="edit" />
+            {tr('editTask')}
+          </button>
+          <button
+            className="danger"
+            disabled={preview || pending}
+            aria-label={`${tr('deleteTask')}: ${task.name}`}
+            onClick={() => onDelete(task as TaskDraft)}
+          >
+            <Icon name="trash" />
+            {tr('deleteTask')}
+          </button>
+        </div>
+      </div>
+      {!preview && <RunOverview run={currentRun} />}
+      <div className="agent-grid">
+        <AgentPanel agent="worker" task={task} example={preview} />
+        <AgentPanel agent="reviewer" task={task} example={preview} />
+      </div>
+      {!preview && currentRun && (
+        <ExecutionControls taskId={task.id} run={currentRun} mode="details" />
+      )}
+    </main>
+  );
+}
 export function Tasks({
+  taskId,
   preview,
   onPreviewChange,
   onSettings,
-  newTaskRequest,
-  onNewTaskHandled,
+  onSelect,
+  onNewTask,
+  onEditTask,
+  onDeleted,
 }: {
+  taskId?: string;
   preview: boolean;
   onPreviewChange(value: boolean): void;
   onSettings(): void;
-  newTaskRequest?: string;
-  onNewTaskHandled?(): void;
+  onSelect(id: string): void;
+  onNewTask(): void;
+  onEditTask(task: TaskDraft): void;
+  onDeleted(id: string): void;
 }) {
   const { snapshot, tr, run, pending, execution } = useUI();
-  const [dialog, setDialog] = useState<'new' | TaskDraft | null>(null);
   const [deleting, setDeleting] = useState<TaskDraft | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sampleId, setSampleId] = useState('sample-bug');
-  useEffect(() => {
-    if (newTaskRequest && snapshot.hasWorkspace) {
-      setDialog('new');
-      onNewTaskHandled?.();
-    }
-  }, [newTaskRequest, snapshot.hasWorkspace, onNewTaskHandled]);
-
+  const [sampleId, setSampleId] = useState<string>();
   const samples: TaskView[] = (['bug', 'feature', 'review', 'refactor'] as const).map(
     (role, index) => ({
       id: `sample-${role}`,
@@ -380,7 +635,7 @@ export function Tasks({
         builtIn: true,
         locale: snapshot.locale,
       } satisfies RoleSnapshot,
-      status: (['reviewing', 'working', 'paused', 'completed'] as const)[index],
+      status: (['reviewing', 'draft', 'draft', 'completed'] as const)[index],
       maxRounds: 5,
       round: index === 0 ? 2 : 1,
       worker: { connectionId: '', model: 'fast-model' },
@@ -390,18 +645,15 @@ export function Tasks({
     }),
   );
   const tasks: TaskView[] = preview ? samples : snapshot.tasks;
-  const selectedId = preview ? sampleId : snapshot.selectedTaskId;
-  const current = tasks.find((task) => task.id === selectedId) || tasks[0];
-  const currentRun =
-    !preview && current ? execution.runs.find((item) => item.taskId === current.id) : undefined;
-  const locked = currentRun && !terminalStatuses.includes(currentRun.status);
+  const current = tasks.find((task) => task.id === (preview ? sampleId : taskId));
   const select = (task: TaskView) => {
     if (preview) {
       setSampleId(task.id);
     } else {
-      void run({ kind: 'task.select', id: task.id }, false).catch(() => undefined);
+      void run({ kind: 'task.select', id: task.id }, false)
+        .then(() => onSelect(task.id))
+        .catch(() => undefined);
     }
-    setSidebarOpen(false);
   };
   const newButton = (
     <button
@@ -409,7 +661,7 @@ export function Tasks({
       disabled={pending || preview}
       onClick={() => {
         if (snapshot.hasWorkspace) {
-          setDialog('new');
+          onNewTask();
         } else {
           void run({ kind: 'workspace.open' }, false).catch(() => undefined);
         }
@@ -424,208 +676,37 @@ export function Tasks({
       {preview && (
         <div className="preview-banner" role="status">
           <span>{tr('previewBadge')}</span>
-          <button onClick={() => onPreviewChange(false)}>{tr('exitPreview')}</button>
-        </div>
-      )}
-      <div className="mobile-task-toolbar">
-        <button aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)}>
-          <Icon name="tasks" />
-          {tr('tasks')}
-        </button>
-        {!preview && <button onClick={() => onPreviewChange(true)}>{tr('samplePreview')}</button>}
-        {newButton}
-      </div>
-      <div className={`workspace-layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        {sidebarOpen && (
-          <button
-            className="sidebar-scrim"
-            aria-label={tr('close')}
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-        <aside className="task-sidebar" aria-label={tr('workspaceTasks')}>
-          <div className="sidebar-heading">
-            <h2 className="eyebrow">{tr('workspaceTasks')}</h2>
+          <div className="button-row">
+            {sampleId && <button onClick={() => setSampleId(undefined)}>{tr('backToHome')}</button>}
             <button
-              className="icon-button sidebar-close"
-              aria-label={tr('close')}
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => {
+                setSampleId(undefined);
+                onPreviewChange(false);
+              }}
             >
-              <Icon name="close" />
+              {tr('exitPreview')}
             </button>
           </div>
-          {newButton}
-          <div className="task-list">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className={`task-item ${current?.id === task.id ? 'selected' : ''}`}
-              >
-                <button
-                  className="task-select"
-                  onClick={() => select(task)}
-                  aria-current={current?.id === task.id ? 'true' : undefined}
-                >
-                  <strong>{task.name}</strong>
-                  <span
-                    className={`role-badge ${task.role.id.startsWith('custom:') ? 'custom' : task.role.id}`}
-                  >
-                    {task.role.name}
-                  </span>
-                  <span className="task-state">
-                    {!preview && execution.runs.some((item) => item.taskId === task.id)
-                      ? tr(
-                          statusKey(execution.runs.find((item) => item.taskId === task.id)!.status),
-                        )
-                      : tr(task.status)}
-                    {task.round
-                      ? ` · ${task.round} / ${task.maxRounds}`
-                      : !preview && execution.runs.some((item) => item.taskId === task.id)
-                        ? ` · ${execution.runs.find((item) => item.taskId === task.id)!.round} / ${task.maxRounds}`
-                        : ''}
-                  </span>
-                </button>
-                <button
-                  className="icon-button task-delete"
-                  aria-label={`${tr('deleteTask')}: ${task.name}`}
-                  title={preview ? tr('readonly') : tr('deleteTask')}
-                  disabled={preview || pending}
-                  onClick={() => setDeleting(snapshot.tasks.find((item) => item.id === task.id)!)}
-                >
-                  <Icon name="trash" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="sidebar-footer">
-            <p>{tr('independentTasks')}</p>
-            <span title={snapshot.workspaceName}>
-              {snapshot.workspaceName || tr('noWorkspaceName')}
-            </span>
-            {!preview && (
-              <button className="text-button" onClick={() => onPreviewChange(true)}>
-                {tr('samplePreview')}
-              </button>
-            )}
-          </div>
-        </aside>
-        <main className="task-content">
-          {!current ? (
-            <section className="empty-workbench">
-              <span className="empty-symbol">+</span>
-              <h2>{tr('noTasks')}</h2>
-              <p>{tr(snapshot.hasWorkspace ? 'emptyDescription' : 'noWorkspace')}</p>
-              <div className="button-row">
-                {newButton}
-                <button onClick={() => onPreviewChange(true)}>{tr('samplePreview')}</button>
-              </div>
-              <div className="empty-role-pair">
-                <div className="worker">
-                  <h3>{tr('worker')}</h3>
-                  <p>{tr('workerRole')}</p>
-                </div>
-                <div className="reviewer">
-                  <h3>{tr('reviewer')}</h3>
-                  <p>{tr('reviewerRole')}</p>
-                </div>
-              </div>
-            </section>
-          ) : (
-            <>
-              <section className="task-summary">
-                <div className="summary-top">
-                  <span className="eyebrow">{tr('selectedTask')}</span>
-                  <span className="status-badge">
-                    {preview
-                      ? `${tr(current.status)} · ${current.round} / ${current.maxRounds}`
-                      : currentRun
-                        ? tr(statusKey(currentRun.status))
-                        : tr('editableDraft')}
-                  </span>
-                </div>
-                <h1>{current.name}</h1>
-                {currentRun?.branch && (
-                  <p>
-                    {tr('gitStrategy')}: {currentRun.branch}
-                  </p>
-                )}
-                <p className="task-requirements">{current.requirements}</p>
-                <span
-                  className={`role-badge ${current.role.id.startsWith('custom:') ? 'custom' : current.role.id}`}
-                >
-                  {tr('reviewer')}: {current.role.name}
-                </span>
-              </section>
-              <div className="task-controls">
-                <div className="button-row">
-                  {preview &&
-                    (['start', 'pause', 'stop'] as const).map((key, index) => (
-                      <button key={key} disabled title={tr(preview ? 'readonly' : 'unavailable')}>
-                        <Icon name={(['play', 'pause', 'stop'] as const)[index]} />
-                        {tr(key)}
-                      </button>
-                    ))}
-                  {!preview && (
-                    <button
-                      onClick={() =>
-                        setDialog(snapshot.tasks.find((task) => task.id === current.id)!)
-                      }
-                      disabled={pending || Boolean(locked)}
-                    >
-                      <Icon name="edit" />
-                      {tr('editTask')}
-                    </button>
-                  )}
-                </div>
-                <span>
-                  {tr('maximumRounds')} <strong>{current.maxRounds}</strong>
-                </span>
-              </div>
-              {!preview && <ExecutionControls taskId={current.id} run={currentRun} />}
-              <div className="agent-grid">
-                <AgentPanel agent="worker" task={current} example={preview} />
-                <AgentPanel agent="reviewer" task={current} example={preview} />
-              </div>
-              {!preview && (
-                <ExecutionControls taskId={current.id} run={currentRun} mode="details" />
-              )}
-              {preview && (
-                <>
-                  <section className="feedback-panel">
-                    <label>
-                      {tr('feedback')}
-                      <textarea rows={2} disabled placeholder={tr('feedbackPlaceholder')} />
-                    </label>
-                    <button disabled title={tr('unavailable')}>
-                      {tr('sendFeedback')}
-                    </button>
-                  </section>
-                  <section className="result-panel">
-                    <div>
-                      <h3>{tr('noResult')}</h3>
-                      <p>{tr('resultHint')}</p>
-                    </div>
-                    <div className="button-row">
-                      <button disabled>{tr('previewDraft')}</button>
-                      <button disabled>{tr('apply')}</button>
-                    </div>
-                  </section>
-                </>
-              )}
-            </>
-          )}
-          {!preview && (
-            <p className="capability-note">
-              {tr('executionReadyHint')}{' '}
-              <button className="text-button" onClick={onSettings}>
-                {tr('settings')}
-              </button>
-            </p>
-          )}
-        </main>
-      </div>
-      {dialog && (
-        <TaskForm task={dialog === 'new' ? undefined : dialog} onClose={() => setDialog(null)} />
+        </div>
+      )}
+      {current ? (
+        <TaskDetail
+          key={current.id}
+          task={current}
+          preview={preview}
+          onEdit={onEditTask}
+          onDelete={setDeleting}
+          onSettings={onSettings}
+        />
+      ) : (
+        <TaskHome
+          tasks={tasks}
+          preview={preview}
+          onSelect={select}
+          onDelete={setDeleting}
+          newButton={newButton}
+          onPreview={() => onPreviewChange(true)}
+        />
       )}
       {deleting && (
         <Confirm
@@ -641,9 +722,10 @@ export function Tasks({
           )}
           danger
           onClose={() => setDeleting(null)}
-          onConfirm={() =>
-            run({ kind: 'task.delete', id: deleting.id, confirmed: true }, 'deleted')
-          }
+          onConfirm={async () => {
+            await run({ kind: 'task.delete', id: deleting.id, confirmed: true }, 'deleted');
+            onDeleted(deleting.id);
+          }}
         />
       )}
     </>

@@ -1,3 +1,4 @@
+import { OperationError } from '../shared/errors';
 import { spawn } from 'node:child_process';
 import { getGitVersionError } from '../../scripts/check-git.cjs';
 
@@ -20,12 +21,12 @@ export type GitErrorCode =
   | 'invalidPath'
   | 'accessDenied'
   | 'storageFailed';
-export class GitTaskError extends Error {
+export class GitTaskError extends OperationError {
   constructor(
     public readonly code: GitErrorCode,
     message: string,
   ) {
-    super(message);
+    super(code, undefined, message);
   }
 }
 export interface GitResult {

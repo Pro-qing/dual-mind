@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">DualMind — 错误提示与窄窗口状态提案，已审核</title>
+  <desc id="description">供审核的独立状态样例：中文操作错误及原始详情、英文对应错误、旧记录和未知异常的兼容呈现，以及窄窗口中待执行任务缺少密钥的提示与纵向 Worker、Reviewer 布局。这些状态不同时出现在产品中。</desc>
+  <style>text { font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif; } .mono { font-family: "DejaVu Sans Mono", monospace; }</style>
+  <rect x="0" y="0" width="1440" height="900" rx="0" fill="#191c22" />
+  <rect x="0" y="0" width="1440" height="40" rx="0" fill="#13161b" />
+  <rect x="0" y="0" width="224" height="40" rx="0" fill="#191c22" />
+  <rect x="0" y="0" width="224" height="2" rx="0" fill="#91bbff" />
+  <rect x="22" y="12" width="14" height="16" rx="3" fill="#2b4161" />
+  <text x="46" y="26" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">DualMind</text>
+  <path d="M198 15 L208 25 M208 15 L198 25" fill="none" stroke="#b1bdce" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1408" y="26" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">界面提案 · 已审核 / 11</text>
+  <line x1="0" y1="40" x2="1440" y2="40" stroke="#394352"/>
+  <text x="32" y="89" font-size="25" fill="#e4e8f0" font-weight="600" text-anchor="start">错误信息与窄窗口</text>
+  <text x="32" y="117" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">独立状态样例 · 用于审核，不是产品中的并排面板</text>
+  <text x="32" y="157" font-size="14" fill="#e4e8f0" font-weight="500" text-anchor="start">操作失败：说明使用当前语言，原始详情可展开</text>
+  <rect x="32" y="174" width="840" height="188" rx="6" fill="#302326" stroke="#684047" />
+  <text x="52" y="207" font-size="16" fill="#ffb4b4" font-weight="600" text-anchor="start">执行失败</text>
+  <text x="52" y="239" font-size="14" fill="#e4e8f0" font-weight="400" text-anchor="start">当前工作区存在未提交的修改。请先处理这些修改，再重新开始。</text>
+  <path d="M54 262 l5 5 l5 -5" fill="none" stroke="#b1bdce" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="72" y="271" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">原始详情</text>
+  <rect x="52" y="283" width="800" height="56" rx="4" fill="#1b2028" stroke="#394352" />
+  <text x="66" y="316" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start" class="mono">The source workspace must be clean before starting.</text>
+  <text x="32" y="402" font-size="14" fill="#e4e8f0" font-weight="500" text-anchor="start">同一错误随语言切换；命令输出与服务原文保持原样</text>
+  <rect x="32" y="419" width="840" height="126" rx="6" fill="#20242c" stroke="#394352" />
+  <rect x="52" y="436" width="76" height="26" rx="13" fill="#25364e" />
+  <text x="90.0" y="454" font-size="12" fill="#91bbff" font-weight="500" text-anchor="middle">中文</text>
+  <text x="146" y="454" font-size="14" fill="#e4e8f0" font-weight="400" text-anchor="start">模型服务拒绝了请求，请检查连接密钥。</text>
+  <rect x="52" y="478" width="76" height="26" rx="13" fill="#303540" />
+  <text x="90.0" y="496" font-size="12" fill="#b1bdce" font-weight="500" text-anchor="middle">English</text>
+  <text x="146" y="497" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">The model service rejected the request. Check the connection key.</text>
+  <text x="146" y="526" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">原始详情 / Original details: HTTP 401</text>
+  <text x="32" y="586" font-size="14" fill="#e4e8f0" font-weight="500" text-anchor="start">旧记录与未知异常：提供本地化说明，保留原始详情</text>
+  <rect x="32" y="602" width="840" height="170" rx="6" fill="#20242c" stroke="#394352" />
+  <text x="52" y="632" font-size="13" fill="#91bbff" font-weight="500" text-anchor="start">历史记录</text>
+  <text x="184" y="632" font-size="14" fill="#e4e8f0" font-weight="400" text-anchor="start">该次运行失败。以下为原始错误信息。</text>
+  <text x="184" y="659" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start" class="mono">Model request timed out.</text>
+  <line x1="52" y1="678" x2="852" y2="678" stroke="#394352"/>
+  <text x="52" y="709" font-size="13" fill="#91bbff" font-weight="500" text-anchor="start">未知异常</text>
+  <text x="184" y="709" font-size="14" fill="#e4e8f0" font-weight="400" text-anchor="start">操作失败，请查看原始详情。</text>
+  <path d="M186 730 l5 5 l-5 5" fill="none" stroke="#b1bdce" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="204" y="740" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">原始详情</text>
+  <text x="904" y="157" font-size="14" fill="#e4e8f0" font-weight="500" text-anchor="start">窄窗口：动作换行，Worker / Reviewer 纵向排列</text>
+  <rect x="904" y="174" width="504" height="598" rx="6" fill="#171c24" stroke="#394352" />
+  <text x="924" y="207" font-size="13" fill="#91bbff" font-weight="400" text-anchor="start">← 返回主页</text>
+  <text x="1388" y="207" font-size="13" fill="#91bbff" font-weight="400" text-anchor="end">设置</text>
+  <line x1="920" y1="225" x2="1392" y2="225" stroke="#394352"/>
+  <text x="924" y="258" font-size="21" fill="#e4e8f0" font-weight="600" text-anchor="start">完善导出功能</text>
+  <rect x="1292" y="236" width="96" height="26" rx="13" fill="#25364e" />
+  <text x="1340.0" y="254" font-size="12" fill="#91bbff" font-weight="500" text-anchor="middle">待执行</text>
+  <text x="924" y="289" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">Feature · 专用 worktree · 最多 5 轮</text>
+  <rect x="924" y="311" width="100" height="36" rx="5" fill="#242a34" stroke="#343e4d" />
+  <text x="974.0" y="334.0" font-size="13" fill="#8390a3" font-weight="400" text-anchor="middle">开始</text>
+  <rect x="1036" y="311" width="110" height="36" rx="5" fill="#252c37" stroke="#394352" />
+  <text x="1091.0" y="334.0" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="middle">编辑任务</text>
+  <rect x="1158" y="311" width="110" height="36" rx="5" fill="#302326" stroke="#684047" />
+  <text x="1213.0" y="334.0" font-size="13" fill="#ffb4b4" font-weight="400" text-anchor="middle">删除任务</text>
+  <rect x="924" y="363" width="464" height="79" rx="5" fill="#342f25" stroke="#61533a" />
+  <text x="940" y="390" font-size="13" fill="#eac58c" font-weight="400" text-anchor="start">Reviewer 尚未设置密钥，暂时无法开始。</text>
+  <text x="940" y="421" font-size="13" fill="#91bbff" font-weight="400" text-anchor="start">前往设置 →</text>
+  <rect x="924" y="460" width="464" height="130" rx="6" fill="#20242c" stroke="#394352" />
+  <text x="940" y="489" font-size="17" fill="#91bbff" font-weight="500" text-anchor="start">Worker</text>
+  <line x1="940" y1="503" x2="1372" y2="503" stroke="#394352"/>
+  <text x="1156" y="548" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="middle">等待开始执行</text>
+  <rect x="924" y="610" width="464" height="130" rx="6" fill="#20242c" stroke="#394352" />
+  <text x="940" y="639" font-size="17" fill="#93dfcd" font-weight="500" text-anchor="start">Reviewer</text>
+  <line x1="940" y1="653" x2="1372" y2="653" stroke="#394352"/>
+  <text x="1156" y="698" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="middle">等待 Worker 的首轮产出</text>
+  <line x1="32" y1="841" x2="1408" y2="841" stroke="#394352"/>
+  <text x="32" y="864" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">中文与英文使用相同的错误标识；运行摘要、历史事件、表单和 VS Code 通知采用一致的消息格式。</text>
+  <text x="32" y="885" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="start">静态设计提案 · 内容与运行结果均为示例 · 已审核 · 实现参考</text>
+  <text x="1408" y="885" font-size="10" fill="#95a4ba" font-weight="400" text-anchor="end">1440 × 900 · 可编辑 SVG</text>
+</svg>
