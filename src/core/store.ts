@@ -1,4 +1,4 @@
-import { toAppError, redactError, type AppError } from '../shared/errors';
+import { toAppError, redactError, redactText, type AppError } from '../shared/errors';
 import { randomUUID } from 'node:crypto';
 import {
   type Action,
@@ -310,6 +310,19 @@ export class LocalStore {
           ? workspace.selectedTaskId
           : workspace.tasks[0]?.id || null,
       };
+    });
+  }
+  /** Preserve the full user message while applying the same credential redaction rules. */
+  async publicText(text: string): Promise<string> {
+    return this.serialize(async () => {
+      const { global } = this.read();
+      const keys = await Promise.all(
+        global.connections.map((c) => this.ports.secrets.get(secretKey(c.id))),
+      );
+      return redactText(
+        text,
+        keys.filter((key): key is string => Boolean(key)),
+      );
     });
   }
   /** Sanitize errors in the host without exposing credential values to callers. */

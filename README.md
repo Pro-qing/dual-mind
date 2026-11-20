@@ -21,14 +21,15 @@ The [0.0.3 version notes](./docs/en/release-notes-0.0.3.md) record source capabi
 - **Worker:** Keeps a general implementation role, preparing dependencies, implementing and verifying the current Reviewer plan, then submitting artifacts for acceptance.
 - **Reviewer:** Decomposes requirements, issues an executable plan, accepts Worker artifacts or supplies the next plan. Uses the task’s chosen Bug, Feature, Review, Refactor, or custom review focus. Each task retains its role instructions as a snapshot.
 
-The execution flow follows **Generate → Review → Revise → Approve**. Developers guide the process and decide whether to apply a reviewed result.
+The execution flow follows **Request → Reviewer plan → Worker implementation → Reviewer acceptance → Approval or the next plan**. Developers guide the process and decide whether to apply a reviewed result.
 
 ## Available locally
 
-- **Task workbench:** Manage workspace tasks on home; creation opens a separate detail page with manual start and two conversation columns.
+- **Task workbench:** Manage workspace tasks on home; creation opens a separate detail page with manual start, role-labelled chat and an independent evidence panel.
 - **Connection settings:** Save OpenAI-compatible endpoints and independent agent model defaults, with API keys stored by VS Code.
 - **Model discovery:** Save a connection with an optional model, set its key in the native password prompt, explicitly query models, then search/select or manually enter IDs for defaults and tasks. Queries verify list access only.
 - **Task execution:** Stream Worker/Reviewer output, plan with Reviewer, let Worker implement and verify autonomously in a dedicated worktree or selected local branch, and iterate through acceptance and revised plans, pause/continue/stop and inspect results. Use the DualMind activity-bar icon to open the workbench.
+- **Follow-up:** Ask about results or continue changes directly. Reviewer answers read-only or issues a new plan, processes queued messages at handoffs and retains bound directories and uncommitted artifacts.
 - **Reviewer presets:** Edit bilingual built-in instructions or manage custom roles in their original language.
 - **Language selection:** Follow VS Code or choose English / Simplified Chinese without rewriting saved task content.
 - **Example preview:** Explore the intended conversations and parallel-task appearance without creating records or sending requests.

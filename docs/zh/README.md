@@ -22,7 +22,12 @@
 
 历史版本：[Preview 1](./release-notes.md)。
 
+新增设计审核：[任务聊天与持续追问](./task-chat-proposal.md)，包含四组待审核 SVG／PNG；实现状态单独记录。
+
 ## 本地源码版本
 
 - [0.0.3](./release-notes-0.0.3.md)：当前源码版本，尚未发布。
 - [0.0.2](./release-notes-0.0.2.md)：模型查询、设置和 Git 准备基础。
+
+- [开发日志](./development-log.md)：记录设计审核、实现与验证进度。
+- [任务聊天验证](./task-chat-validation.md)：持续追问与证据面板的实际覆盖。

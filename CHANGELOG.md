@@ -2,6 +2,13 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## Unreleased — Task chat and follow-up (2026-11-20)
+
+- Replaced large role cards with compact model bars, labelled chat, independent evidence and a persistent composer.
+- Added Reviewer read-only answers, continued modifications, active-message queues, durable messages and idempotent processing.
+- Preserved manual start, all Git strategies, real evidence, round budgets and pause/stop/reload boundaries; commands retain the direct process runner.
+- Updated bilingual documentation and the [development log](./docs/en/development-log.md); see [actual chat validation](./docs/en/task-chat-validation.md).
+
 ## 0.0.3 — Local source version (unpublished)
 
 Recorded 2026-11-20; local annotated tag `v0.0.3`. This does not indicate a Marketplace update or a GitHub Release.

@@ -3,3 +3,5 @@
 `store.ts` validates and serializes local task/configuration operations, preserves Reviewer snapshots, and delegates credentials to host secret storage. The Reviewer planning / Worker implementation / Reviewer acceptance loop lives in `src/execution/`. See [Architecture](../../docs/en/architecture.md).
 
 `store.ts` 校验并串行处理本地任务／配置操作，保留 Reviewer 快照，由宿主秘密存储管理凭据。Reviewer 规划／Worker 实施／Reviewer 验收循环位于 `src/execution/`，详见[架构说明](../../docs/zh/architecture.md)。
+
+Task follow-up uses durable messages and Reviewer-only answering in `src/execution/service.ts`; `publicText` redacts complete user messages without the shorter error-detail limit. 持续追问通过执行服务持久化消息与 Reviewer 只读答复，`publicText` 对完整消息脱敏，不套用错误详情的较短长度限制。

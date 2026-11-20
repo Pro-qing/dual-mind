@@ -2,6 +2,8 @@
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
+**New approved proposal:** [Task chat and follow-up](./task-chat-proposal.md) adds scenes 14–17: wide chat, a narrow evidence drawer, queued messages and follow-up after execution. The four designs are approved; implementation is complete; see [actual task chat validation](./task-chat-validation.md).
+
 **New approved revision:** [Dual-agent planning and acceptance](./execution-cycle-proposal.md), approved 2026-11-20; implemented; see [validation coverage](./execution-cycle-validation.md).
 **Approved and implemented revision:** [Task home, detail, and errors](./task-pages-proposal.md) adds scenes 8–11 for separate home/detail pages, manual start after creation, and consistent bilingual errors. Scenes 8–11 were approved on 2026-11-20 and implemented; scenes 1–7 and their historical descriptions below are preserved.
 

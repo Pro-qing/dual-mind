@@ -2,6 +2,22 @@ import { t } from './i18n';
 import { modelErrorCodes, type ErrorCode, type Locale, type ModelErrorCode } from './model';
 
 export const errorMessages = {
+  messageInvalid: [
+    'Enter 1–50,000 characters and a valid message ID.',
+    '请输入 1–50,000 个字符，并使用有效消息 ID。',
+  ],
+  messageConflict: [
+    'This message ID already has different content. Reload the conversation.',
+    '该消息 ID 已用于其他内容，请重新加载会话。',
+  ],
+  continuationUnavailable: [
+    'The previous task directory is unavailable. The message is saved; inspect the binding before continuing.',
+    '上次任务目录不可用。消息已保存，请检查目录绑定后继续处理。',
+  ],
+  conversationUnavailable: [
+    'Conversation history could not be read. Your saved messages are retained.',
+    '无法读取会话历史，已保存的消息仍予以保留。',
+  ],
   planInvalid: [
     'The plan must include executable steps and unique acceptance criteria. Reading review needs a reason.',
     '方案须包含可执行步骤和唯一验收项；阅读审查须说明无需命令的原因。',

@@ -94,7 +94,7 @@ Deleting a task retains the Git record, worktree and branch. There is no automat
 
 ## Execution messages and persistence
 
-`execution.request` correlates a request ID with configuration save, start/restart, pause/resume/stop, paused feedback, history, diff preview or opening the task directory. `execution.result` returns the execution snapshot and optional history page or a sanitized error. `execution.update` batches summaries and public events; every event carries task ID, execution ID, sequence and, where applicable, agent/request ID. The UI deduplicates events and displays only the selected execution. Model requests and command work never hold the settings-store queue.
+`execution.request` correlates a request ID with configuration save, start/restart, pause/resume/stop, paused feedback, history, diff preview or opening the task directory. `execution.result` returns the execution snapshot and optional history page or a sanitized error. `execution.update` batches summaries and public events; every event carries task ID, execution ID, sequence and, where applicable, agent/request ID. The UI deduplicates events; task chat spans executions while the legacy history API remains scoped to a run. Model requests and command work never hold the settings-store queue.
 
 `dualMind.execution.v1` stores workspace command presets and run summaries. Per-run JSONL history lives in workspace extension storage, outside task files. A page contains at most 80 events. API keys and private Responses reasoning are not journaled. OpenAI-compatible connections add optional `protocol: chatCompletions | responses`; omission means Chat Completions, without rewriting older records. Requests keep gateway prefixes and never fall back to another protocol automatically.
 
@@ -123,3 +123,20 @@ run_command accepts name, program, args, optional cwd (default dot), purpose (pr
 RunSummary optionally carries plan, submission and review for current display. RunEvent adds plan/submission kinds and an optional detail discriminated union (plan, submission, review, command). History retains all versions; old fields and records remain readable. planning is a new pausable phase. Each role receives only its phase's tools, with complete nested batch validation before execution.
 
 Command startup adds structured commandNotFound, commandPermissionDenied, commandStartFailed and commandPlatformUnsupported errors, with the command name and executable path where applicable. Details follow existing redaction rules. Nonzero exit, timeout, excessive output and cancellation retain their existing codes. Legacy systemd translations remain for historical records only and are not emitted by the new runner. Execution replies, plans and evidence storage fields remain compatible without migration.
+
+## Task messages and independent pagination
+
+New execution actions:
+
+| Action            | Parameters and result                                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `message.send`    | `taskId`, client UUID `messageId`, and 1–50,000 character `text`; persistence precedes acknowledgement and ID retries do not launch again |
+| `messages.resume` | `taskId`; explicit processing of saved messages after stop/interruption, without automatically resuming a manual pause                    |
+| `conversation`    | `taskId`, optional opaque `before`; returns `conversation: {messages, before?}`, up to 40 messages                                        |
+| `evidence`        | `taskId`, optional `runId`, `through` sequence and opaque `before`; returns `evidence: {events, before?}`, up to 80 grouped records       |
+
+`TaskMessage` carries stable `id`, `taskId`, `time`, `role`, `kind`, `text`, and optional `status: pending | processing | handled`, `runId`, `sequence`, `round`, `detail`, `fault`. Text, parameters and details are redacted; model and command output is not translated. `conversationVersion` signals message updates. Page responses do not overwrite fresher execution state.
+
+`RunSummary` adds optional `kind: conversation | execution`, `previousRunId`, and `sourceMessageIds`. `answering` can pause; `answered` is a question-only terminal state, never acceptance. Older runs without kind remain execution records. Existing execution, history and configuration interfaces remain compatible. New `messageInvalid`, `messageConflict`, `continuationUnavailable`, and `conversationUnavailable` codes use the shared bilingual error table.
+
+`submit_answer` accepts a nonempty `answer` and is exposed only during message processing. Two completion tools cannot share a batch. This phase may instead submit a complete `submit_plan`; active-plan revisions still retain criteria and explain changes. Model histories remain role-isolated. Public handoff includes original requirements, user additions, previous plans/submissions/reviews and real command records; old commands cannot certify new-run artifacts.

@@ -35,6 +35,7 @@ import {
   type ReviewResult,
   type CommandEvidence,
   type ExecutionDetail,
+  type TaskMessage,
 } from '../shared/execution';
 import { Inference, toolResult, type Endpoint, type History } from '../providers/inference';
 import { RunRecords, validateConfig } from './records';
@@ -58,11 +59,15 @@ interface Active {
   outputs: Map<string, string>;
   additional: CommandEvidence[];
   reviewFeedback: boolean;
+  continuation?: RunSummary;
+  handling: string[];
+  finalizing: boolean;
 }
 export class ExecutionService {
   readonly ready: Promise<void>;
   private active?: Active;
   private starting?: string;
+  private messageAdmission: Promise<unknown> = Promise.resolve();
   private readonly listeners = new Set<(update: ExecutionUpdate) => void>();
   private disposed = false;
   private shutdownUnconfirmed = false;
@@ -137,6 +142,33 @@ export class ExecutionService {
       throw new OperationError('invalidExecution');
     }
     switch (action.kind) {
+      case 'conversation':
+        await this.requireTask(action.taskId);
+        return {
+          state: this.snapshot(),
+          conversation: await this.records.conversation(action.taskId, action.before),
+        };
+      case 'evidence':
+        await this.requireTask(action.taskId);
+        return {
+          state: this.snapshot(),
+          evidence: await this.records.evidence(
+            action.taskId,
+            action.runId,
+            action.through,
+            action.before,
+          ),
+        };
+      case 'message.send':
+        await this.sendMessage(action.taskId, action.messageId, action.text);
+        break;
+      case 'messages.resume':
+        await this.requireTask(action.taskId);
+        if (this.active?.summary.taskId === action.taskId) {
+          break;
+        }
+        await this.start(action.taskId, true);
+        break;
       case 'git.branches':
         return { state: this.snapshot(), repository: await this.workspaces.branches() };
       case 'config.save':
@@ -192,6 +224,144 @@ export class ExecutionService {
     }
     return { state: this.snapshot() };
   }
+  private async requireTask(taskId: string) {
+    if (!(await this.store.snapshot()).tasks.some((t) => t.id === taskId)) {
+      throw new StoreError('notFound');
+    }
+  }
+  private async sendMessage(taskId: string, id: string, text: string) {
+    await this.requireTask(taskId);
+    if (
+      typeof id !== 'string' ||
+      !/^[0-9a-f-]{36}$/.test(id) ||
+      typeof text !== 'string' ||
+      !text.trim() ||
+      text.length > 50000
+    ) {
+      throw new OperationError('messageInvalid');
+    }
+    const clean = await this.store.publicText(text.trim());
+    const message: TaskMessage = {
+      id,
+      taskId,
+      time: new Date().toISOString(),
+      role: 'user',
+      kind: 'message',
+      text: clean,
+      status: 'pending',
+    };
+    const saved = await this.serializeMessage(() => this.records.putMessage(message, true));
+    this.notify();
+    // A retry acknowledges the durable message without launching a second execution.
+    if (saved !== message) {
+      return;
+    }
+    const active = this.active;
+    if (active?.summary.taskId === taskId && active.finalizing) {
+      void active.done
+        .then(async () => {
+          if (
+            !this.disposed &&
+            ['completed', 'answered', 'roundLimit'].includes(active.summary.status)
+          ) {
+            await this.launchMessages(taskId);
+          }
+        })
+        .catch(() => undefined);
+    } else if (!active && !this.starting) {
+      const latest = this.records.runs.find((r) => r.taskId === taskId);
+      if (latest && !['stopped', 'interrupted'].includes(latest.status)) {
+        await this.launchMessages(taskId);
+      }
+    }
+  }
+  private serializeMessage<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.messageAdmission.then(operation);
+    this.messageAdmission = result.catch(() => undefined);
+    return result;
+  }
+  private finishMessages(a: Active, status: RunStatus, verify?: () => Promise<void>) {
+    return this.serializeMessage(async () => {
+      if ((await this.records.pending(a.summary.taskId)).length) {
+        return false;
+      }
+      await verify?.();
+      if (a.controller.signal.aborted || this.disposed) {
+        throw new OperationError('executionStopped');
+      }
+      if (a.pause) {
+        return false;
+      }
+      a.finalizing = true;
+      await this.state(a, status);
+      return true;
+    });
+  }
+  private async launchMessages(taskId: string) {
+    try {
+      await this.start(taskId, true);
+    } catch (error) {
+      const ids = (await this.records.pending(taskId)).map((m) => m.id);
+      await this.records.updateMessages(
+        taskId,
+        ids,
+        'pending',
+        undefined,
+        await this.store.publicError(error),
+      );
+      this.notify();
+    }
+  }
+  private async processMessages(a: Active): Promise<boolean> {
+    let changed = false;
+    while (true) {
+      await this.boundary(a, 'answering');
+      const messages = await this.records.pending(a.summary.taskId);
+      if (!messages.length) {
+        return changed;
+      }
+      a.handling = messages.map((m) => m.id);
+      a.summary.sourceMessageIds = [
+        ...new Set([...(a.summary.sourceMessageIds ?? []), ...a.handling]),
+      ];
+      await this.records.updateMessages(a.summary.taskId, a.handling, 'processing', a.summary.id);
+      this.notify();
+      a.histories.reviewer.push({
+        role: 'user',
+        content: JSON.stringify({
+          handoff: 'user_messages',
+          messages: messages.map((m) => ({ id: m.id, text: m.text })),
+          currentPlan: a.summary.plan,
+          submission: a.summary.submission,
+          review: a.summary.review,
+          instruction:
+            'Handle all these messages. For questions or ambiguity inspect relevant files and submit_answer (read-only; not acceptance). For modifications inspect current files and diff, then submit_plan with executable steps and acceptance. Do not run commands or write files. An active plan revision must retain acceptance IDs and explain the revision. Never silently ignore a requested change.',
+        }),
+      });
+      const result = await this.agent(a, 'answering');
+      await this.boundary(a, 'answering');
+      if (typeof result.answer === 'string') {
+        await this.records.putMessage({
+          id: randomUUID(),
+          taskId: a.summary.taskId,
+          time: new Date().toISOString(),
+          role: 'reviewer',
+          kind: 'answer',
+          text: result.answer,
+          runId: a.summary.id,
+          sequence: a.summary.sequence,
+          round: a.summary.round,
+        });
+      } else {
+        a.summary.kind = 'execution';
+        await this.setPlan(a, result as unknown as PlanInput);
+        changed = true;
+      }
+      await this.records.updateMessages(a.summary.taskId, a.handling, 'handled', a.summary.id);
+      a.handling = [];
+      this.notify();
+    }
+  }
   private requireActive(id: string): Active {
     if (!this.active || this.active.summary.id !== id || this.active.controller.signal.aborted) {
       throw new OperationError('inactiveExecution');
@@ -245,6 +415,7 @@ export class ExecutionService {
         runId: a.summary.id,
         taskId: a.summary.taskId,
         sequence: ++a.summary.sequence,
+        round: a.summary.round,
         kind,
         text: text.slice(at, at + 12000),
         agent,
@@ -288,7 +459,7 @@ export class ExecutionService {
       await this.state(a, phase);
     }
   }
-  private async start(taskId: string) {
+  private async start(taskId: string, continuation = false) {
     if (this.shutdownUnconfirmed) {
       throw new OperationError('shutdownUnconfirmed');
     }
@@ -299,11 +470,28 @@ export class ExecutionService {
     try {
       const config = structuredClone(this.records.config);
       const input = await this.store.executionInput(taskId);
+      const previous = continuation
+        ? this.records.runs.find((r) => r.taskId === taskId && r.git && r.kind !== 'conversation')
+        : undefined;
+      const messages = continuation ? await this.records.pending(taskId) : [];
+      if (continuation) {
+        if (!messages.length) {
+          return;
+        }
+        if (!previous?.git) {
+          throw new OperationError('continuationUnavailable');
+        }
+        await this.workspaces.binding(taskId, previous.git);
+      }
       const now = new Date().toISOString();
       const summary: RunSummary = {
         id: randomUUID(),
         taskId,
         status: 'preparing',
+        kind: continuation ? 'conversation' : 'execution',
+        ...(previous
+          ? { previousRunId: previous.id, sourceMessageIds: messages.map((m) => m.id) }
+          : {}),
         round: 0,
         maxRounds: input.task.maxRounds,
         createdAt: now,
@@ -337,6 +525,9 @@ export class ExecutionService {
         outputs: new Map(),
         additional: [],
         reviewFeedback: false,
+        continuation: previous,
+        handling: [],
+        finalizing: false,
       };
       this.records.runs.unshift(summary);
       this.active = a;
@@ -497,7 +688,9 @@ export class ExecutionService {
         }),
       );
       await this.boundary(a, 'preparing');
-      const workspace = await this.workspaces.prepare(a.summary.taskId, a.input.task.git);
+      const workspace = a.continuation?.git
+        ? await this.workspaces.binding(a.summary.taskId, a.continuation.git)
+        : await this.workspaces.prepare(a.summary.taskId, a.input.task.git);
       a.summary.git = workspace;
       a.summary.directory = workspace.directory;
       a.summary.branch = workspace.branch;
@@ -513,14 +706,55 @@ export class ExecutionService {
       a.histories.reviewer = [
         {
           role: 'system',
-          content: `You are Reviewer. First decompose the user request into an executable plan for Worker using submit_plan. Read relevant project files; do not audit unrelated project areas. Specify objectives, implementation steps and stable acceptance IDs. Use command verification where needed, reading review only with a reason and concrete evidence requirements. Worker chooses and runs actual commands; you cannot write or execute. After Worker submits, inspect actual artifacts and host evidence. Use submit_review to approve all requirements or issue changes_requested with a complete nextPlan. Retain existing acceptance IDs and verification methods, explain revisions, and include outstanding goals. Never accept missing, failed, stale or invented evidence, pending user feedback or unresolved work.\nTask-specific review focus:\n${a.input.task.role.instructions}\n${common}`,
+          content: `You are Reviewer. During initial planning decompose the user request into an executable plan for Worker using submit_plan. Read relevant project files; do not audit unrelated project areas. Specify objectives, implementation steps and stable acceptance IDs. Use command verification where needed, reading review only with a reason and concrete evidence requirements. Worker chooses and runs actual commands; you cannot write or execute. After Worker submits, inspect actual artifacts and host evidence. Use submit_review to approve all requirements or issue changes_requested with a complete nextPlan. Retain existing acceptance IDs and verification methods, explain revisions, and include outstanding goals. Never accept missing, failed, stale or invented evidence, pending user feedback or unresolved work. When the user_messages handoff arrives, handle questions or ambiguity with submit_answer after relevant read-only inspection; this is a reply, never acceptance. For requested changes inspect the current files and differences, then submit_plan for Worker. During an active execution retain existing acceptance IDs and explain revisions. Never ignore queued modification requests.\nTask-specific review focus:\n${a.input.task.role.instructions}\n${common}`,
         },
       ];
-      a.histories.reviewer.push({
-        role: 'user',
-        content: 'Inspect the relevant project context and issue the first execution plan.',
-      });
-      await this.setPlan(a, (await this.agent(a, 'planning')) as unknown as PlanInput);
+      if (a.continuation) {
+        const priorEvents = await this.records.history(
+          a.continuation.id,
+          Number.MAX_SAFE_INTEGER,
+          Number.MAX_SAFE_INTEGER,
+        );
+        for (const event of priorEvents) {
+          if (event.commandId) {
+            a.outputs.set(event.commandId, (a.outputs.get(event.commandId) ?? '') + event.text);
+          }
+        }
+        a.histories.reviewer.push({
+          role: 'user',
+          content: JSON.stringify({
+            handoff: 'previous_execution',
+            originalRequirements: a.input.task.requirements,
+            previousPlan: a.continuation.plan,
+            previousSubmission: a.continuation.submission,
+            previousReview: a.continuation.review,
+            previousCommands: priorEvents.flatMap((event) =>
+              event.detail?.type === 'command' ? [event.detail.command] : [],
+            ),
+            messages: (await this.records.messages(a.summary.taskId)).map((m) => ({
+              role: m.role,
+              text: m.text,
+              status: m.status,
+            })),
+            instruction:
+              'Continue in the same bound directory, including uncommitted work and user edits. Inspect the current files and differences. Old command evidence cannot verify new work.',
+          }),
+        });
+        await this.processMessages(a);
+        while (!a.summary.plan) {
+          if (await this.finishMessages(a, 'answered')) {
+            return;
+          }
+          await this.processMessages(a);
+        }
+      } else {
+        a.histories.reviewer.push({
+          role: 'user',
+          content: 'Inspect the relevant project context and issue the first execution plan.',
+        });
+        await this.setPlan(a, (await this.agent(a, 'planning')) as unknown as PlanInput);
+      }
+      await this.processMessages(a);
       if (a.config.customCommandsEnabled) {
         for (const command of a.config.prepare) {
           if (
@@ -535,8 +769,9 @@ export class ExecutionService {
           }
         }
       }
-      for (let round = 1; round <= a.summary.maxRounds; round++) {
+      workerRounds: for (let round = 1; round <= a.summary.maxRounds; round++) {
         a.summary.round = round;
+        await this.processMessages(a);
         const work = (await this.agent(a, 'worker')) as unknown as WorkSubmission;
         a.summary.submission = work;
         await this.emit(a, 'submission', work.summary, 'worker', undefined, undefined, {
@@ -544,6 +779,9 @@ export class ExecutionService {
           submission: work,
         });
         await this.records.save();
+        if (await this.processMessages(a)) {
+          continue;
+        }
         a.additional = [];
         if (a.config.customCommandsEnabled) {
           for (const command of a.config.checks) {
@@ -616,6 +854,9 @@ export class ExecutionService {
           { type: 'review', review },
         );
         await this.records.save();
+        if (await this.processMessages(a)) {
+          continue;
+        }
         if (review.verdict === 'approve') {
           await this.boundary(a, 'reviewer');
           validateReview(
@@ -627,14 +868,46 @@ export class ExecutionService {
             a.additional,
             a.reviewFeedback || Boolean(a.feedback.length),
           );
-          await this.state(a, 'completed');
-          return;
+          while (true) {
+            if (await this.processMessages(a)) {
+              continue workerRounds;
+            }
+            if (
+              await this.finishMessages(a, 'completed', async () => {
+                validateReview(
+                  review,
+                  a.summary.plan!,
+                  work,
+                  a.evidence,
+                  await this.fingerprint(a.reader!),
+                  a.additional,
+                  a.reviewFeedback || Boolean(a.feedback.length),
+                );
+              })
+            ) {
+              return;
+            }
+          }
         }
         await this.setPlan(a, review.nextPlan!);
         a.reviewFeedback = false;
       }
-      await this.state(a, 'roundLimit');
+      do {
+        await this.processMessages(a);
+      } while (!(await this.finishMessages(a, 'roundLimit')));
     } catch (error) {
+      if (a.handling.length) {
+        await this.records
+          .updateMessages(
+            a.summary.taskId,
+            a.handling,
+            'pending',
+            a.summary.id,
+            this.cleanError(a, error),
+          )
+          .catch(() => undefined);
+        a.handling = [];
+      }
       const stopped = a.controller.signal.aborted && !(error instanceof CommandShutdownError);
       a.summary.fault = this.cleanError(a, error);
       a.summary.error = errorText('en', a.summary.fault);
@@ -655,7 +928,7 @@ export class ExecutionService {
     }
   }
   private async agent(a: Active, phase: AgentPhase): Promise<Record<string, unknown>> {
-    const agent: Agent = phase === 'planning' ? 'reviewer' : phase;
+    const agent: Agent = phase === 'planning' || phase === 'answering' ? 'reviewer' : phase;
     const endpoint: Endpoint = a.input[agent];
     const history = a.histories[agent];
     const definitions = agentTools(phase);
@@ -726,7 +999,22 @@ export class ExecutionService {
         throw new OperationError('completionMissing');
       }
       const finalName =
-        phase === 'planning' ? 'submit_plan' : agent === 'worker' ? 'finish_work' : 'submit_review';
+        phase === 'answering'
+          ? turn.calls.some((c) => c.name === 'submit_answer')
+            ? 'submit_answer'
+            : 'submit_plan'
+          : phase === 'planning'
+            ? 'submit_plan'
+            : agent === 'worker'
+              ? 'finish_work'
+              : 'submit_review';
+      if (
+        turn.calls.filter((c) =>
+          ['submit_plan', 'submit_answer', 'finish_work', 'submit_review'].includes(c.name),
+        ).length > 1
+      ) {
+        throw new OperationError('completionOrder');
+      }
       const finalIndex = turn.calls.findIndex((call) => call.name === finalName);
       if (finalIndex >= 0 && finalIndex !== turn.calls.length - 1) {
         throw new OperationError('completionOrder');
@@ -757,8 +1045,16 @@ export class ExecutionService {
               throw new OperationError('feedbackPending');
             }
             const revision = await a.reader!.fingerprint();
+            if (a.controller.signal.aborted) {
+              throw new OperationError('executionStopped');
+            }
             let result: unknown;
-            if (phase === 'planning') {
+            if (phase === 'answering') {
+              if (call.name === 'submit_plan') {
+                validatePlan(args as unknown as PlanInput, a.summary.plan);
+              }
+              result = args;
+            } else if (phase === 'planning') {
               validatePlan(args as unknown as PlanInput);
               result = args;
             } else if (agent === 'worker') {

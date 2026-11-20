@@ -92,7 +92,9 @@ export function App({
         if (request && request !== historyRequest.current) {
           return result;
         }
-        setExecution(result.state);
+        if (!['conversation', 'evidence'].includes(action.kind)) {
+          setExecution(result.state);
+        }
         if (result.events && request === historyRequest.current) {
           setExecutionEvents(result.events);
         }

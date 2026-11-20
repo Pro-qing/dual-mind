@@ -118,6 +118,9 @@ const server = createServer((request, response) => {
       const planning = body.tools.some(
         (tool) => (tool.function?.name || tool.name) === 'submit_plan',
       );
+      const answering = body.tools.some(
+        (tool) => (tool.function?.name || tool.name) === 'submit_answer',
+      );
       const messages = body.messages || body.input;
       const handoff = messages
         .flatMap((m) => {
@@ -162,64 +165,87 @@ const server = createServer((request, response) => {
       };
       const step = (turn - 1) % (readingOnly ? 2 : 3);
       const approve = (handoff?.round ?? 0) > 1;
-      const call = planning
-        ? { name: 'submit_plan', arguments: JSON.stringify(plan) }
-        : worker
-          ? step === 0
-            ? {
-                name: 'write_file',
-                arguments: JSON.stringify({
-                  path: 'result.txt',
-                  content: longCommand || turn > 1 ? 'fixed' : 'bad',
-                }),
-              }
-            : !readingOnly && step === 1
-              ? {
-                  name: 'run_command',
-                  arguments: JSON.stringify({
-                    name: 'Verify result',
-                    program: process.execPath,
-                    args: [
-                      '-e',
-                      longCommand
-                        ? 'require("node:fs").writeFileSync("command-started",String(process.pid));setInterval(()=>{},1000)'
-                        : 'if(require("node:fs").readFileSync("result.txt","utf8")!=="fixed")process.exit(1)',
-                    ],
-                    purpose: 'verify',
-                    criterionIds: ['result'],
-                  }),
-                }
+      const userHandoff = messages
+        .filter((m) => m.role === 'user')
+        .map((m) => {
+          try {
+            return JSON.parse(m.content);
+          } catch {
+            return undefined;
+          }
+        })
+        .filter((m) => m?.handoff === 'user_messages')
+        .at(-1);
+      if (answering && userHandoff?.currentPlan) {
+        plan.revisionReason = 'Apply the queued modification';
+      }
+      const call =
+        answering && !JSON.stringify(userHandoff?.messages).includes('modification')
+          ? {
+              name: 'submit_answer',
+              arguments: JSON.stringify({
+                answer:
+                  'The result was verified using recorded evidence. This is a read-only answer.',
+              }),
+            }
+          : planning
+            ? { name: 'submit_plan', arguments: JSON.stringify(plan) }
+            : worker
+              ? step === 0
+                ? {
+                    name: 'write_file',
+                    arguments: JSON.stringify({
+                      path: 'result.txt',
+                      content: longCommand || turn > 1 ? 'fixed' : 'bad',
+                    }),
+                  }
+                : !readingOnly && step === 1
+                  ? {
+                      name: 'run_command',
+                      arguments: JSON.stringify({
+                        name: 'Verify result',
+                        program: process.execPath,
+                        args: [
+                          '-e',
+                          longCommand
+                            ? 'require("node:fs").writeFileSync("command-started",String(process.pid));setInterval(()=>{},1000)'
+                            : 'if(require("node:fs").readFileSync("result.txt","utf8")!=="fixed")process.exit(1)',
+                        ],
+                        purpose: 'verify',
+                        criterionIds: ['result'],
+                      }),
+                    }
+                  : {
+                      name: 'finish_work',
+                      arguments: JSON.stringify({
+                        summary: 'Updated result.txt for acceptance.',
+                        completedSteps: ['Updated artifact'],
+                        evidence: [
+                          {
+                            criterionId: 'result',
+                            commandIds: readingOnly ? [] : commandIds,
+                            evidence: 'Inspect the saved artifact',
+                          },
+                        ],
+                        unresolved: [],
+                      }),
+                    }
               : {
-                  name: 'finish_work',
+                  name: 'submit_review',
                   arguments: JSON.stringify({
-                    summary: 'Updated result.txt for acceptance.',
-                    completedSteps: ['Updated artifact'],
-                    evidence: [
+                    verdict: approve ? 'approve' : 'changes_requested',
+                    summary: approve ? 'Artifact accepted.' : 'Fix the failed artifact.',
+                    acceptance: [
                       {
                         criterionId: 'result',
-                        commandIds: readingOnly ? [] : commandIds,
-                        evidence: 'Inspect the saved artifact',
+                        passed: approve,
+                        commandIds: handoff?.submission?.evidence?.[0]?.commandIds ?? [],
+                        evidence: 'Inspected the actual result.txt and supplied host evidence',
                       },
                     ],
-                    unresolved: [],
+                    ...(approve ? {} : { nextPlan: plan }),
                   }),
-                }
-          : {
-              name: 'submit_review',
-              arguments: JSON.stringify({
-                verdict: approve ? 'approve' : 'changes_requested',
-                summary: approve ? 'Artifact accepted.' : 'Fix the failed artifact.',
-                acceptance: [
-                  {
-                    criterionId: 'result',
-                    passed: approve,
-                    commandIds: handoff?.submission?.evidence?.[0]?.commandIds ?? [],
-                    evidence: 'Inspected the actual result.txt and supplied host evidence',
-                  },
-                ],
-                ...(approve ? {} : { nextPlan: plan }),
-              }),
-            };
+                };
       const id = `${worker ? 'worker' : 'reviewer'}-${turn}`;
       response.setHeader('Content-Type', 'text/event-stream');
       const events = request.url.endsWith('/responses')
@@ -694,11 +720,14 @@ try {
   await screenshot(page, f, 'en-task-home');
   await click(f, 'Open task: Persistent UI task');
   await screenshot(page, f, 'en-task-detail');
-  await f.locator('details summary').click();
-  assert.equal(
-    await f.locator('.instruction-snapshot').innerText(),
-    'English review instructions retained across UI language changes.',
+  assert.ok(
+    await f
+      .locator('.chat-composer')
+      .evaluate((el) => el.getBoundingClientRect().bottom <= window.innerHeight + 1),
+    'The composer stays within the viewport',
   );
+  assert.equal(await f.locator('.instruction-snapshot').count(), 0);
+  assert.equal(await f.locator('.model-bar').count(), 2);
   await click(f, 'Settings');
   await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
   await f.getByRole('button', { name: /^返回(?:任务|主页)$/ }).click();
@@ -731,11 +760,8 @@ try {
   f = await frame(page);
   assert.equal(await page.locator('.tab').filter({ hasText: 'DualMind' }).count(), 1);
   // Task snapshots remain English while the surrounding UI is Chinese.
-  await f.locator('details summary').click();
-  assert.equal(
-    await f.locator('.instruction-snapshot').innerText(),
-    'English review instructions retained across UI language changes.',
-  );
+  assert.equal(await f.locator('.instruction-snapshot').count(), 0);
+  assert.equal(await f.locator('.model-bar').count(), 2);
   await click(f, '返回主页');
   await click(f, '查看示例');
   await click(f, '打开任务: 修复重试取消问题');
@@ -746,7 +772,7 @@ try {
   await size(820, 1040);
   await screenshot(page, f, 'zh-workbench-narrow');
   const columns = await f
-    .locator('.agent-grid')
+    .locator('.task-chat')
     .evaluate((element) => getComputedStyle(element).gridTemplateColumns);
   assert.equal(columns.trim().split(/\s+/).length, 1);
   await click(f, '退出示例');
@@ -886,9 +912,20 @@ try {
   await f.getByRole('status').filter({ hasText: 'Completed — acceptance passed' }).waitFor();
   assert.equal(workerTurns, 6);
   assert.equal(reviewTurns, 3);
-  await f.getByText('Tools, checks and review evidence', { exact: true }).click();
-  assert.ok((await f.locator('.execution-evidence').innerText()).includes('FAIL'));
-  assert.ok((await f.locator('.execution-evidence').innerText()).includes('PASS'));
+  await click(f, 'Tools, checks and review evidence');
+  await f.locator('.evidence-record').first().waitFor();
+  await f.locator('.evidence-record').evaluateAll((items) =>
+    items.forEach((item) => {
+      item.open = true;
+    }),
+  );
+  await f.locator('.command-output').evaluateAll((items) =>
+    items.forEach((item) => {
+      item.open = true;
+    }),
+  );
+  assert.ok((await f.locator('.evidence-panel').innerText()).includes('FAIL'));
+  assert.ok((await f.locator('.evidence-panel').innerText()).includes('PASS'));
   await f.locator('[data-error-code="commandFailed"]').first().waitFor();
   assert.match(
     await f.locator('[data-error-code="commandFailed"]').first().innerText(),
@@ -909,6 +946,10 @@ try {
   await f.getByLabel('界面语言', { exact: true }).selectOption('en');
   await screenshot(page, f, 'en-execution-complete');
   await size(820, 1040);
+  await click(f, 'Tools, checks and review evidence');
+  await f.getByRole('dialog', { name: 'Tools, checks and review evidence' }).waitFor();
+  await screenshot(page, f, 'en-execution-evidence-drawer');
+  await f.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
   await screenshot(page, f, 'en-execution-narrow');
   await size(1600, 1100);
   const taskWorktrees = await fixtureGit('worktree', 'list', '--porcelain');
@@ -932,6 +973,32 @@ try {
   await page.locator('.view-lines').filter({ hasText: 'result.txt' }).first().waitFor();
   await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
   f = await frame(page);
+  const workersBeforeAnswer = workerTurns;
+  await f.getByLabel('Follow up or request changes', { exact: true }).fill('Explain the result');
+  await click(f, 'Send');
+  await f
+    .getByText('The result was verified using recorded evidence. This is a read-only answer.', {
+      exact: true,
+    })
+    .waitFor();
+  assert.equal(workerTurns, workersBeforeAnswer);
+  await f.getByRole('status').filter({ hasText: 'Completed — acceptance passed' }).waitFor();
+  assert.equal(await f.getByText('Execution #0', { exact: true }).count(), 0);
+  await screenshot(page, f, 'en-chat-followup-answer');
+  await f
+    .getByLabel('Follow up or request changes', { exact: true })
+    .fill('Continue modification in this task directory');
+  await click(f, 'Send');
+  await f
+    .getByRole('status')
+    .filter({ hasText: /Worker executing|Planning/ })
+    .waitFor();
+  await f
+    .getByRole('status')
+    .filter({ hasText: 'Completed — acceptance passed' })
+    .waitFor({ timeout: 60000 });
+  assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
+  await screenshot(page, f, 'en-chat-followup-modification');
   longCommand = true;
   workerTurns = 0;
   reviewTurns = 0;
@@ -943,6 +1010,12 @@ try {
     assert.ok(Date.now() < commandDeadline, 'Worker command must actually start before stopping');
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
+  await f
+    .getByLabel('Follow up or request changes', { exact: true })
+    .fill('Explain after this operation');
+  await click(f, 'Send');
+  await f.getByText('Pending', { exact: true }).waitFor();
+  await screenshot(page, f, 'en-chat-queued-message');
   await click(f, 'Stop');
   await f
     .getByRole('status')
@@ -1074,6 +1147,24 @@ try {
     );
     await click(f, 'Cancel');
     await screenshot(page, f, `en-git-${mode}-completed`);
+    await f
+      .getByLabel('Follow up or request changes', { exact: true })
+      .fill('Continue modification with the existing uncommitted result');
+    await click(f, 'Send');
+    await f
+      .getByRole('status')
+      .filter({ hasText: /Worker executing|Planning/ })
+      .waitFor();
+    await f
+      .getByRole('status')
+      .filter({ hasText: 'Completed — acceptance passed' })
+      .waitFor({ timeout: 60000 });
+    assert.equal(await readFile(join(workspace, 'result.txt'), 'utf8'), 'fixed');
+    assert.equal(
+      (await fixtureGit('symbolic-ref', '--short', 'HEAD')).trim(),
+      mode === 'branch' ? 'ui-target' : originalBranch,
+    );
+    await screenshot(page, f, `en-chat-${mode}-continuation`);
     await click(f, `Delete task: ${name}`);
     await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
     await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
@@ -1111,8 +1202,11 @@ try {
     .waitFor({ timeout: 30000 });
   assert.equal(workerTurns, 4);
   assert.equal(reviewTurns, 3);
-  await f.getByRole('heading', { name: 'Reviewer execution plan · v2' }).first().waitFor();
-  await f.getByRole('heading', { name: 'Acceptance passed · v2', exact: true }).first().waitFor();
+  await f
+    .getByRole('heading', { name: /Reviewer.*Execution plan · v2/ })
+    .first()
+    .waitFor();
+  await f.getByText('Acceptance passed', { exact: true }).first().waitFor();
   await screenshot(page, f, 'en-reading-acceptance');
   await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
   await f.getByRole('status').filter({ hasText: '已完成：验收通过' }).waitFor();
@@ -1139,7 +1233,10 @@ try {
   f = await frame(page);
   await f.getByRole('status').filter({ hasText: 'Interrupted — restart explicitly' }).waitFor();
   assert.equal(inferenceRequests.length, readingRequestCount, 'Reload never replays Worker calls');
-  await f.getByRole('heading', { name: 'Reviewer execution plan · v1' }).first().waitFor();
+  await f
+    .getByRole('heading', { name: /Reviewer.*Execution plan · v1/ })
+    .first()
+    .waitFor();
   await screenshot(page, f, 'en-reading-reload-interrupted');
   holdWorker = false;
   await click(f, 'Delete task: Reading acceptance task');

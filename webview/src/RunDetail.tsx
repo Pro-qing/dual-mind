@@ -2,13 +2,15 @@ import type { ExecutionDetail, RunSummary, TaskPlan } from '../../src/shared/exe
 import { useUI } from './context';
 import { ErrorNotice } from './ErrorNotice';
 
-export function PlanCard({ plan }: { plan: TaskPlan }) {
+export function PlanCard({ plan, compact = false }: { plan: TaskPlan; compact?: boolean }) {
   const { tr } = useUI();
   return (
     <section className="plan-card" aria-label={tr('executionPlan')}>
-      <h2>
-        {tr('executionPlan')} · v{plan.version}
-      </h2>
+      {!compact && (
+        <h2>
+          {tr('executionPlan')} · v{plan.version}
+        </h2>
+      )}
       <p>{plan.objective}</p>
       <p className="hint">{plan.requirements}</p>
       {plan.revisionReason && (
@@ -46,10 +48,16 @@ export function PlanCard({ plan }: { plan: TaskPlan }) {
     </section>
   );
 }
-export function ExecutionDetailView({ detail }: { detail: ExecutionDetail }) {
+export function ExecutionDetailView({
+  detail,
+  compact = false,
+}: {
+  detail: ExecutionDetail;
+  compact?: boolean;
+}) {
   const { tr, snapshot } = useUI();
   if (detail.type === 'plan') {
-    return <PlanCard plan={detail.plan} />;
+    return <PlanCard plan={detail.plan} compact={compact} />;
   }
   if (detail.type === 'command') {
     const c = detail.command;
@@ -84,9 +92,11 @@ export function ExecutionDetailView({ detail }: { detail: ExecutionDetail }) {
     const s = detail.submission;
     return (
       <section className="handoff-card">
-        <h3>
-          {tr('workSubmission')} · v{s.planVersion}
-        </h3>
+        {!compact && (
+          <h3>
+            {tr('workSubmission')} · v{s.planVersion}
+          </h3>
+        )}
         <p>{s.summary}</p>
         <ul>
           {s.completedSteps.map((step, i) => (
@@ -120,9 +130,13 @@ export function ExecutionDetailView({ detail }: { detail: ExecutionDetail }) {
   const r = detail.review;
   return (
     <section className="handoff-card">
-      <h3>
-        {tr(r.verdict === 'approve' ? 'reviewApproved' : 'reviewChanges')} · v{r.planVersion}
-      </h3>
+      {compact ? (
+        <strong>{tr(r.verdict === 'approve' ? 'reviewApproved' : 'reviewChanges')}</strong>
+      ) : (
+        <h3>
+          {tr(r.verdict === 'approve' ? 'reviewApproved' : 'reviewChanges')} · v{r.planVersion}
+        </h3>
+      )}
       <p>{r.summary}</p>
       <ul>
         {r.acceptance.map((e) => (

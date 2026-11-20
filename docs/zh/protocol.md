@@ -94,7 +94,7 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 ## 执行消息与持久化
 
-`execution.request` 将请求 ID 与配置保存、开始／重新执行、暂停／继续／停止、暂停时反馈、历史分页、差异预览或打开任务目录操作关联。`execution.result` 返回执行快照及可选历史页，或经过过滤的错误。`execution.update` 批量推送摘要和公开事件；事件关联任务 ID、执行 ID、序号，以及适用时的角色／请求 ID。界面去重并只展示选中执行。模型请求和命令运行不占用设置存储队列。
+`execution.request` 将请求 ID 与配置保存、开始／重新执行、暂停／继续／停止、暂停时反馈、历史分页、差异预览或打开任务目录操作关联。`execution.result` 返回执行快照及可选历史页，或经过过滤的错误。`execution.update` 批量推送摘要和公开事件；事件关联任务 ID、执行 ID、序号，以及适用时的角色／请求 ID。界面去重事件，任务聊天贯穿多次执行，原始历史接口继续按执行读取。模型请求和命令运行不占用设置存储队列。
 
 `dualMind.execution.v1` 保存工作区命令预设和执行摘要。每次执行的 JSONL 历史保存在工作区扩展存储中，位于任务文件之外，每页最多 80 条事件。API 密钥和 Responses 私有推理内容不写入日志。兼容连接新增可选 `protocol: chatCompletions | responses`，缺省使用 Chat Completions，不重写旧记录。请求保留网关前缀，不自动回退到另一协议。
 
@@ -123,3 +123,20 @@ run_command 接受 name、program、args、可选 cwd（默认 .）、purpose（
 RunSummary 可选 plan、submission、review 保存当前展示所需内容。RunEvent 新增 plan／submission 种类及可选 detail 判别联合（plan、submission、review、command），完整历史保留各版本。旧字段及旧记录继续可读；planning 是新增可暂停阶段。各角色仅收到阶段允许的工具，完整工具批次的嵌套类型与限制先校验后执行。
 
 命令启动新增 commandNotFound、commandPermissionDenied、commandStartFailed 和 commandPlatformUnsupported 结构化错误，参数包含适用的命令名称和程序路径；详情沿用脱敏规则。非零退出、超时、输出超限和停止仍使用既有错误标识。旧 systemd 错误表仅用于读取历史记录，不再由新运行器生成。运行响应、方案及证据的存储字段均保持兼容，不迁移数据。
+
+## 任务消息与独立分页
+
+新增执行动作：
+
+| 动作              | 参数与结果                                                                                                      |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| `message.send`    | `taskId`、客户端 UUID `messageId`、1–50,000 字符 `text`；先持久化再确认，相同 ID 重试不会再次启动               |
+| `messages.resume` | `taskId`；用户明确继续处理停止／中断后保存的消息，不自动恢复手动暂停                                            |
+| `conversation`    | `taskId`、可选不透明 `before`；返回 `conversation: {messages, before?}`，最多 40 条                             |
+| `evidence`        | `taskId`、可选 `runId`、`through` 序号及不透明 `before`；返回 `evidence: {events, before?}`，最多 80 条分组记录 |
+
+`TaskMessage` 包含稳定 `id`、`taskId`、`time`、`role`、`kind`、`text`，以及可选 `status: pending | processing | handled`、`runId`、`sequence`、`round`、`detail`、`fault`。消息文本、参数和详情均先脱敏；模型与命令原文不自动翻译。`conversationVersion` 通知前端消息更新，分页读取不覆盖更新到的执行状态。
+
+`RunSummary` 增加可选 `kind: conversation | execution`、`previousRunId` 与 `sourceMessageIds`。`answering` 可暂停，`answered` 为纯答复终态，不能当作验收通过；旧运行省略 kind 时仍作为执行。原来的执行、历史和配置接口保持兼容。新增 `messageInvalid`、`messageConflict`、`continuationUnavailable`、`conversationUnavailable` 使用统一双语错误表。
+
+`submit_answer` 参数为非空 `answer`，仅在消息处理阶段提供；同一工具批次不能混用两个完成工具。该阶段也可提交完整 `submit_plan`，活动方案修订仍须保留验收项并说明原因。模型处理历史继续按角色隔离；公开交接包含原始需求、用户补充、上次方案／成果／验收和真实命令信息，旧命令记录不得验证新运行成果。

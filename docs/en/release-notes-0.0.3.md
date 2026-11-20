@@ -33,3 +33,7 @@ Verified in this independent candidate source directory on 2026-11-20:
 At that candidate stage, remote CI, new-version regression on the minimum editor/Ubuntu 20.04, packaging, installation and public distribution were not performed. These results prove only the listed local combination; older cross-environment results are not reused.
 
 Subsequent changes implement separate task detail pages, structured bilingual errors, Reviewer-first plans with real-evidence acceptance, and the local command runner. See the [execution validation record](./execution-cycle-validation.md) for verification and packaging after removing systemd and fixed memory/swap requirements.
+
+## Subsequent local changes: task chat and follow-up
+
+Four additional designs were approved on 2026-11-20, followed by chat, independent evidence, message queues, Reviewer read-only replies and artifact continuation. These are unpublished source changes; earlier version and verification records above remain intact. See the [development log](./development-log.md) and [actual task chat validation](./task-chat-validation.md).

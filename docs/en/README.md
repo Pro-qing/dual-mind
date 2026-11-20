@@ -22,7 +22,12 @@ Repository policies: [contribution guide](../../CONTRIBUTING.md), [code of condu
 
 Release history: [Preview 1](./release-notes.md).
 
+New design review: [Task chat and follow-up](./task-chat-proposal.md), with four SVG/PNG pairs awaiting review and implementation status recorded separately.
+
 ## Local source versions
 
 - [0.0.3](./release-notes-0.0.3.md): current source version, unpublished.
 - [0.0.2](./release-notes-0.0.2.md): model discovery, settings and Git preparation foundations.
+
+- [Development log](./development-log.md): design approval, implementation and validation progress.
+- [Task chat validation](./task-chat-validation.md): actual conversation and evidence coverage.

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
@@ -11,7 +12,11 @@ import { OperationError } from '../../src/shared/errors';
 import { ExecutionService } from '../../src/execution/service';
 import { RunRecords, validateConfig } from '../../src/execution/records';
 import { terminalStatuses, type RunSummary, type Protocol } from '../../src/shared/execution';
-import { CommandShutdownError, type CommandRunner } from '../../src/execution/commands';
+import {
+  CommandShutdownError,
+  LocalCommands,
+  type CommandRunner,
+} from '../../src/execution/commands';
 async function waitUntil(check: () => boolean, max = 15000) {
   const started = Date.now();
   while (!check()) {
@@ -39,6 +44,7 @@ async function setup(
     readingOnly?: boolean;
     unavailable?: boolean;
     shutdownFailure?: boolean;
+    realCommands?: boolean;
   } = {},
 ) {
   const root = await mkdtemp(join(tmpdir(), 'dualmind-execution-test-'));
@@ -79,6 +85,9 @@ async function setup(
       const tools = body.tools as { name?: string; function?: { name: string } }[];
       const planning = tools.some((tool) => (tool.name || tool.function?.name) === 'submit_plan');
       const texts = JSON.stringify(body);
+      const answering = tools.some(
+        (tool) => (tool.name || tool.function?.name) === 'submit_answer',
+      );
       const plan = {
         objective: 'Change file.txt to fixed.',
         requirements: texts.includes('Human-only correction')
@@ -138,78 +147,102 @@ async function setup(
       const preparing = options.autonomous && options.flip && count === 1;
       const workerStep = count - (options.autonomous && options.flip ? 1 : 0);
       const step = options.autonomous ? (workerStep - 1) % 3 : (count - 1) % 2;
+      const userHandoff = messages
+        .filter((m) => m.role === 'user')
+        .map((m) => {
+          try {
+            return JSON.parse(String(m.content));
+          } catch {
+            return undefined;
+          }
+        })
+        .filter((m) => m?.handoff === 'user_messages')
+        .at(-1);
+      if (answering && userHandoff?.currentPlan) {
+        plan.revisionReason = 'Apply queued user requirements';
+      }
       const call =
-        options.badReviewer && agent === 'reviewer'
-          ? { name: 'write_file', arguments: '{"path":"file.txt","content":"reviewer-write"}' }
-          : options.badCheck && agent === 'worker'
-            ? { name: 'run_check', arguments: '{"id":"check","program":"injected"}' }
-            : planning
-              ? { name: 'submit_plan', arguments: JSON.stringify(plan) }
-              : preparing && agent === 'worker'
-                ? {
-                    name: 'run_command',
-                    arguments: JSON.stringify({
-                      name: 'Prepare dependencies',
-                      program: 'prepare-test-double',
-                      args: [],
-                      purpose: 'prepare',
-                      criterionIds: [],
-                    }),
-                  }
-                : agent === 'worker'
-                  ? step === 0
-                    ? {
-                        name: 'write_file',
-                        arguments: JSON.stringify({
-                          path: 'file.txt',
-                          content:
-                            workerStep === 1 && !options.readingOnly && !options.fixedInitially
-                              ? 'bad'
-                              : 'fixed',
-                        }),
-                      }
-                    : options.autonomous && step === 1
-                      ? {
-                          name: 'run_command',
-                          arguments: JSON.stringify({
-                            name: 'Verify artifact',
-                            program: 'test-double',
-                            args: [],
-                            purpose: 'verify',
-                            criterionIds: ['artifact'],
-                          }),
-                        }
-                      : {
-                          name: 'finish_work',
-                          arguments: JSON.stringify({
-                            summary: 'Inspect the updated artifact.',
-                            completedSteps: ['Changed file.txt'],
-                            evidence: [
-                              {
-                                criterionId: 'artifact',
-                                commandIds,
-                                evidence: 'Read file.txt and the recorded result',
-                              },
-                            ],
-                            unresolved: [],
-                          }),
-                        }
-                  : {
-                      name: 'submit_review',
+        answering && !JSON.stringify(userHandoff?.messages).includes('modification')
+          ? {
+              name: 'submit_answer',
+              arguments: JSON.stringify({ answer: 'Read-only answer about the current artifact.' }),
+            }
+          : options.badReviewer && agent === 'reviewer'
+            ? { name: 'write_file', arguments: '{"path":"file.txt","content":"reviewer-write"}' }
+            : options.badCheck && agent === 'worker'
+              ? { name: 'run_check', arguments: '{"id":"check","program":"injected"}' }
+              : planning
+                ? { name: 'submit_plan', arguments: JSON.stringify(plan) }
+                : preparing && agent === 'worker'
+                  ? {
+                      name: 'run_command',
                       arguments: JSON.stringify({
-                        verdict: approve ? 'approve' : 'changes_requested',
-                        summary: approve ? 'Verified.' : 'Fix the failing check.',
-                        acceptance: [
-                          {
-                            criterionId: 'artifact',
-                            commandIds: handoff?.submission?.evidence?.[0]?.commandIds ?? [],
-                            evidence: 'Inspected actual file.txt and supplied command evidence',
-                            passed: approve,
-                          },
-                        ],
-                        ...(approve ? {} : { nextPlan: plan }),
+                        name: 'Prepare dependencies',
+                        program: options.realCommands ? process.execPath : 'prepare-test-double',
+                        args: options.realCommands ? ['-e', 'process.stdout.write("ready")'] : [],
+                        purpose: 'prepare',
+                        criterionIds: [],
                       }),
-                    };
+                    }
+                  : agent === 'worker'
+                    ? step === 0
+                      ? {
+                          name: 'write_file',
+                          arguments: JSON.stringify({
+                            path: 'file.txt',
+                            content:
+                              workerStep === 1 && !options.readingOnly && !options.fixedInitially
+                                ? 'bad'
+                                : 'fixed',
+                          }),
+                        }
+                      : options.autonomous && step === 1
+                        ? {
+                            name: 'run_command',
+                            arguments: JSON.stringify({
+                              name: 'Verify artifact',
+                              program: options.realCommands ? process.execPath : 'test-double',
+                              args: options.realCommands
+                                ? [
+                                    '-e',
+                                    'if(require("node:fs").readFileSync("file.txt","utf8")!=="fixed")process.exit(1)',
+                                  ]
+                                : [],
+                              purpose: 'verify',
+                              criterionIds: ['artifact'],
+                            }),
+                          }
+                        : {
+                            name: 'finish_work',
+                            arguments: JSON.stringify({
+                              summary: 'Inspect the updated artifact.',
+                              completedSteps: ['Changed file.txt'],
+                              evidence: [
+                                {
+                                  criterionId: 'artifact',
+                                  commandIds,
+                                  evidence: 'Read file.txt and the recorded result',
+                                },
+                              ],
+                              unresolved: [],
+                            }),
+                          }
+                    : {
+                        name: 'submit_review',
+                        arguments: JSON.stringify({
+                          verdict: approve ? 'approve' : 'changes_requested',
+                          summary: approve ? 'Verified.' : 'Fix the failing check.',
+                          acceptance: [
+                            {
+                              criterionId: 'artifact',
+                              commandIds: handoff?.submission?.evidence?.[0]?.commandIds ?? [],
+                              evidence: 'Inspected actual file.txt and supplied command evidence',
+                              passed: approve,
+                            },
+                          ],
+                          ...(approve ? {} : { nextPlan: plan }),
+                        }),
+                      };
       const id = `${agent}-${count}`;
       const batch =
         options.badCheck && agent === 'worker'
@@ -324,6 +357,9 @@ async function setup(
   const runner: CommandRunner = {
     run: async (command, directory, signal) => {
       commands++;
+      if (options.realCommands) {
+        return new LocalCommands().run(command, directory, signal);
+      }
       if (options.shutdownFailure) {
         throw new CommandShutdownError();
       }
@@ -703,4 +739,219 @@ test('unconfirmed command shutdown prevents further execution', async (t) => {
     code: 'shutdownUnconfirmed',
   });
   assert.equal(h.commands(), 1);
+});
+
+for (const flip of [false, true]) {
+  for (const mode of ['managed', 'current', 'branch'] as const) {
+    test(`follow-up answers then continues uncommitted artifacts (${mode}, flip=${flip})`, async (t) => {
+      const ctx = await setup(t, {
+        flip,
+        readingOnly: true,
+        git: mode === 'branch' ? { mode, branch: 'main' } : { mode },
+      });
+      await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+      await waitUntil(() => ctx.records.runs[0].status === 'completed');
+      const original = structuredClone(ctx.records.runs[0]);
+      const calls = ctx.captured.filter((c) => c.agent === 'worker').length;
+      const id = randomUUID();
+      await ctx.service.request({
+        kind: 'message.send',
+        taskId: ctx.task.id,
+        messageId: id,
+        text: 'Explain the result',
+      });
+      await waitUntil(() => ctx.records.runs[0].status === 'answered');
+      assert.equal(ctx.captured.filter((c) => c.agent === 'worker').length, calls);
+      assert.equal(ctx.commands(), 0);
+      assert.deepEqual(ctx.records.runs.find((r) => r.id === original.id)?.review, original.review);
+      assert.equal(ctx.records.runs[0].review, undefined);
+      const count = ctx.records.runs.length;
+      await ctx.service.request({
+        kind: 'message.send',
+        taskId: ctx.task.id,
+        messageId: id,
+        text: 'Explain the result',
+      });
+      assert.equal(ctx.records.runs.length, count);
+      await assert.rejects(
+        ctx.service.request({
+          kind: 'message.send',
+          taskId: ctx.task.id,
+          messageId: id,
+          text: 'Different content',
+        }),
+        (e: unknown) => e instanceof OperationError && e.code === 'messageConflict',
+      );
+      await writeFile(
+        join(original.directory!, 'user-added.txt'),
+        'Keep this uncommitted user work',
+      );
+      await ctx.service.request({
+        kind: 'message.send',
+        taskId: ctx.task.id,
+        messageId: randomUUID(),
+        text: 'Continue modification',
+      });
+      await waitUntil(() => ctx.records.runs[0].status === 'completed');
+      assert.equal(ctx.records.runs[0].previousRunId, original.id);
+      assert.equal(ctx.records.runs[0].directory, original.directory);
+      assert.equal(ctx.records.runs[0].branch, original.branch);
+      assert.equal(ctx.records.runs[0].round, 1);
+      assert.equal(ctx.records.runs[0].plan?.version, 1);
+      assert.equal(
+        await readFile(join(original.directory!, 'user-added.txt'), 'utf8'),
+        'Keep this uncommitted user work',
+      );
+      const conversation = await ctx.service.request({ kind: 'conversation', taskId: ctx.task.id });
+      assert.equal(conversation.conversation?.messages.filter((m) => m.role === 'user').length, 2);
+      assert.ok(conversation.conversation?.messages.some((m) => m.kind === 'answer'));
+      assert.equal((await ctx.records.pending(ctx.task.id)).length, 0);
+    });
+  }
+}
+test('queued questions wait through manual pause and are answered before final acceptance', async (t) => {
+  const ctx = await setup(t, { readingOnly: true, slowWorker: true });
+  await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+  await waitUntil(ctx.hasRequest);
+  const run = ctx.records.runs[0];
+  await ctx.service.request({ kind: 'pause', runId: run.id });
+  await ctx.service.request({
+    kind: 'message.send',
+    taskId: ctx.task.id,
+    messageId: randomUUID(),
+    text: 'Explain the result',
+  });
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 1);
+  ctx.release();
+  await waitUntil(() => run.status === 'paused');
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 1);
+  await ctx.service.request({ kind: 'resume', runId: run.id });
+  await waitUntil(() => run.status === 'completed');
+  assert.equal(run.round, 1);
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 0);
+  assert.ok((await ctx.records.messages(ctx.task.id)).some((m) => m.kind === 'answer'));
+});
+test('queued modifications create the next plan and retain the active round budget', async (t) => {
+  const ctx = await setup(t, { readingOnly: true, slowWorker: true });
+  await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+  await waitUntil(ctx.hasRequest);
+  const run = ctx.records.runs[0];
+  await ctx.service.request({
+    kind: 'message.send',
+    taskId: ctx.task.id,
+    messageId: randomUUID(),
+    text: 'Queued modification',
+  });
+  ctx.release();
+  await waitUntil(() => run.status === 'completed');
+  assert.equal(run.plan?.version, 2);
+  assert.equal(run.round, 2);
+  assert.equal(run.maxRounds, ctx.task.maxRounds);
+  assert.equal(ctx.records.runs.length, 1);
+});
+test('binding changes retain the message and block continuation without switching branches', async (t) => {
+  const ctx = await setup(t, { readingOnly: true, git: { mode: 'current' } });
+  await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+  await waitUntil(() => ctx.records.runs[0].status === 'completed');
+  await ctx.git.checked(['switch', '-c', 'external'], ctx.repo);
+  await ctx.service.request({
+    kind: 'message.send',
+    taskId: ctx.task.id,
+    messageId: randomUUID(),
+    text: 'Continue modification',
+  });
+  assert.equal(ctx.records.runs.length, 1);
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 1);
+  assert.ok((await ctx.records.pending(ctx.task.id))[0].fault);
+  await assert.rejects(ctx.service.request({ kind: 'messages.resume', taskId: ctx.task.id }));
+  assert.match(await ctx.git.checked(['branch', '--show-current'], ctx.repo), /external/);
+});
+test('stop and reload preserve queued messages without replaying them', async (t) => {
+  const ctx = await setup(t, { readingOnly: true, slowWorker: true });
+  await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+  await waitUntil(ctx.hasRequest);
+  const run = ctx.records.runs[0];
+  await ctx.service.request({
+    kind: 'message.send',
+    taskId: ctx.task.id,
+    messageId: randomUUID(),
+    text: 'Explain the result',
+  });
+  await ctx.service.request({ kind: 'stop', runId: run.id });
+  ctx.release();
+  await ctx.records.initialize();
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 1);
+  assert.equal(ctx.records.runs.length, 1);
+  await ctx.service.request({ kind: 'messages.resume', taskId: ctx.task.id });
+  await waitUntil(() => ctx.records.runs[0].status === 'answered');
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 0);
+});
+
+for (const flip of [false, true]) {
+  test(`continuation verifies new artifacts with fresh real command evidence (flip=${flip})`, async (t) => {
+    const ctx = await setup(t, { flip, autonomous: true, realCommands: true });
+    await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+    await waitUntil(() => ctx.records.runs[0].status === 'completed');
+    const oldRun = ctx.records.runs[0];
+    const oldCommands = (await ctx.records.history(oldRun.id)).flatMap((e) =>
+      e.detail?.type === 'command' ? [e.detail.command.id] : [],
+    );
+    await ctx.service.request({
+      kind: 'message.send',
+      taskId: ctx.task.id,
+      messageId: randomUUID(),
+      text: 'Continue modification',
+    });
+    await waitUntil(() => ctx.records.runs[0].status === 'completed');
+    const current = ctx.records.runs[0];
+    assert.notEqual(current.id, oldRun.id);
+    const accepted = current.review!.acceptance.flatMap((e) => e.commandIds);
+    assert.ok(accepted.length > 0);
+    assert.ok(accepted.every((id) => !oldCommands.includes(id)));
+    const commands = (await ctx.records.history(current.id)).flatMap((e) =>
+      e.detail?.type === 'command' ? [e.detail.command] : [],
+    );
+    assert.ok(
+      accepted.every((id) => commands.some((c) => c.id === id && c.ok && c.before === c.after)),
+    );
+  });
+}
+test('queued modification cannot increase the current round limit', async (t) => {
+  const ctx = await setup(t, { readingOnly: true, approve: true, slowWorker: true });
+  await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+  await waitUntil(ctx.hasRequest);
+  await ctx.service.request({
+    kind: 'message.send',
+    taskId: ctx.task.id,
+    messageId: randomUUID(),
+    text: 'Queued modification',
+  });
+  ctx.release();
+  await waitUntil(() => ctx.records.runs[0].status === 'roundLimit');
+  assert.equal(ctx.records.runs[0].maxRounds, 1);
+  assert.equal(ctx.records.runs[0].round, 1);
+  assert.equal(ctx.records.runs[0].plan?.version, 2);
+  assert.equal(ctx.records.runs[0].review, undefined);
+});
+test('messages arriving during final review are answered before completion and secrets are redacted', async (t) => {
+  const ctx = await setup(t, { readingOnly: true, holdReview: true });
+  await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+  await waitUntil(ctx.hasRequest);
+  const id = randomUUID();
+  await Promise.all(
+    [1, 2].map(() =>
+      ctx.service.request({
+        kind: 'message.send',
+        taskId: ctx.task.id,
+        messageId: id,
+        text: 'Explain test-secret-worker',
+      }),
+    ),
+  );
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 1);
+  assert.ok(!(await ctx.records.messages(ctx.task.id))[0].text.includes('test-secret-worker'));
+  ctx.release();
+  await waitUntil(() => ctx.records.runs[0].status === 'completed');
+  assert.equal((await ctx.records.pending(ctx.task.id)).length, 0);
+  assert.ok((await ctx.records.messages(ctx.task.id)).some((m) => m.kind === 'answer'));
 });

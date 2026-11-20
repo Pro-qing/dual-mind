@@ -84,7 +84,7 @@ Build output, downloaded editors, dependencies, and VSIX files are ignored by Gi
 
 ## Resource-bounded model verification
 
-Local tests run serially with a 512 MiB JavaScript heap and the existing 30-second per-test timeout. Run each verification command separately with a 1 GiB memory / 60-second limit for individual local batches (120 seconds for the full `npm run check`, which includes the real command timeout test), or 2 GiB / 180 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
+Local tests run serially with a 512 MiB JavaScript heap and the existing 30-second per-test timeout. Run each verification command separately with a 1 GiB memory / 60-second limit for individual local batches (180 seconds for the full `npm run check`, which includes the real command timeout test), or 2 GiB / 300 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
 
 Set `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` to reuse an installed VS Code for `npm test` and `npm run test:ui`; omit it to retain automatic download. Run Electron under `xvfb-run -a` when headless. All tests use isolated user profiles. The real Webview test starts a local mock server and uses a fake key in the native password prompt, then verifies query, selection, persistence, both languages and narrow layouts. It never reads personal credentials; model requests use local mock endpoints and no paid services.
 
@@ -108,3 +108,7 @@ Real UI verification configures both model protocols and real additional command
 Local model fixtures cover Reviewer-first planning, autonomous Worker commands, revised plans after rejection, reading-only acceptance and legacy custom configuration. Contract tests cover nested tool arguments, stable criteria, forged/stale/failed evidence, feedback and newer failures superseding older success. Real command runner tests execute by default; reading acceptance remains independently covered.
 
 See the [validation record](./execution-cycle-validation.md) for actual environments, passes and unverified scenarios.
+
+## Task chat development record
+
+See the [development log](./development-log.md) and [task chat validation](./task-chat-validation.md). Tests cover cross-run pages, idempotency and redaction, read-only answers, all Git strategies with uncommitted continuation, handoff queues, pause/stop/reload, round budgets, fresh evidence, IME and drawer state.

@@ -211,7 +211,9 @@ test('displays the saved snapshot after its preset is edited and the UI language
   });
   await f.store.dispatch({ kind: 'language.set', value: 'zh-CN' });
   await mount(f, { view: 'task', taskId: (await f.store.snapshot()).tasks[0].id });
-  assert.equal(document.querySelector('.instruction-snapshot')?.textContent, original);
+  assert.equal((await f.store.snapshot()).tasks[0].role.instructions, original);
+  assert.equal(document.querySelector('.instruction-snapshot'), null);
+  assert.equal(document.querySelectorAll('.model-bar').length, 2);
   assert.ok(rtl.screen.queryByText('A different future preset.') === null);
 });
 test('validation errors are localized and a failed save keeps form values', async () => {
@@ -991,7 +993,11 @@ test('operation failures and historical errors reformat when the user changes la
     request: async () => snapshot,
     queryModels: async () => ({ models: [], fetchedAt: '' }),
     onModelsInvalidated: () => () => undefined,
-    execute: async () => ({ state: { config: { prepare: [], checks: [] }, runs: [run] }, events }),
+    execute: async () => ({
+      state: { config: { prepare: [], checks: [] }, runs: [run] },
+      events,
+      evidence: { events },
+    }),
   };
   const result = rtl.render(
     <App
@@ -1001,6 +1007,7 @@ test('operation failures and historical errors reformat when the user changes la
     />,
   );
   await rtl.screen.findByText(/模型请求超时/);
+  click('工具、检查与审查证据');
   await rtl.waitFor(() => assert.equal(rtl.screen.getAllByText(/该次运行失败/).length, 2));
   assert.ok(rtl.screen.getByText(/命令“Check build”执行超时/));
   assert.ok(rtl.screen.getByText(/ORIGINAL COMMAND OUTPUT/));
@@ -1085,6 +1092,18 @@ test('saving the current task preserves loaded conversation history', async () =
         navigationRequests++;
         return {
           state: execution,
+          conversation: {
+            messages: [
+              {
+                id: 'saved-message',
+                taskId: task.id,
+                role: 'worker',
+                kind: 'submission',
+                text: 'Preserved worker conversation',
+                time: '2026-11-20T00:00:00.000Z',
+              },
+            ],
+          },
           events: [
             {
               runId: run.id,
@@ -1109,11 +1128,12 @@ test('saving the current task preserves loaded conversation history', async () =
   }
   rtl.render(<Harness />);
   await rtl.screen.findByText('Preserved worker conversation');
+  const requestsBeforeSave = navigationRequests;
   click('Edit task');
   click('Save task');
   await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
   assert.ok(rtl.screen.getByText('Preserved worker conversation'));
-  assert.equal(navigationRequests, 1);
+  assert.equal(navigationRequests, requestsBeforeSave);
 });
 
 test('automatic execution starts without presets; advanced commands retain disabled values', async () => {
@@ -1131,7 +1151,9 @@ test('automatic execution starts without presets; advanced commands retain disab
   const actions: string[] = [];
   await mount(f, { view: 'task', taskId: task.id }, undefined, {
     execute: async (action) => {
-      actions.push(action.kind);
+      if (!['conversation', 'evidence'].includes(action.kind)) {
+        actions.push(action.kind);
+      }
       if (action.kind === 'config.save') {
         config = action.config;
       }
@@ -1209,6 +1231,19 @@ test('plan, acceptance, planning controls and history restore in both languages'
     onModelsInvalidated: () => () => undefined,
     execute: async () => ({
       state: execution,
+      conversation: {
+        messages: [
+          {
+            id: 'plan-message',
+            taskId: task.id,
+            time: '2026-11-20T00:00:00.000Z',
+            role: 'reviewer',
+            kind: 'plan',
+            text: plan.objective,
+            detail: { type: 'plan', plan },
+          },
+        ],
+      },
       events: [
         {
           runId: run.id,
@@ -1231,12 +1266,12 @@ test('plan, acceptance, planning controls and history restore in both languages'
   );
   await rtl.screen.findByRole('status');
   assert.match(rtl.screen.getByRole('status').textContent!, /Planning/);
-  assert.ok(rtl.screen.getAllByText('Waiting for Reviewer plan').length > 0);
+  assert.equal(document.querySelector('.agent-panel'), null);
   assert.equal(
     (rtl.screen.getByRole('button', { name: 'Pause' }) as HTMLButtonElement).disabled,
     false,
   );
-  await rtl.waitFor(() => assert.equal(rtl.screen.getAllByText('Reading review').length, 2));
+  await rtl.waitFor(() => assert.equal(rtl.screen.getAllByText('Reading review').length, 1));
   ui.rerender(
     <App
       snapshot={{ ...snapshot, execution, locale: 'zh-CN', language: 'zh-CN' }}
@@ -1244,6 +1279,216 @@ test('plan, acceptance, planning controls and history restore in both languages'
     />,
   );
   assert.match(rtl.screen.getByRole('status').textContent!, /制定方案中/);
-  assert.equal(rtl.screen.getAllByText('阅读审查').length, 2);
+  assert.equal(rtl.screen.getAllByText('阅读审查').length, 1);
   assert.ok(rtl.screen.getAllByText('Documentation only').length > 0);
+});
+
+test('chat keeps failed input, reuses message IDs, respects IME and clears only after persistence', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const task = (await f.store.snapshot()).tasks[0];
+  const state = { config: { prepare: [], checks: [] }, runs: [] };
+  const messages: import('../../src/shared/execution').TaskMessage[] = [];
+  const sent: string[] = [];
+  let fail = true;
+  await mount(f, { view: 'task', taskId: task.id }, undefined, {
+    execute: async (action) => {
+      if (action.kind === 'message.send') {
+        sent.push(action.messageId);
+        if (fail) {
+          fail = false;
+          throw new OperationError('operationTimeout');
+        }
+        messages.push({
+          id: action.messageId,
+          taskId: task.id,
+          time: new Date().toISOString(),
+          role: 'user',
+          kind: 'message',
+          text: action.text,
+          status: 'pending',
+        });
+      }
+      return { state, conversation: { messages }, evidence: { events: [] } };
+    },
+  });
+  const input = rtl.screen.getByLabelText('Follow up or request changes') as HTMLTextAreaElement;
+  rtl.fireEvent.change(input, { target: { value: '保留这条追问' } });
+  rtl.fireEvent.keyDown(input, { key: 'Enter', isComposing: true, keyCode: 229 });
+  assert.equal(sent.length, 0);
+  rtl.fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
+  assert.equal(sent.length, 0);
+  rtl.fireEvent.keyDown(input, { key: 'Enter' });
+  await rtl.waitFor(() => assert.equal(sent.length, 1));
+  await rtl.waitFor(() => assert.equal(input.disabled, false));
+  assert.equal(input.value, '保留这条追问');
+  click('Send');
+  await rtl.waitFor(() => assert.equal(input.value, ''));
+  assert.equal(sent[0], sent[1]);
+  assert.equal(messages.length, 1);
+  assert.ok(document.querySelector('.chat-message.user[data-message-id]'));
+  assert.equal(document.querySelector('.agent-panel'), null);
+});
+
+test('evidence stays expanded through localization and refresh; narrow drawer restores focus', async () => {
+  const width = window.innerWidth;
+  Object.defineProperty(window, 'innerWidth', { value: 1300, configurable: true });
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot(),
+    task = snapshot.tasks[0];
+  const state = { config: { prepare: [], checks: [] }, runs: [] };
+  let update: ((value: import('../../src/shared/execution').ExecutionUpdate) => void) | undefined;
+  const events: RunEvent[] = [
+    {
+      runId: 'run',
+      taskId: task.id,
+      sequence: 1,
+      kind: 'tool',
+      text: 'actual read_file result',
+      agent: 'reviewer',
+      time: '2026-11-20T00:00:00.000Z',
+    },
+  ];
+  const bridge: Bridge = {
+    request: async () => snapshot,
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+    onExecution: (listener) => {
+      update = listener;
+      return () => undefined;
+    },
+    execute: async () => ({
+      state,
+      conversation: {
+        messages: [
+          {
+            id: 'answer',
+            taskId: task.id,
+            role: 'reviewer',
+            kind: 'answer',
+            text: 'Explained result',
+            runId: 'run',
+            sequence: 1,
+            time: '2026-11-20T00:00:00.000Z',
+          },
+        ],
+      },
+      evidence: { events },
+    }),
+  };
+  const ui = rtl.render(
+    <App
+      snapshot={{ ...snapshot, execution: state }}
+      bridge={bridge}
+      initialNavigation={{ view: 'task', taskId: task.id }}
+    />,
+  );
+  await rtl.screen.findByText('Explained result');
+  await rtl.waitFor(() => assert.equal(document.querySelectorAll('.evidence-record').length, 1));
+  const detail = document.querySelector<HTMLDetailsElement>('.evidence-record')!;
+  rtl.fireEvent.click(detail.querySelector('summary')!);
+  await rtl.waitFor(() => assert.equal(detail.open, true));
+  click('View execution details');
+  await rtl.waitFor(() =>
+    assert.equal(document.querySelector<HTMLDetailsElement>('.evidence-record')!.open, true),
+  );
+  click('View execution details');
+  assert.equal(document.querySelector<HTMLElement>('.evidence-panel')!.hidden, false);
+  ui.rerender(
+    <App
+      snapshot={{ ...snapshot, execution: state, locale: 'zh-CN', language: 'zh-CN' }}
+      bridge={bridge}
+    />,
+  );
+  assert.equal(document.querySelector<HTMLDetailsElement>('.evidence-record')!.open, true);
+  await rtl.act(async () => update?.({ state: { ...state, conversationVersion: 1 }, events }));
+  await rtl.waitFor(() =>
+    assert.equal(document.querySelector<HTMLDetailsElement>('.evidence-record')!.open, true),
+  );
+  Object.defineProperty(window, 'innerWidth', { value: 800, configurable: true });
+  rtl.fireEvent(window, new Event('resize'));
+  const trigger = rtl.screen.getByRole('button', { name: '查看执行详情' });
+  trigger.focus();
+  rtl.fireEvent.click(trigger);
+  assert.ok(rtl.screen.getByRole('dialog', { name: '工具、检查与审查证据' }));
+  rtl.fireEvent.keyDown(document, { key: 'Escape' });
+  assert.equal(document.querySelector<HTMLElement>('.evidence-panel')!.hidden, true);
+  assert.equal(document.activeElement, trigger);
+  Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+});
+
+test('conversation pagination preserves the reading position and new messages do not force scrolling', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot(),
+    task = snapshot.tasks[0];
+  const state = { config: { prepare: [], checks: [] }, runs: [] };
+  let update: ((value: import('../../src/shared/execution').ExecutionUpdate) => void) | undefined;
+  const messages: import('../../src/shared/execution').TaskMessage[] = Array.from(
+    { length: 20 },
+    (_, index) => ({
+      id: `m-${index}`,
+      taskId: task.id,
+      role: index % 2 ? 'reviewer' : 'user',
+      kind: index % 2 ? 'answer' : 'message',
+      text: `Message ${index}`,
+      time: new Date(1700000000000 + index * 1000).toISOString(),
+      status: 'handled',
+    }),
+  );
+  const bridge: Bridge = {
+    request: async () => snapshot,
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+    onExecution: (listener) => {
+      update = listener;
+      return () => undefined;
+    },
+    execute: async (action) => ({
+      state,
+      conversation: {
+        messages:
+          action.kind === 'conversation' && action.before
+            ? messages.slice(0, 10)
+            : messages.slice(10),
+        before: action.kind === 'conversation' && action.before ? undefined : 'older',
+      },
+      evidence: { events: [] },
+    }),
+  };
+  rtl.render(
+    <App
+      snapshot={{ ...snapshot, execution: state }}
+      bridge={bridge}
+      initialNavigation={{ view: 'task', taskId: task.id }}
+    />,
+  );
+  await rtl.screen.findByText('Message 19');
+  const scroller = document.querySelector<HTMLElement>('.chat-messages')!;
+  Object.defineProperty(scroller, 'scrollHeight', {
+    get: () => scroller.querySelectorAll('.chat-message').length * 100,
+  });
+  Object.defineProperty(scroller, 'clientHeight', { value: 400 });
+  scroller.scrollTop = 100;
+  rtl.fireEvent.scroll(scroller);
+  const oldHeight = scroller.scrollHeight;
+  click('Older records');
+  await rtl.screen.findByText('Message 0');
+  assert.equal(scroller.scrollTop, 100 + scroller.scrollHeight - oldHeight);
+  const preserved = scroller.scrollTop;
+  messages.push({
+    id: 'new-message',
+    taskId: task.id,
+    role: 'reviewer',
+    kind: 'answer',
+    text: 'New reply',
+    time: '2026-11-20T00:00:00.000Z',
+  });
+  await rtl.act(async () => update?.({ state: { ...state, conversationVersion: 1 }, events: [] }));
+  await rtl.screen.findByText('New reply');
+  assert.equal(scroller.scrollTop, preserved);
+  assert.equal(rtl.screen.queryByRole('button', { name: 'Older records' }), null);
+  click('New messages');
+  assert.equal(scroller.scrollTop, scroller.scrollHeight);
 });

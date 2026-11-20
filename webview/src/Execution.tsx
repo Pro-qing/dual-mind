@@ -1,7 +1,7 @@
 import { ExecutionDetailView } from './RunDetail';
 import { toAppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   terminalStatuses,
   type ExecutionConfig,
@@ -14,8 +14,8 @@ import { useUI } from './context';
 export function statusKey(status: RunStatus) {
   return `run_${status}` as const;
 }
-function ExecutionEvidenceItem({ event }: { event: RunEvent }) {
-  const { snapshot } = useUI();
+export function ExecutionEvidenceItem({ event }: { event: RunEvent }) {
+  const { snapshot, tr } = useUI();
   let fault = event.fault ? toAppError(event.fault) : undefined;
   if (!fault && event.kind === 'error') {
     fault = toAppError(event.text, 'legacyExecution');
@@ -34,7 +34,12 @@ function ExecutionEvidenceItem({ event }: { event: RunEvent }) {
     return (
       <div className="execution-detail">
         <ExecutionDetailView detail={event.detail} />
-        {event.detail.type === 'command' && <pre>{event.text}</pre>}
+        {event.detail.type === 'command' && (
+          <details className="command-output">
+            <summary>{tr('chatRawOutput')}</summary>
+            <pre>{event.text}</pre>
+          </details>
+        )}
       </div>
     );
   }
@@ -240,11 +245,6 @@ export function ExecutionControls({
       .finally(() => setBusy(false))
       .catch(() => undefined);
   };
-  useEffect(() => {
-    if (run && mode === 'controls') {
-      void execute({ kind: 'history', runId: run.id }).catch(() => undefined);
-    }
-  }, [run?.id, execute, mode]);
   const events = executionEvents.filter((event) => event.runId === run?.id);
   return (
     <section className="execution-panel" aria-label={tr('executionTab')}>
@@ -262,7 +262,9 @@ export function ExecutionControls({
               disabled={
                 busy ||
                 !running ||
-                !['planning', 'preparing', 'worker', 'checking', 'reviewer'].includes(run!.status)
+                !['answering', 'planning', 'preparing', 'worker', 'checking', 'reviewer'].includes(
+                  run!.status,
+                )
               }
               onClick={() => call({ kind: 'pause', runId: run!.id })}
             >

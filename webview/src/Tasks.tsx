@@ -1,7 +1,7 @@
 import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
 import type { ReactNode } from 'react';
-import { RunOverview } from './RunDetail';
+import { TaskChat } from './TaskChat';
 import { ExecutionControls, statusKey } from './Execution';
 import { terminalStatuses } from '../../src/shared/execution';
 import { useEffect, useState } from 'react';
@@ -278,107 +278,15 @@ function AgentPanel({
   task: TaskView;
   example: boolean;
 }) {
-  const { snapshot, tr, execution, executionEvents } = useUI();
-  const runtime = execution.runs.find((item) => item.taskId === task.id);
-  const output = executionEvents.filter(
-    (event) => event.runId === runtime?.id && event.agent === agent && event.kind === 'text',
-  );
-  const binding = task[agent];
-  const connection = snapshot.connections.find((c) => c.id === binding.connectionId);
-  const frozen = runtime?.models?.[agent];
-  const label =
-    !example && frozen
-      ? `${frozen.connectionName} / ${frozen.model}`
-      : example
-        ? `${tr(agent === 'worker' ? 'sampleLocal' : 'sampleTeam')} / ${binding.model}`
-        : binding.connectionId
-          ? `${connection?.name || tr('missingConnection')} / ${binding.model || tr('noBinding')}`
-          : tr('noBinding');
-  const waitingKey =
-    !example && runtime && !terminalStatuses.includes(runtime.status)
-      ? runtime.status === 'planning' && agent === 'worker'
-        ? 'awaitingPlan'
-        : ['preparing', 'worker', 'checking'].includes(runtime.status) && agent === 'reviewer'
-          ? 'awaitingSubmission'
-          : runtime.status === 'reviewer' && agent === 'worker'
-            ? 'awaitingAcceptance'
-            : undefined
-      : undefined;
+  const { execution, tr } = useUI();
+  const runtime = execution.runs.find((r) => r.taskId === task.id);
+  const model =
+    (!example && runtime?.models?.[agent]?.model) || task[agent].model || tr('missingModel');
   return (
-    <section className={`agent-panel ${agent}`} aria-label={tr(agent)}>
-      <header className="agent-header">
-        <span className="agent-avatar">{agent === 'worker' ? 'W' : 'R'}</span>
-        <div>
-          <h2>{tr(agent)}</h2>
-          <p>{agent === 'worker' ? tr('workerRole') : task.role.name}</p>
-        </div>
-        <span className="agent-state">
-          {example
-            ? tr(agent === 'worker' ? 'working' : 'reviewing')
-            : runtime
-              ? tr(
-                  waitingKey ??
-                    (runtime.status === 'completed' ? 'completed' : statusKey(runtime.status)),
-                )
-              : tr('pendingTask')}
-        </span>
-      </header>
-      <div className="agent-body">
-        <div
-          className={`model-readout ${!example && binding.connectionId && !connection ? 'invalid' : ''}`}
-          title={label}
-        >
-          {label}
-        </div>
-        {example ? (
-          <>
-            <h3 className="eyebrow">{tr('readonly')}</h3>
-            <p className="conversation-text">
-              {tr(agent === 'worker' ? 'sampleWorker' : 'sampleReviewer')}
-            </p>
-            {agent === 'worker' && (
-              <pre>
-                <code>{tr('sampleCode')}</code>
-              </pre>
-            )}
-          </>
-        ) : output.length ? (
-          <div className="conversation-output">
-            {output.map((event) => (
-              <span key={event.sequence}>{event.text}</span>
-            ))}
-          </div>
-        ) : (
-          <div className="conversation-empty">
-            <h3>{tr('noConversation')}</h3>
-            <p>
-              {tr(
-                waitingKey ??
-                  (runtime?.status === 'planning' ? 'planningHint' : 'pendingConversation'),
-              )}
-            </p>
-          </div>
-        )}
-        {agent === 'reviewer' && (
-          <div className="review-focus">
-            <h3 className="eyebrow">{tr('reviewFocus')}</h3>
-            <p>{task.role.purpose}</p>
-            <details>
-              <summary>
-                {tr('snapshot')} ·{' '}
-                {task.role.locale === 'original'
-                  ? tr('originalText')
-                  : task.role.locale === 'zh-CN'
-                    ? '简体中文'
-                    : 'English'}
-              </summary>
-              <pre className="instruction-snapshot">{task.role.instructions}</pre>
-              <p className="hint">{tr('snapshotHint')}</p>
-            </details>
-          </div>
-        )}
-      </div>
-    </section>
+    <div className={`model-bar ${agent}`} aria-label={tr(agent)}>
+      <strong>{tr(agent)}</strong>
+      <span title={model}>{model}</span>
+    </div>
   );
 }
 function TaskHome({
@@ -397,7 +305,12 @@ function TaskHome({
   onPreview(): void;
 }) {
   const { snapshot, execution, tr, pending } = useUI();
-  const state = (task: TaskView) => execution.runs.find((run) => run.taskId === task.id);
+  const state = (task: TaskView) =>
+    execution.runs.find(
+      (run) =>
+        run.taskId === task.id &&
+        (run.kind !== 'conversation' || !terminalStatuses.includes(run.status)),
+    );
   const active = tasks.filter((task) =>
     preview
       ? ['working', 'reviewing', 'paused'].includes(task.status)
@@ -515,6 +428,29 @@ function TaskHome({
     </main>
   );
 }
+function ResultActions({ runId, available }: { runId: string; available: boolean }) {
+  const { execute, tr, execution } = useUI();
+  return (
+    <div className="button-row">
+      {(['preview', 'openDirectory'] as const).map((kind) => (
+        <button
+          key={kind}
+          disabled={!available}
+          onClick={() => void execute({ kind, runId }).catch(() => undefined)}
+        >
+          {tr(
+            kind === 'preview'
+              ? 'previewChanges'
+              : execution.runs.find((r) => r.id === runId)?.git?.strategy?.mode &&
+                  execution.runs.find((r) => r.id === runId)?.git?.strategy?.mode !== 'managed'
+                ? 'revealProject'
+                : 'openTaskDirectory',
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
 function TaskDetail({
   task,
   preview,
@@ -529,25 +465,26 @@ function TaskDetail({
   onSettings(): void;
 }) {
   const { execution, tr, pending } = useUI();
-  const currentRun = !preview ? execution.runs.find((item) => item.taskId === task.id) : undefined;
+  const currentRun = !preview
+    ? execution.runs.find(
+        (item) =>
+          item.taskId === task.id &&
+          (item.kind !== 'conversation' || !terminalStatuses.includes(item.status)),
+      )
+    : undefined;
   const locked = currentRun && !terminalStatuses.includes(currentRun.status);
   return (
     <main className="task-content" aria-label={tr('taskDetail')}>
       <section className="task-summary">
         <div className="summary-top">
-          <span className="eyebrow">{tr('selectedTask')}</span>
+          <h1>{task.name}</h1>
           <span className="status-badge">
             {currentRun
               ? tr(statusKey(currentRun.status))
               : tr(task.status === 'draft' ? 'pendingTask' : task.status)}
           </span>
         </div>
-        <h1>{task.name}</h1>
-        <p className="task-requirements">{task.requirements}</p>
         <div className="task-metadata">
-          <span className={`role-badge ${task.role.id}`}>
-            {tr('reviewer')}: {task.role.name}
-          </span>
           <span>
             {tr('gitStrategy')}:{' '}
             {currentRun?.branch ||
@@ -580,6 +517,9 @@ function TaskDetail({
             <Icon name="edit" />
             {tr('editTask')}
           </button>
+          {!preview && currentRun && (
+            <ResultActions runId={currentRun.id} available={Boolean(currentRun.directory)} />
+          )}
           <button
             className="danger"
             disabled={preview || pending}
@@ -591,14 +531,11 @@ function TaskDetail({
           </button>
         </div>
       </div>
-      {!preview && <RunOverview run={currentRun} />}
-      <div className="agent-grid">
+      <div className="model-bars">
         <AgentPanel agent="worker" task={task} example={preview} />
         <AgentPanel agent="reviewer" task={task} example={preview} />
       </div>
-      {!preview && currentRun && (
-        <ExecutionControls taskId={task.id} run={currentRun} mode="details" />
-      )}
+      <TaskChat key={task.id} task={task} preview={preview} />
     </main>
   );
 }

@@ -130,3 +130,7 @@ Execution regression no longer needs a user systemd session. Real command tests 
 ## Automatic execution and command-free tasks
 
 Reviewer plans first; Worker prepares dependencies and runs commands as needed. Command-free tasks can still complete through documented reading acceptance. Failed, unexecuted or unconfirmed-stop commands retain actual records and cannot certify success. External tools may bound the overall development verification process; those budgets are not product task prerequisites.
+
+## Continuing conversation environment
+
+Chat, read-only answers and continuation retain the Ubuntu/Linux baseline. Read-only replies start no Worker commands; continuation reuses the bound directory and requires the same branch and HEAD. Commands still run directly without reinstating systemd or fixed memory requirements. Added real UI cases use local model simulators and disposable repositories; see [task chat validation](./task-chat-validation.md).

@@ -21,7 +21,11 @@ export class TaskSidebar implements vscode.TreeDataProvider<vscode.TreeItem>, vs
       return [];
     }
     return snapshot.tasks.map((task) => {
-      const run = snapshot.execution.runs.find((item) => item.taskId === task.id);
+      const run = snapshot.execution.runs.find(
+        (item) =>
+          item.taskId === task.id &&
+          (item.kind !== 'conversation' || !terminalStatuses.includes(item.status)),
+      );
       const item = new vscode.TreeItem(task.name);
       item.id = task.id;
       item.tooltip = task.requirements;

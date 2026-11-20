@@ -39,7 +39,7 @@ const plan = object({
   revisionReason: string,
 });
 const evidence = { criterionId: id, commandIds: array(id, 40), evidence: nonempty };
-export type AgentPhase = Agent | 'planning';
+export type AgentPhase = Agent | 'planning' | 'answering';
 export function agentTools(phase: AgentPhase): ToolDefinition[] {
   const read: ToolDefinition[] = [
     {
@@ -84,6 +84,23 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
       ),
     },
   ];
+  if (phase === 'answering') {
+    return [
+      ...read,
+      {
+        name: 'submit_answer',
+        description:
+          'Answer or clarify the user message using read-only inspection. This is not acceptance and must not claim new work was performed.',
+        parameters: object({ answer: nonempty }),
+      },
+      {
+        name: 'submit_plan',
+        description:
+          'For a requested modification, issue an executable plan for Worker. Inspect the current files and differences first.',
+        parameters: plan,
+      },
+    ];
+  }
   if (phase === 'planning') {
     return [
       ...read,
