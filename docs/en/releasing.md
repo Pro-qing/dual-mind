@@ -68,16 +68,16 @@ From the clean checkout of the new tag, load nvm and install locked dependencies
 
 `npm run package` rebuilds the extension host and Webview. `DUAL_MIND_RELEASE_REF` fixes packaged README/changelog links to the new tag. The output is `release/dual-mind-<version>.vsix`; running packaging again for that version overwrites the local file. Keep release candidates and downloaded verification copies in separate locations. Generated bundles, screenshots, VSIX files and checksum files remain ignored by Git.
 
-Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all seven adopted SVG/PNG pairs. The source JPEG, development sources, tests, credentials and source maps must be absent.
+Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all 17 approved SVG/PNG pairs. The source JPEG, development sources, tests, credentials and source maps must be absent.
 
-Install the package in an isolated user profile/extensions directory. Verify the icon, identity/version, workbench, both languages, draft saving and reload recovery. Keep only the intended extension identity enabled in that profile.
+Install the package in an isolated user profile/extensions directory. Verify the icon, identity/version, workbench, both languages, task creation/saving and reload recovery. Keep only the intended extension identity enabled in that profile.
 
 ## Publish the same artifact to both services
 
 1. Prepare a GitHub Release draft using the already validated new tag, a title matching the new version, bilingual notes, and the VSIX/checksum from the same build. During the current preview stage, select **Pre-release** and do not mark it as latest. Review the commit, links, features/limitations, and asset hashes before publication.
 2. Sign in to the [publisher management page](https://marketplace.visualstudio.com/manage) as the owner of **Pro-qing**. Open the existing **DualMind** extension and upload the new version's VSIX. Confirm the extension ID, version, icon, Preview label and README; wait for validation and public availability.
 3. Publish the reviewed GitHub Release draft. Record each service's public URL and actual publication time independently. If only one service has completed publication, describe only that service as updated.
-4. Download the GitHub VSIX and checksum into a fresh directory, run `sha256sum --check SHA256SUMS.txt`, and compare the digest with the prepared artifact. Install the download in isolation. Separately install/update `Pro-qing.dual-mind` through Marketplace, confirm the new version, and verify workbench opening, language switching and draft persistence.
+4. Download the GitHub VSIX and checksum into a fresh directory, run `sha256sum --check SHA256SUMS.txt`, and compare the digest with the prepared artifact. Install the download in isolation. Separately install/update `Pro-qing.dual-mind` through Marketplace, confirm the new version, and verify workbench opening, language switching and task persistence.
 5. Record the release commit, tag, VSIX SHA-256, both publication times, and the actual installation results. Update bilingual status documents after confirmation. Preserve all historical tags and public assets.
 
 ## Refreshing the Marketplace description

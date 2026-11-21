@@ -8,7 +8,9 @@ DualMind 0.0.3 is a local, unpublished source version. Public 0.0.1 artifacts re
 
 The host sends task requirements, the corresponding role instructions and needed file/tool content to the configured model endpoint. Roles retain separate histories and exchange artifacts/evidence only. Public logs and execution records exclude API keys, but task text and code can contain sensitive information; evaluate the actual endpoint and task scope.
 
-Worker can modify the selected task directory; Reviewer has only controlled read interfaces. Direct modes modify the opened project, while dedicated mode uses a worktree. Preset programs run with the current user permissions; systemd bounds memory, swap and time. File interfaces and resource limits are not OS sandboxes and cannot constrain arbitrary external processes.
+Worker can modify the selected task directory; Reviewer has only controlled read interfaces. Direct modes modify the opened project, while dedicated mode uses a worktree.
+
+Worker commands and enabled additional custom commands run directly with the current user permissions, without systemd/cgroup requirements or extension-imposed memory/swap quotas. Commands default to a 180-second timeout (10–900 seconds allowed) and a 2 MiB output limit. Cancellation, timeout, excessive output or parent exit trigger cleanup of remaining group members: SIGTERM first, SIGKILL after 3 seconds if needed, and up to 10 seconds to confirm termination. Unconfirmed shutdown blocks new tasks in the current host. Cleanup does not track background services that deliberately leave the process group. File interfaces and command limits are not OS sandboxes and cannot constrain arbitrary external processes.
 
 Branch/HEAD and check evidence are validated. Stop cancels requests and terminates command process groups without reverting saved files. Approval does not automatically commit, merge or apply dedicated-directory results.
 

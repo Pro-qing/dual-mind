@@ -68,16 +68,16 @@ VSCODE_TEST_VERSION=stable npm test
 
 `npm run package` 会重建扩展宿主与 Webview，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签。产物路径为 `release/dual-mind-<version>.vsix`，再次打包同一版本会覆盖本地文件；候选包和重新下载的验证副本应分别存放。构建产物、截图、VSIX 和校验文件继续由 Git 忽略。
 
-检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及七组已采用 SVG／PNG；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
+检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及全部 17 组已审核 SVG／PNG；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
 
-在隔离用户配置／扩展目录中安装包，验证图标、身份／版本、工作台、两种语言、草稿保存及重载恢复。该配置只启用目标扩展身份。
+在隔离用户配置／扩展目录中安装包，验证图标、身份／版本、工作台、两种语言、任务创建／保存及重载恢复。该配置只启用目标扩展身份。
 
 ## 将同一产物发布到两端
 
 1. 使用已验证的新标签准备 GitHub Release 草稿，标题匹配新版本，填入双语说明，并上传同次构建的 VSIX 和校验文件。当前预览阶段勾选 **Pre-release**，不设为 latest。公开前核对提交、链接、功能／限制及附件哈希。
 2. 用拥有 **Pro-qing** 的账号登录 [Publisher 管理页](https://marketplace.visualstudio.com/manage)，打开已有的 **DualMind** 扩展条目，上传新版本 VSIX。确认扩展标识、版本、图标、Preview 标记和 README，等待验证及公开完成。
 3. 公开已核对的 GitHub Release 草稿，分别记录两端公开地址和实际发布时间。若只有一端完成发布，仅将该端标为已更新。
-4. 将 GitHub VSIX 和校验文件重新下载到新目录，执行 `sha256sum --check SHA256SUMS.txt` 并与准备产物的摘要比较，然后隔离安装下载包。另从 Marketplace 安装／更新 `Pro-qing.dual-mind`，确认新版本，验证工作台打开、语言切换与草稿持久化。
+4. 将 GitHub VSIX 和校验文件重新下载到新目录，执行 `sha256sum --check SHA256SUMS.txt` 并与准备产物的摘要比较，然后隔离安装下载包。另从 Marketplace 安装／更新 `Pro-qing.dual-mind`，确认新版本，验证工作台打开、语言切换与任务持久化。
 5. 记录发布提交、标签、VSIX SHA-256、两端发布时间和实际安装验证结果；确认后同步双语状态文档，保留全部历史标签和公开附件。
 
 ## 同步 Marketplace 介绍

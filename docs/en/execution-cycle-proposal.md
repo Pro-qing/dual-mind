@@ -4,6 +4,8 @@
 
 Status: approved and implemented. Date: 2026-11-20. Existing scenes 1–11 are retained. These designs describe intended behavior, not runtime validation results.
 
+Subsequent revision: [task chat and follow-up](./task-chat-proposal.md) replaces the two-column detail layout below with chat and independent evidence. This document preserves the original design. Reviewer planning, Worker implementation, Reviewer acceptance and additional-command settings still apply; see [Usage](./usage.md) for current layout.
+
 ## Task detail
 
 [Editable SVG](../design/dual-mind-execution-cycle-proposal.svg)

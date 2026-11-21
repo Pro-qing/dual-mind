@@ -44,7 +44,7 @@ React 工作台支持本地任务、连接设置、Reviewer 预设和中英文�
 
 ![已审核的 DualMind 并行任务设计参考](./docs/design/dual-mind-workbench.png)
 
-七组已采用 SVG／PNG 保留为设计参考，其中 [API 模型查询](./docs/design/dual-mind-api-model-discovery.png)与[任务模型选择](./docs/design/dual-mind-task-model-selection.png)已在开发分支实现；已发布的 0.0.1 制品保持原有行为。图中的并行执行仍待实现，单任务执行已经接入。[工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
+现有 17 组已审核 SVG／PNG 保留为设计参考：场景 1–7 为原工作台与模型选择，8–11 为任务页面，12–13 为方案与验收循环，14–17 为[任务聊天与持续追问](./docs/zh/task-chat-proposal.md)。当前源码已实现单任务执行和聊天；上图保留原工作台设计，图中的并行执行仍待实现。已发布的 0.0.1 制品保持原有行为。[原工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
 
 ## 文档与参与贡献
 

@@ -9,7 +9,7 @@
 - Add Chat Completions/Responses streaming inference and tool adapters, independent Worker/Reviewer histories and frozen execution snapshots.
 - Connect Reviewer planning, autonomous Worker implementation and command verification, Reviewer acceptance and revised plans; add round limits, pause/continue/stop, feedback and reload interruption.
 - Add the activity-bar icon, native task sidebar, public streamed output, check evidence, paged records, diff preview and directory access.
-- Tasks choose dedicated, current or a specified existing local branch. Direct runs require cleanliness each time and freeze branch/HEAD; viewing records never switches branches.
+- Tasks choose dedicated, current or a specified existing local branch. Direct start/restart requires cleanliness and freezes branch/HEAD; viewing records never switches branches. Subsequent chat continuation reuses the bound directory and uncommitted artifacts and obtains fresh evidence.
 - Reviewer has no writing or command tools. Commands launch directly in the task directory without systemd/cgroup or fixed memory/swap quotas; timeouts, output limits and process-group shutdown remain.
 
 - Stabilize Webview screenshot cleanup so expiring toasts cannot leave a wait for a vanished close button.

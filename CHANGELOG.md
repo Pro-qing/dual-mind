@@ -2,6 +2,13 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## Unreleased — Development rules and documentation synchronization (2026-11-21)
+
+- Require repository-wide documentation review after code changes, synchronized English/Chinese updates in the same change, and bilingual development-log entries even when no text update is needed.
+- Require English and Simplified Chinese in new commit subjects and corresponding bilingual bodies when present; add message examples and a PR check.
+- Update PR checks and current descriptions of command execution, the 17 designs and approval status, chat layout, follow-up and release operations.
+- Preserve historical releases, designs and validation records. This change updates documentation and the template only; see the [development log](./docs/en/development-log.md) for actual review and checks.
+
 ## Unreleased — Task chat and follow-up (2026-11-20)
 
 - Replaced large role cards with compact model bars, labelled chat, independent evidence and a persistent composer.
@@ -11,13 +18,13 @@
 
 ## 0.0.3 — Local source version (unpublished)
 
-Recorded 2026-11-20; local annotated tag `v0.0.3`. This does not indicate a Marketplace update or a GitHub Release.
+Recorded 2026-11-20; local annotated tag `v0.0.3`. This does not indicate a Marketplace update or a GitHub Release. The entries below preserve the initial tag’s historical capabilities; subsequent source revisions are described in the unreleased entries above and the [current version notes](./docs/en/release-notes-0.0.3.md).
 
 - Add Chat Completions/Responses streaming inference and tool adapters, independent Worker/Reviewer histories and frozen execution snapshots.
 - Connect preparation commands, Worker edits, all preset checks, Reviewer review and revisions; add round limits, pause/continue/stop, feedback and reload interruption.
 - Add the activity-bar icon, native task sidebar, public streamed output, check evidence, paged records, diff preview and directory access.
 - Tasks choose dedicated, current or a specified existing local branch. Direct runs require cleanliness each time and freeze branch/HEAD; viewing records never switches branches.
-- Reviewer has no writing or command tools. Commands require user-systemd resource limits, with no unrestricted fallback.
+- Reviewer has no writing or command tools. In this initial version, commands required user-systemd resource limits, with no unrestricted fallback. This is a historical record: the runner was subsequently replaced with direct processes. See [runner revision validation](./docs/en/execution-cycle-validation.md#local-command-runner-verification-2026-11-20) and the current [security boundaries](./SECURITY.md).
 
 See the [0.0.3 version notes](./docs/en/release-notes-0.0.3.md) for scope, limitations and verification.
 

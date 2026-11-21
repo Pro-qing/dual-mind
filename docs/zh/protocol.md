@@ -98,7 +98,7 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 `dualMind.execution.v1` 保存工作区命令预设和执行摘要。每次执行的 JSONL 历史保存在工作区扩展存储中，位于任务文件之外，每页最多 80 条事件。API 密钥和 Responses 私有推理内容不写入日志。兼容连接新增可选 `protocol: chatCompletions | responses`，缺省使用 Chat Completions，不重写旧记录。请求保留网关前缀，不自动回退到另一协议。
 
-状态包括 preparing、planning、worker、checking、reviewer、pausing、paused、stopping，以及终态 stopped／completed／roundLimit／failed／interrupted。暂停仍占用工作区名额；停止须在取消请求和命令结束后确认。宿主重载将未完成执行标记中断，手动重新执行创建新执行 ID，不重放旧调用。宿主拒绝编辑活动任务及修改关联连接的地址／协议／密钥。删除活动任务先停止执行，再移除可见执行历史，保留 Git 成果。
+状态包括 preparing、planning、worker、checking、reviewer、answering、pausing、paused、stopping，以及终态 answered／stopped／completed／roundLimit／failed／interrupted。answered 仅表示只读答复完成，不是验收通过。暂停仍占用工作区名额；停止须在取消请求和命令结束后确认。宿主重载将未完成执行标记中断，手动重新执行创建新执行 ID，不重放旧调用。宿主拒绝编辑活动任务及修改关联连接的地址／协议／密钥。删除活动任务先停止执行，再移除可见执行历史，保留 Git 成果。
 
 初始规划通过 `submit_plan` 下发方案，`finish_work` 提交成果，`submit_review` 给出验收结论；普通文本不能替代这些工具。每次 Worker 提交后，宿主执行已启用的附加检查，接受验收前核验成果指纹和各项真实证据。双方历史从不合并；手动应用／提交／合并不属于此协议。
 
@@ -106,7 +106,7 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 `TaskInput.git`／`TaskDraft.git` 为可选字段：`{mode: "managed"}`、`{mode: "current"}` 或 `{mode: "branch", branch: "已有本地分支名"}`。旧任务缺省按专用模式解释；编辑时省略字段保留已有选择。宿主拒绝准备后的策略变更，不接受任意路径、版本表达式或 Git 命令参数。
 
-执行操作 `git.branches` 只读返回 `repository: {currentBranch, branches}` 及执行状态，不要求先保存任务，仅列出本地分支。执行状态通过 `preparedTaskIds` 让准备中断后的表单也保持锁定。`RunSummary.git` 保存实际执行绑定，含 `baseCommit`、`headCommit`。旧执行记录缺省使用专用目录登记。`binding(taskId, expected?)` 只验证、不准备；预览／打开目录不能切换分支或重置基准。直接模式每次开始／重新执行检查目录干净并记录新基准，旧记录在分支或 HEAD 不符时拒绝访问。
+执行操作 `git.branches` 只读返回 `repository: {currentBranch, branches}` 及执行状态，不要求先保存任务，仅列出本地分支。执行状态通过 `preparedTaskIds` 让准备中断后的表单也保持锁定。`RunSummary.git` 保存实际执行绑定，含 `baseCommit`、`headCommit`。旧执行记录缺省使用专用目录登记。`binding(taskId, expected?)` 只验证、不准备；预览／打开目录不能切换分支或重置基准。直接模式每次开始／重新执行检查目录干净并记录新基准，旧记录在分支或 HEAD 不符时拒绝访问。聊天续接通过 `binding` 复用目录及未提交成果，不调用 `prepare`，新成果须取得新验证证据。
 
 删除任务保留登记及成果。上文 worktree 人工清理步骤只适用于专用模式，不可对用户当前项目执行；直接模式不会自动还原文件或切回原分支。
 

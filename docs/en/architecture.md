@@ -32,7 +32,7 @@ resources/        Packaged PNG icon and archived branding source
 scripts/          Build, checks, local tests and actual Webview verification
 tests/local/     Store and React interaction tests
 tests/            VS Code extension-host tests
-docs/design/     Eleven adopted SVG/PNG design pairs
+docs/design/     17 approved SVG/PNG design pairs
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          Compatibility CI and collaboration templates
@@ -62,7 +62,7 @@ The host bundle targets Node.js 20 for VS Code 1.100.0, while the development to
 
 Webview resources are limited to its built output, with a nonce-based script CSP and no direct network connections. API key entry uses a host-managed password prompt. The Webview receives only metadata and key-presence status. See the [implemented message boundary](./protocol.md).
 
-Home and detail are separate pages; the native VS Code sidebar opens task detail directly. Below 900 CSS pixels, conversation panels stack and task rows and actions wrap. Narrow settings and dialogs scroll without hiding their actions. Theme colors come from VS Code variables. Both UI languages use the same components and stable role IDs.
+Home and detail are separate pages; the native VS Code sidebar opens task detail directly. Detail uses compact model bars, user messages on the right and AI messages on the left, independent evidence and a persistent composer. Wide windows have an approximately 360 CSS pixel evidence panel; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Task rows and actions wrap, while narrow settings and dialogs scroll without hiding their actions. Theme colors come from VS Code variables. Both UI languages use the same components and stable role IDs.
 
 ## Connection verification and model discovery
 
@@ -90,7 +90,7 @@ Inference requests have a 120-second deadline, 8 MiB response limit and 512 KiB 
 
 The current implementation separates Worker/Reviewer model bindings, workspace tasks and task-specific Reviewer instruction snapshots. Store tests cover same-connection/same-model bindings, cross-task and cross-workspace edits, preset changes, and mutation of input or returned snapshot objects. Discovery integration tests check that saved task requirements, Reviewer instructions and workspace identifiers do not enter model-list requests. User-scoped settings and connection-scoped model-list caches are intentionally shared; neither is conversation history.
 
-The development branch now constructs separate role histories and actual model requests. Worker receives fixed execution instructions; Reviewer receives the saved task role snapshot. Runtime tests capture requests and verify role isolation, rather than inferring it from the two-column interface.
+The development branch now constructs separate role histories and actual model requests. Worker receives fixed execution instructions; Reviewer receives the saved task role snapshot. Runtime tests capture requests and verify role isolation; role labels in the interface do not establish isolation.
 
 Execution maintains independent histories identified by workspace, task, execution instance and agent. A connection or model ID is never a conversation identity, including when both agents use identical endpoints and models. At execution start, freeze the task requirements, acceptance criteria, role instructions and configuration for that execution. Both agents share the requirements and acceptance criteria; each uses only its own role instructions and history. Later settings changes must not rewrite an active execution.
 
@@ -100,7 +100,7 @@ Worker hands over current artifacts and test evidence; Reviewer returns review c
 
 In dedicated mode, `src/git/` implements a lazy host service for the first execution: one `dualmind/task/<task UUID>/worker` branch and a separate worktree per task, outside the source repository under the extension's workspace storage directory. `ExecutionService` calls `TaskWorkspaces.prepare()` before its first model request; `Workbench.prepareTaskWorkspace()` remains a host integration wrapper. Opening settings, querying models or saving tasks does not prepare a workspace.
 
-First preparation in dedicated mode requires Git 2.25+, a trusted single-folder workspace opened at the repository root, a named branch, a commit and a clean source directory (including staged, unstaged and non-ignored untracked files). Bare repositories, submodules, detached HEAD and multiple workspace folders are rejected. An existing linked worktree can be the source. The baseline commit is frozen at first preparation; ignored/generated files are not copied. Existing prepared task files are reused even after the source moves or becomes dirty. No source checkout, automatic commit, stash, fetch, merge, push or dependency installation occurs.
+First preparation in dedicated mode requires Git 2.25+, a trusted single-folder workspace opened at the repository root, a named branch, a commit and a clean source directory (including staged, unstaged and non-ignored untracked files). Bare repositories, submodules, detached HEAD and multiple workspace folders are rejected. An existing linked worktree can be the source. The baseline commit is frozen at first preparation; ignored/generated files are not copied. Existing prepared task files are reused even after the source moves or becomes dirty. The Git preparation service performs no source checkout, automatic commit, stash, fetch, merge, push or dependency installation; Worker may subsequently prepare project dependencies under the plan.
 
 A separate `dualMind.git.workspaces.v1` host record holds the task/repository identity, source branch, baseline commit, task branch, directory and `preparing`/`ready` phase. Intent is saved before Git creation; recovery verifies directory ownership, branch, common repository and baseline ancestry. Matching completed creation can recover a failed final state write. Conflicts, missing ready directories and partial checkouts with modifications are preserved for manual inspection. Preparation is serialized per repository and registry in the host; Git branch/path conflicts also prevent another process from overwriting existing work. Task storage stays version 1 with no migration.
 
@@ -110,7 +110,7 @@ This is a tool-interface boundary, not an operating-system sandbox: external pro
 
 ## Task Git strategies
 
-Tasks optionally select managed (default), current, or an existing local branch. Managed tasks own an external worktree; direct tasks use the trusted opened repository. Strategies lock when preparation intent is registered. Current mode resolves the branch for each new execution; specified mode keeps its saved branch name. Direct executions require cleanliness every time and freeze the target HEAD as baseline. Preparation is serialized per repository; branch switching disables guessing, overwrite-ignore, hooks and filters, and preserves worktree occupancy checks.
+Tasks optionally select managed (default), current, or an existing local branch. Managed tasks own an external worktree; direct tasks use the trusted opened repository. Strategies lock when preparation intent is registered. Current mode resolves the branch at start/restart; specified mode keeps its saved branch name. Direct start/restart requires cleanliness and freezes the target HEAD as baseline. Chat continuation uses the existing binding, retains uncommitted artifacts and obtains fresh evidence without preparing again or switching branches. Preparation is serialized per repository; branch switching disables guessing, overwrite-ignore, hooks and filters, and preserves worktree occupancy checks.
 
 Run summaries retain a complete Git binding (strategy, repository/common directory, working directory, branch, base commit and execution HEAD). Role interfaces and command boundaries verify that binding. Managed baseline reuse remains compatible with old registrations; old absent strategy fields mean managed. No storage version change or bulk migration is needed. The readonly binding lookup used by preview/Explorer never invokes preparation or switches branches. Reviewer permissions and role histories are unaffected. Directories are not OS sandboxes; external changes during an operation cannot be made atomic with arbitrary user processes.
 

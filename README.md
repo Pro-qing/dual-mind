@@ -44,7 +44,7 @@ Independent parallel sessions, automatic editor context and explicit application
 
 ![Approved DualMind parallel-task design reference](./docs/design/dual-mind-workbench.png)
 
-All seven SVG / PNG scenes are retained as adopted design references, and [API model discovery](./docs/design/dual-mind-api-model-discovery.png) and [task model selection](./docs/design/dual-mind-task-model-selection.png) are implemented in the development branch. The published 0.0.1 artifact retains its original behavior. Illustrated parallel execution remains planned; single-task execution is implemented. [Workbench SVG](./docs/design/dual-mind-workbench.svg) · [Full design gallery](./docs/en/design.md).
+The 17 approved SVG/PNG pairs remain design references: scenes 1–7 cover the original workbench and model selection, 8–11 task pages, 12–13 planning and acceptance, and 14–17 [task chat and follow-up](./docs/en/task-chat-proposal.md). Current source implements single-task execution and chat. The image above retains the original workbench design; illustrated parallel execution remains planned. The published 0.0.1 artifact retains its original behavior. [Original workbench SVG](./docs/design/dual-mind-workbench.svg) · [Full design gallery](./docs/en/design.md).
 
 ## Documentation and contribution
 

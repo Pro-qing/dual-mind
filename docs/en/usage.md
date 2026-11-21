@@ -107,11 +107,11 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 The development branch executes tasks in dedicated worktrees or directly on a selected local branch with streaming, checks/review rounds and pause/continue/stop. Automatic editor-context collection, parallel execution and applying dedicated-worktree results to the original workspace remain unavailable. Examples remain isolated read-only content.
 
-The seven [adopted design scenes](./design.md) remain in the repository. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+The 17 [approved design scenes](./design.md) remain in the repository. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
 
 ## Executing tasks (development source)
 
-Open the workbench from the **DualMind activity-bar icon** and create a task. Creation opens its detail page in the pending state. Only **Start** sends inference requests.
+Open the workbench from the **DualMind activity-bar icon** and create a task. Creation opens its detail page in the pending state. For a new task, **Start** begins the first model request and execution.
 
 1. Configure Worker and Reviewer connections, keys and models, selecting Chat Completions or Responses as appropriate. Models must support streaming and tool calls.
 2. Open a trusted single-folder Git repository with a committed named branch and a clean directory for initial preparation. Select a managed worktree, the current branch or an existing local branch.
@@ -121,7 +121,7 @@ Open the workbench from the **DualMind activity-bar icon** and create a task. Cr
 
 Task detail shows the current plan version, steps, criteria, submission and verdict; history retains each plan and actual command records. Results include exit status, output and evidence IDs. Changed artifacts need fresh verification; failed or stale evidence cannot pass. Documentation-only work may use reading review with reasons and concrete evidence. Acceptance does not commit, merge or push.
 
-Pause takes effect at an operation boundary. Feedback submitted while paused is handled by Reviewer at the next planning/acceptance handoff. Continue resumes; Stop cancels requests and commands. Each round is one Worker implementation plus Reviewer acceptance. Exhausted rounds retain outstanding work. Reload marks unfinished runs interrupted; restarting creates a new run and plan. Active/paused tasks and referenced critical connection settings remain locked. Deleting an active task first stops it and preserves Git artifacts.
+Pause takes effect at an operation boundary. Chat messages can be submitted while running or paused; Reviewer handles them at role handoffs, and sending does not automatically resume a manual pause. Continue resumes; Stop cancels requests and commands. Each round is one Worker implementation plus Reviewer acceptance. Exhausted rounds retain outstanding work. Reload marks unfinished runs interrupted; restarting creates a new run and plan. Active/paused tasks and referenced critical connection settings remain locked. Deleting an active task first stops it and preserves Git artifacts.
 
 ### Advanced settings: additional custom commands
 
@@ -133,11 +133,13 @@ Commands run directly as the current user in the task directory or an ordinary s
 
 ## Development branch selection (development builds)
 
-New tasks default to **Use a DualMind dedicated branch**. Choose **Use the current branch** to work directly in the opened project on the branch checked out at execution start, or **Use a specified local branch** to select an existing local branch and switch to it before execution. Refreshing the branch list and saving a task never switch or create branches. No remote fetch or branch creation is performed in direct modes.
+New tasks default to **Use a DualMind dedicated branch**. Choose **Use the current branch** to work directly in the opened project on the branch checked out at start/restart, or **Use a specified local branch** to select an existing local branch and switch to it before execution. Refreshing the branch list and saving a task never switch or create branches. No remote fetch or branch creation is performed in direct modes.
 
 Every start/restart in direct mode requires a clean directory, including staged, unstaged and non-ignored untracked files. Commit or otherwise handle previous results yourself before restarting. Branches occupied by another worktree, ignored-file collisions and target submodules block switching. Once preparation has registered a directory, the strategy is locked; create a new task to change it. Old tasks retain dedicated mode.
 
-Direct execution changes your project files. Stop, completion and deletion do not undo changes or switch back. **Show current project files** focuses Explorer; preview uses the execution's fixed branch/HEAD and never switches branches. Each direct run records a fresh baseline from the target HEAD. A branch/HEAD change invalidates further access to that run; use a new execution after handling changes. Dedicated runs keep their existing baseline and retained worktree. Reviewer remains read-only in either mode. These changes are not in the published 0.0.1 artifact.
+Direct execution changes your project files. Stop, completion and deletion do not undo changes or switch back. **Show current project files** focuses Explorer; preview uses the execution's fixed branch/HEAD and never switches branches. Each direct start/restart records a fresh baseline from the target HEAD. Chat continuation validates and reuses the existing binding and uncommitted artifacts without resetting the baseline. A branch/HEAD change invalidates further access to that run; use a new execution after handling changes. Dedicated runs keep their existing baseline and retained worktree. Reviewer remains read-only in either mode. These changes are not in the published 0.0.1 artifact.
+
+The manual worktree cleanup instructions in the [protocol guide](./protocol.md#internal-git-workspace-service) apply only to managed mode; never use them to remove the user’s directly opened project.
 
 ## Task chat, questions and continued changes
 

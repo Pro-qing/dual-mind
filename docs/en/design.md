@@ -1,4 +1,4 @@
-# UI designs: adopted workbench and model-discovery scenes
+# UI designs: current implementation and historical references
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
@@ -9,21 +9,35 @@
 
 **Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
 
-**All seven scenes are adopted; scenes 6–7 are implemented in the development branch.** Original SVG/PNG files and their historical review labels remain unchanged. Drawings contain illustrative content, not live API results. Published 0.0.1 retains local settings; the development branch adds explicit model-list queries and selection. The development branch now also implements single-task execution, streaming and review rounds; original-workspace application and parallel execution remain planned. See [Usage](./usage.md).
+**There are currently 17 approved SVG/PNG pairs.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, and 14–17 current task chat and follow-up. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; dedicated-worktree application and parallel execution remain planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
 
-Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. English interface labels are explained in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
+Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. Early scenes use English labels; later revisions mainly use Simplified Chinese. Each group has explanations in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
 
 ## Design gallery
 
-| Scene                      | Editable source                                     | Preview                                             |
-| -------------------------- | --------------------------------------------------- | --------------------------------------------------- |
-| 1. Parallel task workbench | [SVG](../design/dual-mind-workbench.svg)            | [PNG](../design/dual-mind-workbench.png)            |
-| 2. API Connections         | [SVG](../design/dual-mind-api-settings.svg)         | [PNG](../design/dual-mind-api-settings.png)         |
-| 3. Reviewer Roles          | [SVG](../design/dual-mind-reviewer-roles.svg)       | [PNG](../design/dual-mind-reviewer-roles.png)       |
-| 4. New task                | [SVG](../design/dual-mind-new-task.svg)             | [PNG](../design/dual-mind-new-task.png)             |
-| 5. Delete task             | [SVG](../design/dual-mind-delete-task.svg)          | [PNG](../design/dual-mind-delete-task.png)          |
-| 6. API model discovery     | [SVG](../design/dual-mind-api-model-discovery.svg)  | [PNG](../design/dual-mind-api-model-discovery.png)  |
-| 7. Task model selection    | [SVG](../design/dual-mind-task-model-selection.svg) | [PNG](../design/dual-mind-task-model-selection.png) |
+| Scene                               | Editable source                                            | Preview                                                    |
+| ----------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
+| 1. Parallel task workbench          | [SVG](../design/dual-mind-workbench.svg)                   | [PNG](../design/dual-mind-workbench.png)                   |
+| 2. API Connections                  | [SVG](../design/dual-mind-api-settings.svg)                | [PNG](../design/dual-mind-api-settings.png)                |
+| 3. Reviewer Roles                   | [SVG](../design/dual-mind-reviewer-roles.svg)              | [PNG](../design/dual-mind-reviewer-roles.png)              |
+| 4. New task                         | [SVG](../design/dual-mind-new-task.svg)                    | [PNG](../design/dual-mind-new-task.png)                    |
+| 5. Delete task                      | [SVG](../design/dual-mind-delete-task.svg)                 | [PNG](../design/dual-mind-delete-task.png)                 |
+| 6. API model discovery              | [SVG](../design/dual-mind-api-model-discovery.svg)         | [PNG](../design/dual-mind-api-model-discovery.png)         |
+| 7. Task model selection             | [SVG](../design/dual-mind-task-model-selection.svg)        | [PNG](../design/dual-mind-task-model-selection.png)        |
+| 8. Task home                        | [SVG](../design/dual-mind-task-home-proposal.svg)          | [PNG](../design/dual-mind-task-home-proposal.png)          |
+| 9. Task detail                      | [SVG](../design/dual-mind-task-detail-proposal.svg)        | [PNG](../design/dual-mind-task-detail-proposal.png)        |
+| 10. Create task                     | [SVG](../design/dual-mind-task-create-proposal.svg)        | [PNG](../design/dual-mind-task-create-proposal.png)        |
+| 11. Errors and narrow view          | [SVG](../design/dual-mind-task-states-proposal.svg)        | [PNG](../design/dual-mind-task-states-proposal.png)        |
+| 12. Planning and acceptance         | [SVG](../design/dual-mind-execution-cycle-proposal.svg)    | [PNG](../design/dual-mind-execution-cycle-proposal.png)    |
+| 13. Additional command settings     | [SVG](../design/dual-mind-execution-settings-proposal.svg) | [PNG](../design/dual-mind-execution-settings-proposal.png) |
+| 14. Chat and evidence panel         | [SVG](../design/dual-mind-task-chat-proposal.svg)          | [PNG](../design/dual-mind-task-chat-proposal.png)          |
+| 15. Narrow evidence drawer          | [SVG](../design/dual-mind-task-chat-narrow-proposal.svg)   | [PNG](../design/dual-mind-task-chat-narrow-proposal.png)   |
+| 16. Queued messages                 | [SVG](../design/dual-mind-task-chat-queued-proposal.svg)   | [PNG](../design/dual-mind-task-chat-queued-proposal.png)   |
+| 17. Questions and continued changes | [SVG](../design/dual-mind-task-chat-followup-proposal.svg) | [PNG](../design/dual-mind-task-chat-followup-proposal.png) |
+
+## Historical descriptions of scenes 1–7
+
+The following sections preserve the original workbench/model-selection context, including its two columns, draft terminology and intended parallel interactions; they do not describe all current capabilities. Scenes 8–11 and 12–13 record the intermediate task-page and execution-cycle revisions. Scenes 14–17 and the usage guide describe current chat layout.
 
 ### 1. Parallel task workbench
 
@@ -126,7 +140,7 @@ The editable combobox has an accessible label, keyboard focus, and a scrollable 
 
 Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection settings use one scrollable column, with wrapping query controls and status text. Menus stay within the visible dialog, scroll independently, and may open upward when space below is limited. Save/cancel actions remain reachable. Reference-state cards in these drawings are explanatory material, not additional runtime panels.
 
-## Layout and state conventions
+## Historical layout and state conventions for scenes 1–7
 
 - Tasks and conversation history are organized by workspace. Connections, default model bindings, and role presets are local to the VS Code user. Credential values belong in the host's secret storage.
 - Background progress updates the task list; the selected task alone supplies the two conversation columns. A task reaching an error, pause, or completion does not stop another task.
@@ -135,13 +149,13 @@ Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection setti
 
 ## Review and implementation gate
 
-The owner has adopted scenes 1–7. The development branch implements explicit API queries and shared model selectors with isolated tests. Historical labels inside the original artwork are preserved; they do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
+The owner has approved the existing 17 designs. Future interface changes require an updated SVG proposal and explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
 
 See [Architecture](./architecture.md) for implemented module responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. Implemented settings/execution messages, role handoffs and file-access boundaries are documented there.
 
 ## Updating and validating previews
 
-SVG is the editable source. Keep a same-name PNG beside every SVG. Preserve the approved five pairs byte-for-byte. Use a separate Python environment with CairoSVG 2.7.1, and regenerate only these model-discovery scenes from the repository root:
+SVG is the editable source. Keep a same-name PNG beside every SVG. Preserve approved assets and obtain design review before revisions. The following maintenance commands regenerate only model-discovery scenes 6–7; each other proposal documents its own commands and scope. Use a separate Python environment with CairoSVG 2.7.1, from the repository root:
 
 ```bash
 for scene in dual-mind-api-model-discovery dual-mind-task-model-selection; do
@@ -151,8 +165,8 @@ npm run docs:check
 npm run format:check
 ```
 
-Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair, requires all seven scenes, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. This design-only delivery does not rebuild or replace a published VSIX. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
+Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair (currently 17), requires the original baseline scenes 1–7, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Updating designs or documentation does not indicate that a public VSIX has been rebuilt or replaced. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
 
 ## Execution interface in the development branch
 
-The existing drawings remain unchanged references. The actual settings tabs are API Connections, Defaults for new tasks, Task execution and Reviewer Roles. The activity-bar icon opens a native task sidebar and the existing singleton workbench. Execution adds streamed role output, check evidence, pause/continue/stop and manual-result controls to scene 1. One task runs per workspace; examples of parallel execution remain future behavior.
+The actual settings tabs are API Connections, Defaults for new tasks, Task execution and Reviewer Roles. The activity-bar icon opens a native task sidebar and the singleton workbench. Current detail uses scenes 14–17: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with progress output and command details expanded in evidence. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace. The original two-column, parallel-execution and apply-result controls remain historical designs; see [Usage](./usage.md) for current behavior and [task chat validation](./task-chat-validation.md) for actual coverage.

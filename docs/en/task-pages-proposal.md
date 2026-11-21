@@ -6,6 +6,8 @@
 
 The agreed interaction uses one VS Code tab for the home and task detail pages. Creating a task opens its detail page in the **Pending** state; the user clicks **Start**. Remove the task “draft” concept from the product interface. Existing defaults, role snapshots, model selection, and Git strategies continue to apply.
 
+Subsequent revision: [task chat and follow-up, scenes 14–17](./task-chat-proposal.md), supersedes this proposal’s two-column detail layout. The descriptions and images below retain the design approved on 2026-11-20. Home navigation, manual start, error compatibility and data rules still apply; see [Usage](./usage.md) for current layout.
+
 ## Previews
 
 Each canvas is 1440 × 900. These proposals use Simplified Chinese for the main interface, with an English error example in scene 11; the implementation displays one language according to its setting. Graphics and text remain editable, with no external images, font downloads, or scripts. Review notes along the bottom are not product content.

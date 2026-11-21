@@ -12,7 +12,7 @@
 | [Development](./development.md)                         | nvm, build commands, debugging, and tests                                               |
 | [Architecture](./architecture.md)                       | Implemented workbench, storage boundaries, branding assets, and module responsibilities |
 | [Host/UI protocol](./protocol.md)                       | Settings/model queries, execution messages, role handoffs and Git bindings              |
-| [UI design](./design.md)                                | Seven adopted SVG/PNG scenes, including model discovery                                 |
+| [UI design](./design.md)                                | 17 approved SVG/PNG scenes covering task pages, execution and chat                      |
 | [Roadmap](./roadmap.md)                                 | Versioned progress, implemented execution and remaining capabilities                    |
 | [Packaging and releases](./releasing.md)                | Publication history and the workflow for future GitHub / Marketplace versions           |
 | [Licensing](./licensing.md)                             | MIT license and bundled third-party notices                                             |
@@ -22,12 +22,17 @@ Repository policies: [contribution guide](../../CONTRIBUTING.md), [code of condu
 
 Release history: [Preview 1](./release-notes.md).
 
-New design review: [Task chat and follow-up](./task-chat-proposal.md), with four SVG/PNG pairs awaiting review and implementation status recorded separately.
+## Design revisions and validation
+
+The following revisions were approved and implemented on 2026-11-20. Static designs and actual validation are recorded separately; earlier scenes remain historical references.
+
+- [Task home, detail and errors](./task-pages-proposal.md): scenes 8–11, separate pages, manual start and bilingual errors.
+- [Dual-agent planning and acceptance](./execution-cycle-proposal.md): scenes 12–13; see [execution-cycle validation](./execution-cycle-validation.md) for actual coverage.
+- [Task chat and follow-up](./task-chat-proposal.md): scenes 14–17; see [task chat validation](./task-chat-validation.md) for actual coverage.
+
+The [development log](./development-log.md) records code/documentation review, design approval, implementation and actual validation.
 
 ## Local source versions
 
 - [0.0.3](./release-notes-0.0.3.md): current source version, unpublished.
 - [0.0.2](./release-notes-0.0.2.md): model discovery, settings and Git preparation foundations.
-
-- [Development log](./development-log.md): design approval, implementation and validation progress.
-- [Task chat validation](./task-chat-validation.md): actual conversation and evidence coverage.

@@ -28,6 +28,44 @@ npm ci
 
 `.npmrc` enables strict engine checks. The environment check also runs before installation, checks, builds, and watch commands. Do not bypass `EBADENGINE` with `--force` or replace the system Node.js binary. Load nvm and select the repository version instead. nvm selection is per shell; run `nvm use` in each new terminal.
 
+## Code and documentation synchronization
+
+Code and corresponding documentation must be completed in the same change. Searching, reviewing and recording documentation impact are delivery requirements; checking links or the existence of translations alone is insufficient.
+
+1. Identify affected features, modules, interfaces, message/configuration fields, user actions and behavioral limits from the code diff. Include English and Chinese terms, plus both old and new names.
+2. Use `rg` to search relevant documentation throughout the repository, including root guides/policies, `docs/en/`, `docs/zh/`, module READMEs and `.github/` templates. Start with a command such as the following, replace the example terms, and expand the search through references and new findings instead of checking only one known page:
+
+   ```bash
+   rg -n --hidden -g '*.md' -g '!.git/**' -g '!node_modules/**' -g '!dist/**' -g '!out/**' -g '!release/**' -g '!.vscode-test/**' -g '!.test-workspace/**' -g '!coverage/**' 'TaskChat|message.send|任务聊天|task chat' .
+   ```
+
+3. Read each match in context and follow related sections. Compare descriptions, examples, defaults, boundaries/limitations, implementation/approval/publication status and cross-references against the code. Update both languages and repeated descriptions; document new behavior in the relevant guide when coverage is missing.
+4. Distinguish current descriptions from historical designs, releases and validation records. Current descriptions follow the code. Preserve historical dates, results, failures and unverified cases; add revision notes and current-document links where clarification is needed. Designs, CI configuration and old passing tests are not evidence of current validation.
+5. Every code change must append corresponding entries to the [English development log](./development-log.md) and [Chinese development log](../zh/development-log.md). Record the actual date, change, search terms and reviewed files/sections, documentation updates, executed checks and results, and unrun checks/limitations. Even when no text needs updating, record the review scope and specific reason. Documentation-only synchronization also records the review and checks actually performed.
+6. Run checks appropriate to the change, then search again for old terms and contradictory descriptions. Confirm that remaining matches have an explicit historical context. Confirm documentation review, bilingual synchronization and development-log entries separately in the PR.
+
+For documentation-only changes, run `npm run docs:check`, `npm run format:check` and `git diff --check`. The first two validate links/assets/language pairs and formatting, not semantic accuracy. Code changes still require the relevant engineering checks and tests from the [contribution guide](../../CONTRIBUTING.md). Log only actual results, without reusing historical conclusions.
+
+## Git commit messages
+
+Every new Git commit must include English and Simplified Chinese, including documentation changes. Retain the existing type prefix and use `type(scope): English summary / 中文摘要`, with an optional scope. Both languages must describe the same change; translations in a PR or development log cannot replace a bilingual commit message. This rule applies to new commits; do not rewrite existing history merely to add translations.
+
+When a body is needed, use separate `English:` and `中文：` sections covering the reason, final behavior, actual validation and relevant limitations in the same order. Keep filenames, commands and interface identifiers unchanged. A short commit may consist only of its bilingual subject. The following is a format example; replace validation placeholders with actual results for the change:
+
+```text
+docs: synchronize documentation / 同步文档
+
+English:
+Update current behavior descriptions and document the required review workflow.
+Validation: <checks actually run and their results; unrun checks and limitations>.
+
+中文：
+同步现行行为说明，并记录必须执行的文档核对流程。
+验证：<实际执行的检查及结果；未运行项与限制>。
+```
+
+Before committing, review the staged diff, matching bilingual meaning and validation record. Use a UTF-8 message file with `git commit --file <message-file>` for multiline messages, preserving actual newlines instead of interpolating the body into a shell command.
+
 ## Build and debug
 
 ```bash

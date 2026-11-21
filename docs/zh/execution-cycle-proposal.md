@@ -4,6 +4,8 @@
 
 状态：已审核并实现。日期：2026-11-20。原有场景 1–11 保留。本提案是实施依据，不是运行验证结果。
 
+后续修订：[任务聊天与持续追问](./task-chat-proposal.md)已将下述双栏详情改为聊天及独立证据面板。这里保留原设计；Reviewer 规划、Worker 实施、Reviewer 验收及附加命令设置的约定继续适用，当前布局见[使用说明](./usage.md)。
+
 ## 任务详情
 
 [可编辑 SVG](../design/dual-mind-execution-cycle-proposal.svg)

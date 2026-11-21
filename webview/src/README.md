@@ -4,6 +4,6 @@
 
 `App.tsx` 管理导航和语言切换，`Tasks.tsx` 管理任务主页、详情、共用表单及隔离示例，`Settings.tsx` 编辑连接和 Reviewer 配置，`bridge.ts` 关联宿主请求与确认。样式使用 VS Code 主题变量，详见 [Webview 概述](../README.md)。
 
-`RunDetail.tsx` renders plans, submissions, acceptance and command evidence; `Execution.tsx` provides execution controls and optional advanced custom commands.
+`TaskChat.tsx` manages task conversation, message sending, independent evidence pages, history scrolling and the narrow evidence drawer. `RunDetail.tsx` renders plans, submissions, acceptance and command evidence; `Execution.tsx` provides execution controls and optional advanced custom commands.
 
-`RunDetail.tsx` 展示方案、成果提交、验收与命令证据；`Execution.tsx` 提供执行控制及可选的高级自定义命令。
+`TaskChat.tsx` 管理任务聊天、消息发送、独立证据分页、历史滚动和窄窗口证据抽屉。`RunDetail.tsx` 展示方案、成果提交、验收与命令证据；`Execution.tsx` 提供执行控制及可选的高级自定义命令。
