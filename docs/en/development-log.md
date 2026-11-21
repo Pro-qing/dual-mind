@@ -2,6 +2,16 @@
 
 [简体中文](../zh/development-log.md) · [Development guide](./development.md)
 
+## 2026-11-21 — 0.0.4 version record and nvm environment
+
+- **Change:** bump the extension and lockfile root versions to 0.0.4 from the existing source, adding bilingual version notes and updating indexes, home pages and current documentation status. Product code, dependencies and storage protocols are unchanged.
+- **Machine configuration:** installed nvm 0.41.0 and Node.js 24.22.3/npm 11.19.1 in the user directory, selecting the version with `.nvmrc`. Bash loads nvm with `--no-use`, the default alias retains system Node.js 26.13.1/npm 11.20.0, and the previous `.bashrc` is backed up. Switching and restoration passed; system Node.js/npm file checksums were unchanged. User-directory configuration is outside the Git commit.
+- **Search and review:** used `rg` for 0.0.3/0.0.4, nvm/Node.js/`.nvmrc`, 系统/默认版本 and system/default version. Reviewed root contribution rules, bilingual environment/development/releasing/architecture/protocol/design/usage/roadmap/index guides, toolchain records, earlier version notes, changelogs and development logs against package metadata, the lockfile, environment checks, VS Code build tasks and the nvm wrapper.
+- **Updated and retained content:** synchronized current version references and explicit nvm switching instructions. Historical tags, publication records, validation results and toolchain initialization records remain. Existing `.nvmrc`, engine constraints and build scripts already support Node.js 24 and need no changes.
+- **Validation:** on Ubuntu 24.04.5 amd64 with nvm-managed Node.js 24.22.3 and Git 2.43.0, `npm run check:env`, `npm run docs:check`, `npm run format:check` and `git diff --check` passed. Documentation checks covered 65 Markdown files, 594 local links, 27 language pairs and 17 SVG/PNG pairs. Confirmed that package and lockfile changes affect root version fields only; runtime source, dependencies and build logic are unchanged. The full `npm run check`, builds, packaging, extension-host tests and real UI tests were not run for this commit; historical passes are not carried forward.
+- **Artifact review:** the user chose to build, package and install manually. Before committing, confirmed that the local 0.0.4 VSIX exists, its ZIP is intact, its manifest identity/version/Preview flag are correct, and it contains 100 files. VS Code CLI lists `pro-qing.dual-mind@0.0.4`. No separate checksum file exists. Bundled documentation predates these record corrections; the package was not rebuilt and workbench behavior was not tested.
+- **Scope:** create a bilingual Git commit containing version metadata and documentation only. VSIX files, user-directory configuration and other build artifacts are excluded; no release tag, push or public distribution.
+
 ## 2026-11-21 — Bilingual Git commit messages
 
 - **Change:** new commit subjects must include English and Simplified Chinese. Any body must provide corresponding bilingual reasons, behavior and actual validation; existing commit history is retained.

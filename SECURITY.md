@@ -4,7 +4,7 @@
 
 ## Current source scope
 
-DualMind 0.0.3 is a local, unpublished source version. Public 0.0.1 artifacts retain historical behavior. API keys enter through the native VS Code password prompt and remain in SecretStorage; the Webview receives only saved status. The host validates messages; the Webview uses nonce-based CSP and disallows direct network access.
+DualMind 0.0.4 is a local, unpublished source version. Public 0.0.1 artifacts retain historical behavior. API keys enter through the native VS Code password prompt and remain in SecretStorage; the Webview receives only saved status. The host validates messages; the Webview uses nonce-based CSP and disallows direct network access.
 
 The host sends task requirements, the corresponding role instructions and needed file/tool content to the configured model endpoint. Roles retain separate histories and exchange artifacts/evidence only. Public logs and execution records exclude API keys, but task text and code can contain sensitive information; evaluate the actual endpoint and task scope.
 

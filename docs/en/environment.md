@@ -2,7 +2,7 @@
 
 [简体中文](../zh/environment.md) · [Documentation](./README.md)
 
-**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
+**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
 
 ## Supported baseline
 
@@ -27,11 +27,13 @@ sudo apt-get update
 sudo apt-get install -y ca-certificates curl git
 ```
 
-Install nvm using its [official installation instructions](https://github.com/nvm-sh/nvm#installing-and-updating). Open a new terminal or load an existing installation:
+Install nvm using its [official installation instructions](https://github.com/nvm-sh/nvm#installing-and-updating). To preserve the machine's default Node.js, add `--no-use` to the command that loads `nvm.sh` in your shell startup file. This loads version management without automatically selecting a version. Open a new terminal or load an existing installation:
 
 ```bash
-source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+source "${NVM_DIR:-$HOME/.nvm}/nvm.sh" --no-use
 ```
+
+For a new nvm installation on a machine previously using system Node.js, run `nvm alias default system` before the first `nvm install` so the project version does not become the default. Preserve any existing nvm default alias. `--no-use` retains the PATH inherited when the shell starts; it does not force an existing terminal back from a project version to the system version.
 
 From the repository root:
 
@@ -46,6 +48,8 @@ npm ci
 ```
 
 Both nvm commands read `.nvmrc`, which contains `24`. Run `nvm use` again in each new terminal. Avoid Ubuntu 20.04's system Node.js 10.19.0; keep it installed if other software needs it, and select the development version through nvm. Do not replace `/usr/bin/node` or bypass `.npmrc` engine checks with `--force`.
+
+After project work, run `nvm use system` in the same terminal to return to the system version; `nvm deactivate` removes the nvm version path from the current shell. Changing directories alone does not switch Node.js.
 
 CI uses `actions/setup-node` to read the same `.nvmrc`; it does not need a separate nvm installation.
 

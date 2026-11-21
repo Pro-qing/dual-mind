@@ -2,7 +2,7 @@
 
 [English](../en/environment.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.3 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-20；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.3 版本说明](./release-notes-0.0.3.md)。
+**当前源码版本：0.0.4 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-21；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.4 版本说明](./release-notes-0.0.4.md)。
 
 ## 支持基线
 
@@ -27,11 +27,13 @@ sudo apt-get update
 sudo apt-get install -y ca-certificates curl git
 ```
 
-按照 [nvm 官方安装说明](https://github.com/nvm-sh/nvm#installing-and-updating)安装 nvm。重新打开终端，或加载已有安装：
+按照 [nvm 官方安装说明](https://github.com/nvm-sh/nvm#installing-and-updating)安装 nvm。需要保留本机默认 Node.js 时，在 shell 启动文件中为加载 `nvm.sh` 的命令加上 `--no-use`，只加载版本管理功能，不自动选择版本。重新打开终端，或加载已有安装：
 
 ```bash
-source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+source "${NVM_DIR:-$HOME/.nvm}/nvm.sh" --no-use
 ```
+
+如果是新安装的 nvm，且本机此前使用系统 Node.js，在首次 `nvm install` 前执行 `nvm alias default system`，防止首次安装把项目版本设为默认。已有 nvm 默认别名时保留原值。`--no-use` 会保留启动 shell 时继承的 PATH；它不会强制把已有终端从项目版本切回系统版本。
 
 在仓库根目录执行：
 
@@ -46,6 +48,8 @@ npm ci
 ```
 
 两条 nvm 命令均读取内容为 `24` 的 `.nvmrc`。每次打开新终端后重新执行 `nvm use`。避免使用 Ubuntu 20.04 自带的 Node.js 10.19.0；其他软件如有需要，可以继续保留系统版本，通过 nvm 选择开发版本即可。不要替换 `/usr/bin/node`，也不要用 `--force` 绕过 `.npmrc` 的引擎检查。
+
+完成项目工作后，在同一终端执行 `nvm use system` 可切回系统版本；`nvm deactivate` 可移除当前 shell 的 nvm 版本路径。仅切换目录不会自动切换 Node.js。
 
 CI 通过 `actions/setup-node` 读取同一份 `.nvmrc`，无需单独安装 nvm。
 

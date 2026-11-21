@@ -2,7 +2,7 @@
 
 [简体中文](../zh/README.md) · [Project home](../../README.md)
 
-**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
+**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
 
 | Guide                                                   | Contents                                                                                |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -34,5 +34,6 @@ The [development log](./development-log.md) records code/documentation review, d
 
 ## Local source versions
 
-- [0.0.3](./release-notes-0.0.3.md): current source version, unpublished.
+- [0.0.4](./release-notes-0.0.4.md): current source and local VSIX, unpublished.
+- [0.0.3](./release-notes-0.0.3.md): previous local source version, unpublished.
 - [0.0.2](./release-notes-0.0.2.md): model discovery, settings and Git preparation foundations.

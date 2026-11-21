@@ -2,7 +2,7 @@
 
 [English](../en/releasing.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.3 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-20；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.3 版本说明](./release-notes-0.0.3.md)。
+**当前源码版本：0.0.4 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-21；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.4 版本说明](./release-notes-0.0.4.md)。
 
 ## 0.0.1 历史发布记录
 
@@ -86,4 +86,4 @@ Marketplace 展示上传扩展包中的 README，提交或推送 GitHub 文档�
 
 官方参考：[扩展发布](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)、[扩展清单](https://code.visualstudio.com/api/references/extension-manifest)和 [GitHub 发布文档](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。API 凭据不得写入源码或暴露在命令参数中。
 
-本地源码标签 `v0.0.3` 不代表已公开发布。发布前需验证待发布的精确提交及目标编辑器／系统组合，并单独完成打包、安装、推送和双端发布流程。本次不执行这些发布步骤。
+历史本地源码标签 `v0.0.3` 与当前 0.0.4 本地 VSIX 均不代表已公开发布。本次版本记录提交不创建或推送标签，也不上传 Marketplace／GitHub Release；本地包及已安装版本的核对范围见版本说明。公开发布前仍需验证待发布的精确提交及目标编辑器／系统组合，再完成上述分发流程；本次实际检查见[0.0.4 版本说明](./release-notes-0.0.4.md)。

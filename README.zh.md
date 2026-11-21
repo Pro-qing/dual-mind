@@ -8,13 +8,13 @@ DualMind 是一个面向 VS Code 的 AI 结对编程插件项目，将任务准�
 
 ## 项目状态
 
-**当前源码 0.0.3 · 本地版本记录 · 尚未发布**
+**当前源码 0.0.4 · 本地版本记录 · 尚未发布**
 
-React 工作台支持本地任务、连接设置、Reviewer 预设和中英文切换。0.0.3 已提供独立角色历史、Worker 执行、只读 Reviewer 审查和活动栏入口；任务可使用专用 worktree 或直接修改选定本地分支，将专用目录成果应用回原工作区仍待实现，可选示例继续保持只读。
+React 工作台支持本地任务、连接设置、Reviewer 预设和中英文切换。0.0.4 已提供独立角色历史、Worker 执行、只读 Reviewer 审查和活动栏入口；任务可使用专用 worktree 或直接修改选定本地分支，将专用目录成果应用回原工作区仍待实现，可选示例继续保持只读。
 
 历史发布记录：0.0.1 已于 2026-11-18 上架 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind)，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**，带有 Preview 标记。[GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 同日发布。[发布说明](./docs/zh/release-notes-preview-2.md)。
 
-[0.0.3 版本说明](./docs/zh/release-notes-0.0.3.md)记录本次源码能力与验证；[更新日志](./CHANGELOG.zh.md)区分本地版本和历史公开制品。
+[0.0.4 版本说明](./docs/zh/release-notes-0.0.4.md)记录本次源码能力与验证；[更新日志](./CHANGELOG.zh.md)区分本地版本和历史公开制品。
 
 ## 两种互补角色
 

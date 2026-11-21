@@ -2,6 +2,13 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.4 — Local package (unpublished, 2026-11-21)
+
+- Package the current source as 0.0.4, including the still-publicly-unreleased task chat, follow-up and documentation conventions recorded below. This packaging action adds no runtime features.
+- Synchronize extension/lockfile versions, bilingual current-version notes and navigation, retaining historical versions and validation records.
+- Document explicit nvm selection of Node.js 24, preservation of the machine default and return to the system version.
+- See the [0.0.4 version notes](./docs/en/release-notes-0.0.4.md) and [development log](./docs/en/development-log.md) for local scope, actual checks and limitations; installed-version registration is recorded separately from behavior validation, with no public distribution.
+
 ## Unreleased — Development rules and documentation synchronization (2026-11-21)
 
 - Require repository-wide documentation review after code changes, synchronized English/Chinese updates in the same change, and bilingual development-log entries even when no text update is needed.
@@ -18,7 +25,7 @@
 
 ## 0.0.3 — Local source version (unpublished)
 
-Recorded 2026-11-20; local annotated tag `v0.0.3`. This does not indicate a Marketplace update or a GitHub Release. The entries below preserve the initial tag’s historical capabilities; subsequent source revisions are described in the unreleased entries above and the [current version notes](./docs/en/release-notes-0.0.3.md).
+Recorded 2026-11-20; local annotated tag `v0.0.3`. This does not indicate a Marketplace update or a GitHub Release. The entries below preserve the initial tag’s historical capabilities; subsequent source revisions are described in the unreleased entries above and the [0.0.3 version notes](./docs/en/release-notes-0.0.3.md).
 
 - Add Chat Completions/Responses streaming inference and tool adapters, independent Worker/Reviewer histories and frozen execution snapshots.
 - Connect preparation commands, Worker edits, all preset checks, Reviewer review and revisions; add round limits, pause/continue/stop, feedback and reload interruption.

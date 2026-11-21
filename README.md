@@ -8,13 +8,13 @@ DualMind is an AI pair-programming extension project for VS Code. It brings task
 
 ## Project status
 
-**Source 0.0.3 · Local version record · Unpublished**
+**Source 0.0.4 · Local version record · Unpublished**
 
-The React workbench supports local tasks, connection settings, Reviewer presets, and English / Simplified Chinese. Source 0.0.3 provides independent role histories, Worker execution, read-only review and an activity-bar entry. Tasks may use dedicated worktrees or directly edit a selected local branch; applying dedicated-worktree results back to the original workspace remains planned. The optional conversation preview is explicitly read-only example content.
+The React workbench supports local tasks, connection settings, Reviewer presets, and English / Simplified Chinese. Source 0.0.4 provides independent role histories, Worker execution, read-only review and an activity-bar entry. Tasks may use dedicated worktrees or directly edit a selected local branch; applying dedicated-worktree results back to the original workspace remains planned. The optional conversation preview is explicitly read-only example content.
 
 Historical 0.0.1 publication: available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) as **Pro-qing.dual-mind**, version **0.0.1**, published 2026-11-18 with the Preview label. [GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) was also published on 2026-11-18. [Release notes](./docs/en/release-notes-preview-2.md).
 
-The [0.0.3 version notes](./docs/en/release-notes-0.0.3.md) record source capabilities and verification. The [changelog](./CHANGELOG.md) distinguishes local versions from historical public artifacts.
+The [0.0.4 version notes](./docs/en/release-notes-0.0.4.md) record source capabilities and verification. The [changelog](./CHANGELOG.md) distinguishes local versions from historical public artifacts.
 
 ## Two complementary roles
 

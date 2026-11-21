@@ -2,7 +2,7 @@
 
 [English](../en/development.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.3 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-20；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.3 版本说明](./release-notes-0.0.3.md)。
+**当前源码版本：0.0.4 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-21；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.4 版本说明](./release-notes-0.0.4.md)。
 
 ## 开发环境
 
@@ -11,7 +11,7 @@
 如果已安装 nvm 但终端未加载，可执行：
 
 ```bash
-source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+source "${NVM_DIR:-$HOME/.nvm}/nvm.sh" --no-use
 ```
 
 如果尚未安装 nvm，请按 [nvm 官方安装说明](https://github.com/nvm-sh/nvm#installing-and-updating)完成安装并重新打开终端。日常开发无需全局安装 Yeoman。
@@ -26,7 +26,7 @@ npm run check:env
 npm ci
 ```
 
-`.npmrc` 启用了严格引擎检查；安装、综合检查、构建和监听命令前还会运行环境检查。遇到 `EBADENGINE` 时，请加载 nvm 并切换版本，不要用 `--force` 绕过检查或替换系统 Node.js。nvm 的选择对当前终端生效；新终端需要再次执行 `nvm use`。
+`.npmrc` 启用了严格引擎检查；安装、综合检查、构建和监听命令前还会运行环境检查。遇到 `EBADENGINE` 时，请加载 nvm 并切换版本，不要用 `--force` 绕过检查或替换系统 Node.js。nvm 的选择对当前终端生效；新终端需要再次执行 `nvm use`。保留本机默认版本的初始化方式见[环境说明](./environment.md#准备开发工具链)；完成项目工作后执行 `nvm use system` 可切回系统 Node.js，切换目录本身不会自动切换版本。
 
 ## 代码与文档同步
 

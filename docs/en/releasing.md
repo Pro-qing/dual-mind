@@ -2,7 +2,7 @@
 
 [简体中文](../zh/releasing.md) · [Documentation](./README.md)
 
-**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
+**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
 
 ## Historical 0.0.1 publication
 
@@ -86,4 +86,4 @@ Marketplace displays the README from the uploaded extension package. Committing 
 
 Official references: [Publishing extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension), [Extension manifest](https://code.visualstudio.com/api/references/extension-manifest), and [GitHub releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository). API credentials must not be stored in source files or exposed in command arguments.
 
-The local source tag `v0.0.3` is not a public release. Before publication, validate the exact candidate commit and target editor/OS matrix, then separately package, install, push and publish. These distribution steps are not performed by this local version record.
+Neither the historical local source tag `v0.0.3` nor the current local 0.0.4 VSIX represents a public release. This version-record commit does not create or push a tag or upload to Marketplace/GitHub Releases; the version notes describe the scope of local-package and installed-version checks. Public distribution still requires validation of the exact candidate commit and target editor/OS matrix followed by the workflow above; see the [0.0.4 version notes](./release-notes-0.0.4.md) for actual checks.

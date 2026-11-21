@@ -2,7 +2,7 @@
   "name": "dual-mind",
   "displayName": "DualMind",
   "description": "%description%",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.100.0",
     "node": ">=24.0.0 <25.0.0"

@@ -2,7 +2,7 @@
 
 [简体中文](../zh/development.md) · [Documentation](./README.md)
 
-**Source version: 0.0.3 · Local version record · Unpublished.** Recorded on 2026-11-20; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.3 version notes](./release-notes-0.0.3.md).
+**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
 
 ## Environment
 
@@ -11,7 +11,7 @@ Use **Ubuntu 20.04+ on x86_64/amd64**, VS Code 1.100.0+, and nvm-managed Node.js
 If nvm is installed but not loaded, run:
 
 ```bash
-source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+source "${NVM_DIR:-$HOME/.nvm}/nvm.sh" --no-use
 ```
 
 If nvm is absent, follow the [official nvm installation instructions](https://github.com/nvm-sh/nvm#installing-and-updating), then open a new shell. No global Yeoman installation is needed for daily development.
@@ -26,7 +26,7 @@ npm run check:env
 npm ci
 ```
 
-`.npmrc` enables strict engine checks. The environment check also runs before installation, checks, builds, and watch commands. Do not bypass `EBADENGINE` with `--force` or replace the system Node.js binary. Load nvm and select the repository version instead. nvm selection is per shell; run `nvm use` in each new terminal.
+`.npmrc` enables strict engine checks. The environment check also runs before installation, checks, builds, and watch commands. Do not bypass `EBADENGINE` with `--force` or replace the system Node.js binary. Load nvm and select the repository version instead. nvm selection is per shell; run `nvm use` in each new terminal. See the [environment guide](./environment.md#prepare-the-development-toolchain) for initialization that preserves the machine default. Run `nvm use system` after project work to return to system Node.js; changing directories alone does not switch versions.
 
 ## Code and documentation synchronization
 
