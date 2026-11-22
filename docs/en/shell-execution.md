@@ -1,0 +1,33 @@
+# Shell execution and independent verification
+
+[简体中文](../zh/shell-execution.md) · [Usage](./usage.md)
+
+Worker and Reviewer use the same host-managed `run_command` tool on Linux, macOS and Windows. No language-specific environment settings or saved command presets are required. This source change adds native macOS and Windows CI; those platforms must pass their actual jobs before being described as validated. The Ubuntu 20.04 baseline remains.
+
+## Environment and commands
+
+A run freezes the extension host environment and probes the login environment once, with a five-second execution deadline. Unix prefers the configured Bash/Zsh, then Bash on Linux or Zsh on macOS, then `sh`. Windows prefers PowerShell 7, Windows PowerShell, then `cmd`. Unix reads login startup files; PowerShell loads its profile. Only exported environment variables are captured: aliases, functions and shell state are not sessions. Probe errors and timeouts fall back to the host environment, with an explanation in model context. Cancellation stops the run; unconfirmed cleanup never falls back.
+
+Each command starts a new shell from that snapshot. Put activation and work in the same command, for example `. .venv/bin/activate && python -m pytest`, or `. /opt/ros/jazzy/setup.bash && colcon test` in Bash. On PowerShell, use its native activation and invocation syntax. A previous `cd`, `export`, or activation does not persist. The model receives the actual platform, shell, task directory and fallback status. Agents may install project dependencies and create virtual environments; missing Node.js, Python, compilers or other basic toolchains must be reported instead of installing user/system toolchains or escalating privileges.
+
+Environment values remain in host memory and are not automatically included in prompts, events or history. Secret-like environment values join connection-key redaction, including streamed output split across chunks. Connection keys are not added to command environments. Credentials already exported by the user are inherited and therefore accessible to local commands. This is the current user's command execution, not an OS sandbox or a guarantee that arbitrary commands are harmless. Startup hooks such as `BASH_ENV` and `ENV` are removed from the captured command environment; initialize explicitly inside the command when needed.
+
+`run_command` accepts `name`, `command`, `purpose`, `criterionIds`, optional relative `cwd`, and optional `timeoutSeconds`. The default timeout is 180 seconds, allowed range 10–900; combined output is limited to 2 MiB. Pipelines, redirection and multiline scripts use the selected shell's semantics. PowerShell uses UTF-8 and propagates a failing native exit code even if a subsequent cmdlet succeeds. Native Windows tools with their own output encodings may still require an encoding flag. Existing saved `program`/`args` presets retain literal argument execution and must name an executable; they are never converted to shell text. Use the shell tool for shell builtins and Windows batch commands.
+
+## Roles and evidence
+
+Worker implements the plan and verifies changes. Reviewer may explore during planning and answering, and may also prepare project dependencies, build and test during acceptance. Reviewer has no write/delete file tools and is instructed not to change source code through commands. Shell permissions still belong to the current user. Changes during review invalidate the submitted fingerprint and trigger the existing pause and revalidation flow; files are preserved.
+
+The host records the command's actual agent and phase, raw shell command (redacted), shell, directory, purpose, criteria, plan version, before/after fingerprints and result. Commands before a plan use version 0 and cannot certify work. Reviewer can cite its own successful verification IDs without having them appear in Worker submission. Evidence must match the current plan, criterion and unchanged artifact fingerprint, have exit code zero, and have no failure reason. A later failed check for the same criterion invalidates older success. Old records without agent fields remain Worker records; histories are not rewritten.
+
+## Lifecycle and validation
+
+Cancellation, timeout, excessive output and normal parent exit clean up remaining processes before recording the final fingerprint. Unix uses process groups, SIGTERM followed by SIGKILL after three seconds, and up to ten seconds to confirm termination; Linux inspects `/proc`, macOS uses `ps`, and zombies do not count as running. Windows tracks process ancestry and creation times, uses `taskkill /T /F`, and queries again to confirm shutdown, with a fifteen-second cleanup budget. Failure to confirm termination blocks new runs in that host. These mechanisms are not containment: detached Unix services and Windows descendants whose intermediate ancestors disappear between observations can escape tracking. Do not start background services intended to outlive a command.
+
+Native tests exercise shell syntax, Unicode paths, environment snapshots, exit status, limits, cancellation and remaining children. Protocol integration tests cover both model protocols, Reviewer exploration and independent verification, failed review checks, source changes, legacy presets and old evidence. Linux tests run locally; CI adds full checks, extension-host tests and packaging on macOS and Windows. The execution surface still requires a trusted, single local file workspace; this change makes no new Remote SSH/WSL support claim.
+
+## Failure recovery
+
+The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
+
+The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.

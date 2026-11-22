@@ -89,6 +89,12 @@ test('starts empty; preview is read-only and never writes real tasks', async () 
   const del = rtl.screen.getAllByRole('button', { name: /Delete task:/ });
   assert.equal(del.length, 4);
   assert.ok(del.every((button) => (button as HTMLButtonElement).disabled));
+  rtl.fireEvent.click(rtl.screen.getAllByRole('button', { name: /^Open task:/ })[0]);
+  const example = document.querySelector<HTMLElement>('[data-message-id="requirements"]')!;
+  rtl.fireEvent.click(rtl.within(example).getByRole('button', { name: 'Expand message' }));
+  assert.equal(example.dataset.expanded, 'true');
+  rtl.fireEvent.click(rtl.within(example).getByRole('button', { name: 'Compact message' }));
+  assert.equal(example.dataset.expanded, 'false');
   click('Exit examples');
   assert.equal((await f.store.snapshot()).tasks.length, 0);
   assert.equal(f.workspace.values.size, 0);
@@ -1088,8 +1094,10 @@ test('saving the current task preserves loaded conversation history', async () =
         setSnapshot(next);
         return next;
       },
-      execute: async () => {
-        navigationRequests++;
+      execute: async (action) => {
+        if (action.kind === 'conversation') {
+          navigationRequests++;
+        }
         return {
           state: execution,
           conversation: {
@@ -1491,4 +1499,584 @@ test('conversation pagination preserves the reading position and new messages do
   assert.equal(rtl.screen.queryByRole('button', { name: 'Older records' }), null);
   click('New messages');
   assert.equal(scroller.scrollTop, scroller.scrollHeight);
+});
+
+test('icon-only message sizing, minimized errors and evidence preferences survive locale, task changes and reload', async () => {
+  const previousWidth = window.innerWidth;
+  Object.defineProperty(window, 'innerWidth', { value: 1300, configurable: true });
+  try {
+    const f = fixture();
+    await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+    const snapshot = await f.store.snapshot(),
+      task = snapshot.tasks[0];
+    const state = { config: { prepare: [], checks: [] }, runs: [] };
+    const messages: import('../../src/shared/execution').TaskMessage[] = [
+      {
+        id: 'process',
+        taskId: task.id,
+        role: 'reviewer',
+        kind: 'process',
+        text: 'Public text '.repeat(200),
+        requestId: 'request',
+        time: '2026-11-22T00:00:00Z',
+        sequence: 2,
+      },
+      {
+        id: 'error',
+        taskId: task.id,
+        role: 'system',
+        kind: 'error',
+        text: 'Failure',
+        fault: { code: 'commandFailed', params: { name: 'Test', exitCode: 1 } },
+        time: '2026-11-22T00:01:00Z',
+      },
+    ];
+    const events: RunEvent[] = [
+      {
+        taskId: task.id,
+        runId: 'run',
+        sequence: 1,
+        kind: 'tool',
+        text: 'Recorded output',
+        time: '2026-11-22T00:00:00Z',
+      },
+    ];
+    let push: ((update: import('../../src/shared/execution').ExecutionUpdate) => void) | undefined;
+    let saved: import('../../webview/src/chatViewState').WorkbenchViewState | undefined;
+    const actions: import('../../src/shared/execution').ExecutionAction[] = [];
+    const bridge: Bridge = {
+      request: async () => snapshot,
+      queryModels: async () => ({ models: [], fetchedAt: '' }),
+      onModelsInvalidated: () => () => undefined,
+      onExecution: (listener) => {
+        push = listener;
+        return () => undefined;
+      },
+      execute: async (action) => {
+        actions.push(action);
+        return {
+          state,
+          conversation: { messages: structuredClone(messages) },
+          evidence: {
+            events: structuredClone(events),
+            summary: { records: events.length, errors: events.filter((e) => e.fault).length },
+          },
+        };
+      },
+    };
+    const save = (value: import('../../webview/src/chatViewState').WorkbenchViewState) => {
+      saved = value;
+    };
+    const ui = rtl.render(
+      <App
+        snapshot={{ ...snapshot, execution: state }}
+        bridge={bridge}
+        initialNavigation={{ view: 'task', taskId: task.id }}
+        onViewState={save}
+      />,
+    );
+    await rtl.screen.findByText(/Public text Public text/);
+    const process = document.querySelector<HTMLElement>('[data-message-id="process"]')!;
+    const expand = rtl.within(process).getByRole('button', { name: 'Expand message' });
+    assert.equal(expand.textContent, '');
+    assert.ok(expand.querySelector('svg'));
+    assert.equal(expand.title, 'Expand message');
+    rtl.fireEvent.click(expand);
+    assert.equal(process.dataset.expanded, 'true');
+    const error = document.querySelector<HTMLElement>('[data-message-id="error"]')!;
+    rtl.fireEvent.click(rtl.within(error).getByRole('button', { name: 'Minimize record' }));
+    assert.equal(error.dataset.minimized, 'true');
+    assert.ok(rtl.within(error).getByText('Error'));
+    assert.equal(rtl.within(error).queryByRole('alert'), null);
+    await rtl.waitFor(() => assert.equal(document.querySelectorAll('.evidence-record').length, 1));
+    const record = document.querySelector<HTMLDetailsElement>('.evidence-record')!;
+    rtl.fireEvent.click(record.querySelector('summary')!);
+    await rtl.waitFor(() => assert.equal(record.open, true));
+    rtl.fireEvent.click(
+      rtl.within(record.parentElement!).getByRole('button', { name: 'Minimize record' }),
+    );
+    assert.equal(record.parentElement!.dataset.minimized, 'true');
+    click('Minimize evidence panel');
+    assert.ok(document.querySelector('.evidence-rail'));
+    assert.equal(document.querySelector<HTMLElement>('.evidence-panel')!.hidden, true);
+    events.push({
+      ...events[0],
+      sequence: 2,
+      kind: 'error',
+      fault: { code: 'commandFailed' },
+      text: 'New error',
+    });
+    await rtl.act(async () =>
+      push?.({ state: { ...state, conversationVersion: 1 }, events: [events[1]] }),
+    );
+    await rtl.waitFor(() =>
+      assert.equal(document.querySelector('.evidence-rail .chat-count')?.textContent, '1'),
+    );
+    assert.ok(document.querySelector('.evidence-rail .chat-error-badge'));
+    assert.equal(document.querySelector<HTMLElement>('.evidence-panel')!.hidden, true);
+    ui.rerender(
+      <App
+        snapshot={{ ...snapshot, execution: state, locale: 'zh-CN', language: 'zh-CN' }}
+        bridge={bridge}
+        onViewState={save}
+      />,
+    );
+    assert.equal(process.dataset.expanded, 'true');
+    assert.equal(error.dataset.minimized, 'true');
+    click('恢复证据面板');
+    await rtl.waitFor(() =>
+      assert.equal(document.querySelector<HTMLElement>('.evidence-panel')!.hidden, false),
+    );
+    const restoredRecord = document.querySelector<HTMLDetailsElement>('.evidence-record')!;
+    assert.equal(restoredRecord.open, true);
+    assert.equal(restoredRecord.parentElement!.dataset.minimized, 'true');
+    rtl.fireEvent.click(
+      rtl.within(restoredRecord.parentElement!).getByRole('button', { name: '恢复记录' }),
+    );
+    assert.equal(restoredRecord.parentElement!.dataset.minimized, 'false');
+    assert.equal(restoredRecord.open, true);
+    click('最小化证据面板');
+    await rtl.waitFor(() => assert.equal(saved?.chats[task.id].panel, 'minimized'));
+    const persisted = structuredClone(saved!);
+    ui.unmount();
+    rtl.render(
+      <App
+        snapshot={{ ...snapshot, execution: state }}
+        bridge={bridge}
+        initialNavigation={persisted.navigation}
+        initialChatViews={persisted.chats}
+        onViewState={save}
+      />,
+    );
+    await rtl.screen.findByText(/Public text Public text/);
+    assert.equal(
+      document.querySelector<HTMLElement>('[data-message-id="process"]')!.dataset.expanded,
+      'true',
+    );
+    assert.equal(
+      document.querySelector<HTMLElement>('[data-message-id="error"]')!.dataset.minimized,
+      'true',
+    );
+    assert.ok(document.querySelector('.evidence-rail'));
+    assert.ok(
+      actions
+        .filter((a) => a.kind === 'conversation')
+        .every((a) => a.kind === 'conversation' && a.includeProcess),
+    );
+    assert.ok(!JSON.stringify(persisted).includes('Public text'));
+  } finally {
+    Object.defineProperty(window, 'innerWidth', { value: previousWidth, configurable: true });
+  }
+});
+
+test('activity shows silent waiting and command state, then removes animation on pause, stop and interruption', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot(),
+    task = snapshot.tasks[0];
+  const run: RunSummary = {
+    id: 'run',
+    taskId: task.id,
+    status: 'planning',
+    round: 0,
+    maxRounds: 2,
+    createdAt: '',
+    updatedAt: '',
+    sequence: 1,
+  };
+  const state: import('../../src/shared/execution').ExecutionSnapshot = {
+    config: { prepare: [], checks: [] },
+    runs: [run],
+    activity: {
+      id: 'request',
+      taskId: task.id,
+      runId: run.id,
+      agent: 'reviewer',
+      phase: 'planning',
+      stage: 'waiting',
+      startedAt: new Date(Date.now() - 5000).toISOString(),
+    },
+  };
+  const bridge: Bridge = {
+    request: async () => snapshot,
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+    execute: async () => ({ state, conversation: { messages: [] }, evidence: { events: [] } }),
+  };
+  const ui = rtl.render(
+    <App
+      snapshot={{ ...snapshot, execution: state }}
+      bridge={bridge}
+      initialNavigation={{ view: 'task', taskId: task.id }}
+    />,
+  );
+  await rtl.screen.findByText(/Waiting for model response/);
+  assert.match(document.querySelector('.activity-time')!.textContent!, /^00:0[5-9]$/);
+  assert.ok(document.querySelector('.activity-spinner'));
+  ui.rerender(
+    <App
+      snapshot={{
+        ...snapshot,
+        execution: {
+          ...state,
+          activity: { ...state.activity!, stage: 'command', label: 'Regression' },
+        },
+      }}
+      bridge={bridge}
+    />,
+  );
+  await rtl.screen.findByText(/Running command: Regression/);
+  for (const status of ['paused', 'stopped', 'failed', 'interrupted'] as const) {
+    ui.rerender(
+      <App
+        snapshot={{ ...snapshot, execution: { ...state, runs: [{ ...run, status }] } }}
+        bridge={bridge}
+      />,
+    );
+    await rtl.waitFor(() => assert.equal(document.querySelector('.activity-spinner'), null));
+    assert.equal(document.querySelector('.activity-time'), null);
+    assert.ok(
+      document.querySelector('.chat-activity')!.textContent!.includes(t('en', `run_${status}`)),
+    );
+  }
+});
+
+test('streamed process updates keep card identity and reader position; narrow minimization restores focus', async () => {
+  const width = window.innerWidth;
+  Object.defineProperty(window, 'innerWidth', { value: 800, configurable: true });
+  try {
+    const f = fixture();
+    await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+    const snapshot = await f.store.snapshot(),
+      task = snapshot.tasks[0];
+    const state = { config: { prepare: [], checks: [] }, runs: [] };
+    let push: ((value: import('../../src/shared/execution').ExecutionUpdate) => void) | undefined;
+    const message: import('../../src/shared/execution').TaskMessage = {
+      id: 'stream',
+      taskId: task.id,
+      role: 'worker',
+      kind: 'process',
+      time: '2026-11-22T00:00:00Z',
+      text: 'First chunk',
+      sequence: 1,
+    };
+    const bridge: Bridge = {
+      request: async () => snapshot,
+      queryModels: async () => ({ models: [], fetchedAt: '' }),
+      onModelsInvalidated: () => () => undefined,
+      onExecution: (listener) => {
+        push = listener;
+        return () => undefined;
+      },
+      execute: async () => ({
+        state,
+        conversation: { messages: [structuredClone(message)] },
+        evidence: { events: [] },
+      }),
+    };
+    rtl.render(
+      <App
+        snapshot={{ ...snapshot, execution: state }}
+        bridge={bridge}
+        initialNavigation={{ view: 'task', taskId: task.id }}
+      />,
+    );
+    await rtl.screen.findByText('First chunk');
+    const card = document.querySelector<HTMLElement>('[data-message-id="stream"]')!;
+    rtl.fireEvent.click(rtl.within(card).getByRole('button', { name: 'Expand message' }));
+    const scroller = document.querySelector<HTMLElement>('.chat-messages')!;
+    Object.defineProperty(scroller, 'scrollHeight', { value: 1000 });
+    Object.defineProperty(scroller, 'clientHeight', { value: 300 });
+    scroller.scrollTop = 90;
+    rtl.fireEvent.scroll(scroller);
+    message.text += ' and next chunk';
+    message.sequence = 2;
+    await rtl.act(async () => push?.({ state: { ...state, conversationVersion: 1 }, events: [] }));
+    await rtl.screen.findByText('First chunk and next chunk');
+    assert.equal(document.querySelector('[data-message-id="stream"]'), card);
+    assert.equal(card.dataset.expanded, 'true');
+    assert.equal(scroller.scrollTop, 90);
+    assert.ok(rtl.screen.getByRole('button', { name: 'New messages' }));
+    // An older pagination/refresh response must not overwrite a newer streamed projection.
+    message.text = 'old';
+    message.sequence = 1;
+    await rtl.act(async () => push?.({ state: { ...state, conversationVersion: 2 }, events: [] }));
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 140));
+    });
+    assert.ok(rtl.screen.getByText('First chunk and next chunk'));
+    const trigger = rtl.screen.getByRole('button', { name: 'Tools, checks and review evidence' });
+    trigger.focus();
+    rtl.fireEvent.click(trigger);
+    assert.ok(rtl.screen.getByRole('dialog'));
+    click('Minimize evidence panel');
+    assert.equal(rtl.screen.queryByRole('dialog'), null);
+    assert.equal(document.activeElement, trigger);
+    const restore = rtl.screen.getByRole('button', { name: 'Restore evidence panel' });
+    assert.equal(restore, trigger);
+    rtl.fireEvent.click(restore);
+    assert.ok(rtl.screen.getByRole('dialog'));
+    rtl.fireEvent.keyDown(document, { key: 'Escape' });
+    assert.equal(rtl.screen.queryByRole('dialog'), null);
+    assert.equal(document.activeElement, trigger);
+  } finally {
+    Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+  }
+});
+
+async function recoveryUI(overrides: Partial<RunSummary> = {}, locale: 'en' | 'zh-CN' = 'en') {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot();
+  snapshot.locale = locale;
+  snapshot.connections = [
+    {
+      id: 'endpoint',
+      name: 'Local fixture',
+      baseUrl: 'http://localhost',
+      defaultModel: 'fixture',
+      hasKey: true,
+    },
+  ];
+  const task = snapshot.tasks[0];
+  task.worker = task.reviewer = { connectionId: 'endpoint', model: 'fixture' };
+  const run: RunSummary = {
+    id: 'recovery-run',
+    taskId: task.id,
+    status: 'failed',
+    round: 2,
+    maxRounds: 5,
+    createdAt: '',
+    updatedAt: '',
+    sequence: 2,
+    fault: { code: 'inferenceTimeout' },
+    recovery: {
+      generation: 1,
+      attempts: 0,
+      available: true,
+      agent: 'worker',
+      phase: 'worker',
+      operation: 'model',
+    },
+    ...overrides,
+  };
+  const state: import('../../src/shared/execution').ExecutionSnapshot = {
+    config: { prepare: [], checks: [] },
+    runs: [run],
+  };
+  const calls: import('../../src/shared/execution').ExecutionAction[] = [];
+  let push!: (update: import('../../src/shared/execution').ExecutionUpdate) => void;
+  let finish!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  const bridge: Bridge = {
+    request: async () => snapshot,
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+    onExecution: (listener) => {
+      push = listener;
+      return () => undefined;
+    },
+    execute: async (action) => {
+      calls.push(action);
+      if (action.kind === 'resume') {
+        await pending;
+      }
+      return {
+        state,
+        conversation: {
+          messages: [
+            {
+              id: 'pending',
+              role: 'user',
+              kind: 'message',
+              status: 'pending',
+              taskId: task.id,
+              text: 'Please explain',
+              time: '',
+            },
+          ],
+        },
+        evidence: { events: [] },
+      };
+    },
+  };
+  const ui = rtl.render(
+    <App
+      snapshot={{ ...snapshot, execution: structuredClone(state) }}
+      bridge={bridge}
+      initialNavigation={{ view: 'task', taskId: task.id }}
+    />,
+  );
+  await rtl.screen.findByRole('region', { name: t(locale, 'recoveryTitle') });
+  return {
+    snapshot,
+    state,
+    run,
+    ui,
+    calls,
+    finish,
+    update: async () => rtl.act(async () => push({ state: structuredClone(state), events: [] })),
+  };
+}
+
+for (const locale of ['en', 'zh-CN'] as const) {
+  test(`${locale}: recovery keeps the run, role, pending messages and minimized preferences; duplicate resume is suppressed`, async () => {
+    const h = await recoveryUI(
+      {
+        kind: 'conversation',
+        recovery: {
+          generation: 1,
+          attempts: 0,
+          available: true,
+          agent: 'reviewer',
+          phase: 'answering',
+          operation: 'model',
+        },
+      },
+      locale,
+    );
+    await rtl.screen.findByText('Please explain');
+    assert.ok(rtl.screen.getByText(t(locale, 'recoveryQueued'), { exact: false }));
+    assert.equal(rtl.screen.queryByRole('button', { name: t(locale, 'chatResume') }), null);
+    assert.match(document.querySelector('.recovery-position')!.textContent!, /Reviewer/);
+    assert.ok(
+      document
+        .querySelector('.recovery-position')!
+        .textContent!.includes(t(locale, 'recoveryPhaseAnswering')),
+    );
+    click(t(locale, 'executionEvidence'));
+    click(t(locale, 'chatMinimizePanel'));
+    const resume = rtl.screen.getByRole('button', {
+      name: t(locale, 'resumeRun'),
+    }) as HTMLButtonElement;
+    assert.equal(resume.disabled, false);
+    assert.ok(resume.querySelector('svg'));
+    rtl.fireEvent.click(resume);
+    rtl.fireEvent.click(resume);
+    assert.deepEqual(
+      h.calls.filter((a) => a.kind === 'resume'),
+      [{ kind: 'resume', runId: h.run.id }],
+    );
+    h.run.status = 'recovering';
+    h.run.recovery = { ...h.run.recovery!, attempts: 1, available: false, step: 'processes' };
+    await h.update();
+    assert.equal(resume.disabled, true);
+    assert.equal(
+      (rtl.screen.getByRole('button', { name: t(locale, 'stop') }) as HTMLButtonElement).disabled,
+      false,
+    );
+    assert.ok(
+      document
+        .querySelector('.recovery-notice')!
+        .textContent!.includes(t(locale, 'recoveryProcesses')),
+    );
+    assert.equal(document.querySelector('.recovery-notice .error-notice'), null);
+    assert.equal(document.querySelector('.activity-spinner'), null);
+    assert.equal(
+      document.querySelector<HTMLElement>(
+        '[aria-label="' + t(locale, 'executionEvidence') + '"].evidence-panel',
+      )!.hidden,
+      true,
+    );
+    await rtl.act(async () => h.finish());
+    h.run.status = 'reviewer';
+    delete h.run.fault;
+    await h.update();
+    assert.equal(document.querySelector('.recovery-notice'), null);
+    assert.equal(document.querySelector<HTMLElement>('.evidence-panel')!.hidden, true);
+    assert.equal(h.run.round, 2);
+  });
+}
+
+test('legacy, exhausted, unconfirmed-process, missing-configuration and other-task recovery controls explain their restrictions', async () => {
+  const h = await recoveryUI({ recovery: undefined });
+  const resume = () =>
+    rtl.screen.getByRole('button', { name: 'Continue execution' }) as HTMLButtonElement;
+  assert.equal(resume().disabled, true);
+  assert.ok(rtl.screen.getByText('No recovery point is available for this record.'));
+  h.run.recovery = {
+    generation: 1,
+    attempts: 0,
+    available: false,
+    blocked: { code: 'toolCorrectionLimit' },
+  };
+  await h.update();
+  assert.equal(resume().disabled, true);
+  assert.ok(document.querySelector('.recovery-notice [data-error-code="toolCorrectionLimit"]'));
+  h.run.recovery = {
+    generation: 1,
+    attempts: 1,
+    available: true,
+    agent: 'worker',
+    phase: 'worker',
+  };
+  h.run.fault = { code: 'recoveryProcessUnknown' };
+  await h.update();
+  assert.equal(
+    resume().disabled,
+    false,
+    'Continue rechecks uncertain processes; the host still blocks execution',
+  );
+  assert.ok(rtl.screen.getByText(/No command will run until cleanup is confirmed/));
+  h.state.runs.unshift({ ...h.run, id: 'other', taskId: 'other-task', status: 'worker' });
+  await h.update();
+  assert.equal(resume().disabled, true);
+  assert.ok(rtl.screen.getAllByText(t('en', 'otherTaskActive')).length);
+  h.state.runs.shift();
+  h.snapshot.connections[0].hasKey = false;
+  h.ui.rerender(
+    <App
+      snapshot={{ ...h.snapshot, execution: structuredClone(h.state) }}
+      bridge={{
+        request: async () => h.snapshot,
+        queryModels: async () => ({ models: [], fetchedAt: '' }),
+        onModelsInvalidated: () => () => undefined,
+      }}
+    />,
+  );
+  await rtl.waitFor(() => assert.equal(resume().disabled, true));
+  assert.ok(rtl.screen.getByRole('button', { name: t('en', 'openSettings') }));
+  h.finish();
+});
+
+test('retry countdown follows the host deadline, distinguishes the next request and disappears on interruption', async () => {
+  const h = await recoveryUI();
+  const clock = Date.now();
+  h.run.status = 'worker';
+  h.state.activity = {
+    id: 'request',
+    taskId: h.run.taskId,
+    runId: h.run.id,
+    agent: 'worker',
+    phase: 'worker',
+    stage: 'waiting',
+    startedAt: new Date(clock - 5000).toISOString(),
+    retry: { attempt: 2, delayMs: 2000, retryAt: new Date(clock + 2000).toISOString() },
+  };
+  await h.update();
+  assert.match(
+    document.querySelector('.chat-activity')!.textContent!,
+    /Waiting to retry · Request attempt 2\/3/,
+  );
+  assert.equal(rtl.screen.getByLabelText('Seconds until retry').textContent, '2s');
+  await rtl.waitFor(
+    () => assert.equal(rtl.screen.getByLabelText('Seconds until retry').textContent, '1s'),
+    { timeout: 2500 },
+  );
+  assert.equal(rtl.screen.getByLabelText('Seconds until retry').textContent, '1s');
+  h.state.activity.retry = { attempt: 2, delayMs: 0, requesting: true };
+  await h.update();
+  assert.match(
+    document.querySelector('.chat-activity')!.textContent!,
+    /Waiting for model response · Request attempt 2\/3/,
+  );
+  assert.equal(rtl.screen.queryByLabelText('Seconds until retry'), null);
+  h.run.status = 'interrupted';
+  await h.update();
+  assert.equal(document.querySelector('.activity-spinner'), null);
+  assert.equal(document.querySelector('.activity-time'), null);
+  assert.doesNotMatch(document.querySelector('.chat-activity')!.textContent!, /Request attempt/);
+  h.finish();
 });

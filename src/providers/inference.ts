@@ -1,3 +1,4 @@
+import { quotaError, retryAfter, retryDelay, transientNetwork, waitForRetry } from './retry';
 import { OperationError } from '../shared/errors';
 import type { Protocol } from '../shared/execution';
 import { modelsUrl } from './models';
@@ -19,11 +20,16 @@ export interface ToolCall {
 }
 export type History = Record<string, unknown>[];
 export interface ModelTurn {
+  attempts?: number;
   text: string;
   calls: ToolCall[];
   output: History;
 }
-export class InferenceError extends OperationError {}
+export class InferenceError extends OperationError {
+  attempts = 1;
+  retryable = false;
+  retryAfterMs?: number;
+}
 interface WireEvent {
   error?: unknown;
   type?: string;
@@ -59,6 +65,60 @@ export class Inference {
     tools: ToolDefinition[],
     signal: AbortSignal,
     delta: (text: string) => void,
+    progress?: () => void,
+    retry?: (attempt: number, delayMs: number) => void | Promise<void>,
+    attemptStarted?: (attempt: number) => void,
+  ): Promise<ModelTurn> {
+    const deadline = Date.now() + this.limits.timeoutMs;
+    for (let attempt = 1; ; attempt++) {
+      let received = false;
+      try {
+        if (attempt > 1) {
+          attemptStarted?.(attempt);
+        }
+        const result = await this.attempt(
+          endpoint,
+          history,
+          tools,
+          signal,
+          delta,
+          () => {
+            received = true;
+            progress?.();
+          },
+          Math.max(1, deadline - Date.now()),
+        );
+        return { ...result, attempts: attempt };
+      } catch (error) {
+        if (error instanceof InferenceError) {
+          error.attempts = attempt;
+        }
+        if (
+          !(error instanceof InferenceError) ||
+          !error.retryable ||
+          received ||
+          signal.aborted ||
+          attempt >= 3
+        ) {
+          throw error;
+        }
+        const delay = retryDelay(attempt, deadline - Date.now(), error.retryAfterMs);
+        if (delay === undefined) {
+          throw error;
+        }
+        await retry?.(attempt + 1, delay);
+        await waitForRetry(delay, signal);
+      }
+    }
+  }
+  private async attempt(
+    endpoint: Endpoint,
+    history: History,
+    tools: ToolDefinition[],
+    signal: AbortSignal,
+    delta: (text: string) => void,
+    progress: () => void,
+    timeoutMs: number,
   ): Promise<ModelTurn> {
     const chat = endpoint.protocol === 'chatCompletions';
     const url = modelsUrl(endpoint.baseUrl).replace(
@@ -94,7 +154,7 @@ export class Inference {
     const timer = setTimeout(() => {
       timedOut = true;
       abort();
-    }, this.limits.timeoutMs);
+    }, timeoutMs);
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
     try {
       const response = await fetch(url, {
@@ -109,11 +169,18 @@ export class Inference {
         signal: controller.signal,
       });
       if (!response.ok) {
-        await response.body?.cancel();
-        throw new InferenceError(
-          response.status === 401 || response.status === 403 ? 'inferenceAuth' : 'inferenceHttp',
+        const quota = await quotaError(response);
+        const error = new InferenceError(
+          response.status === 401 || response.status === 403
+            ? 'inferenceAuth'
+            : quota
+              ? 'inferenceQuota'
+              : 'inferenceHttp',
           { status: response.status },
         );
+        error.retryable = !quota && [408, 425, 429, 500, 502, 503, 504].includes(response.status);
+        error.retryAfterMs = retryAfter(response.headers.get('retry-after'));
+        throw error;
       }
       if (!response.headers.get('content-type')?.includes('text/event-stream') || !response.body) {
         await response.body?.cancel();
@@ -126,6 +193,13 @@ export class Inference {
         text = '',
         done = false,
         finished = false;
+      let reportedProgress = false;
+      const reportProgress = () => {
+        if (!reportedProgress) {
+          reportedProgress = true;
+          progress?.();
+        }
+      };
       const calls = new Map<number, ToolCall>();
       let output: History = [];
       const accept = (raw: string) => {
@@ -161,6 +235,7 @@ export class Inference {
           if (!event.choices.length) {
             return;
           }
+          reportProgress();
           const choice = event.choices[0];
           if (choice.index !== 0) {
             throw invalid();
@@ -213,6 +288,9 @@ export class Inference {
             finished = true;
           }
         } else {
+          if (typeof event.type === 'string' && event.type.startsWith('response.')) {
+            reportProgress();
+          }
           if (event.type === 'response.output_text.delta') {
             if (typeof event.delta !== 'string') {
               throw invalid();
@@ -290,19 +368,8 @@ export class Inference {
       ) {
         throw invalid();
       }
-      for (const call of list) {
-        try {
-          if (
-            !JSON.parse(call.arguments) ||
-            typeof JSON.parse(call.arguments) !== 'object' ||
-            Array.isArray(JSON.parse(call.arguments))
-          ) {
-            throw invalid();
-          }
-        } catch {
-          throw invalid();
-        }
-      }
+      // Completed argument strings are validated by the execution layer so the
+      // model can correct them. Framing, IDs and allowed tools remain strict here.
       if (chat) {
         output = [
           {
@@ -331,7 +398,9 @@ export class Inference {
       if (error instanceof InferenceError) {
         throw error;
       }
-      throw new InferenceError('inferenceNetwork');
+      const failure = new InferenceError('inferenceNetwork');
+      failure.retryable = transientNetwork(error);
+      throw failure;
     } finally {
       clearTimeout(timer);
       signal.removeEventListener('abort', abort);

@@ -2,7 +2,8 @@ import { type AppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
 import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App, type Navigation } from './App';
+import { App } from './App';
+import { restoreWorkbenchView, type WorkbenchViewState } from './chatViewState';
 import { connect, type VSCodeApi } from './bridge';
 import type { AppSnapshot, Locale } from '../../src/shared/model';
 import { t } from '../../src/shared/i18n';
@@ -10,6 +11,7 @@ import './styles.css';
 
 declare function acquireVsCodeApi(): VSCodeApi;
 const api = acquireVsCodeApi();
+const saveViewState = (value: WorkbenchViewState) => api.setState(value);
 function Root() {
   const [snapshot, setSnapshot] = useState<AppSnapshot | null>(null);
   const [error, setError] = useState<AppError | null>(null);
@@ -70,15 +72,16 @@ function Root() {
       </div>
     );
   }
-  const previous = api.getState() as Partial<Navigation> | undefined;
+  const previous = restoreWorkbenchView(api.getState(), snapshot.tasks);
   return (
     <>
       {error && <ErrorNotice error={error} locale={locale} />}
       <App
         snapshot={snapshot}
         bridge={bridge}
-        initialNavigation={previous}
-        onNavigation={(value) => api.setState(value)}
+        initialNavigation={previous.navigation}
+        initialChatViews={previous.chats}
+        onViewState={saveViewState}
       />
     </>
   );

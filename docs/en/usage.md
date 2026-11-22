@@ -107,7 +107,7 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 The development branch executes tasks in dedicated worktrees or directly on a selected local branch with streaming, checks/review rounds and pause/continue/stop. Automatic editor-context collection, parallel execution and applying dedicated-worktree results to the original workspace remain unavailable. Examples remain isolated read-only content.
 
-The 17 [approved design scenes](./design.md) remain in the repository. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+The 20 [approved design scenes](./design.md) remain in the repository. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
 
 ## Executing tasks (development source)
 
@@ -152,6 +152,22 @@ Creation still requires manual Start. Messages sent before the first start are s
 - Questions or clarification: Reviewer can inspect files and use `submit_answer`, without Worker or commands and without changing the previous acceptance verdict. The answer is marked Replied.
 - Further changes: Reviewer inspects current artifacts and issues a plan, automatically starting the Worker/Reviewer loop. A new execution links its predecessor and source messages, with a fresh configured round budget.
 - Messages during execution: messages are immediately saved as Pending while the current operation continues. Reviewer handles them at a role handoff or before final completion. Questions consume no revision round; changes need a new plan and retain the active batch’s round limit.
-- Pause, stop and reload: sending does not resume a manual pause. Stop or reload preserves pending messages for explicit “Process pending messages”, without replay. Messages can be saved while another task runs, but processing still requires the single workspace slot.
+- Pause, stop and reload: sending does not resume a manual pause. Stop preserves pending messages for explicit “Process pending messages”. Failed or reloaded runs instead require Continue execution in the original run; processing messages cannot bypass recovery. Messages can be saved while another task runs, but processing still requires the single workspace slot.
 
 Continuation supports managed worktrees, the current branch and a selected branch, retaining bound directories and uncommitted artifacts. User edits are inspected and changed artifacts need fresh evidence. Directory identity, branch and HEAD are checked first; mismatches retain the message and report an error without switching, resetting, committing or cleaning. Restart retains its original preparation semantics and direct-mode cleanliness checks; it is distinct from continued changes in chat.
+
+## Native shell commands
+
+Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
+
+## Task-based branch names and compact chat controls
+
+New managed workspaces use `dualmind/<task-name>-<short-id>`, including Chinese task names. Task-name normalization, conflicts and legacy preservation are described in the [proposal](./chat-progress-proposal.md#new-branch-naming-backend-implemented). Changing a task title after preparation does not rename its branch. Existing/current-branch modes keep the selected branch.
+
+The activity strip shows the current role, operation and elapsed time, including silent model waits. Public process text remains distinct from plans and acceptance. Each message has an icon-only sizing button: short messages use natural height, long messages scroll inside a 240-pixel body (180 on narrow screens), and the outward-arrow icon expands them without changing font size. Hover for the action name. System messages and evidence records can minimize while retaining error badges. The panel’s minus icon leaves a 44-pixel rail on wide screens or a restore button in the narrow toolbar; new records/errors update badges without forcing it open. Manual choices survive task switches, language changes and Webview reload. Only the selected task’s presentation changes; execution continues.
+
+## Failure recovery
+
+The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
+
+The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.

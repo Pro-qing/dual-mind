@@ -12,7 +12,7 @@
 | [开发指南](./development.md)                       | nvm、构建命令、调试与测试                           |
 | [架构说明](./architecture.md)                      | 已实现工作台、存储边界、品牌资源及模块职责          |
 | [宿主／界面协议](./protocol.md)                    | 设置／模型查询、执行消息、角色交接及 Git 绑定       |
-| [界面设计](./design.md)                            | 17 组已审核 SVG／PNG，含任务页面、执行循环与聊天    |
+| [界面设计](./design.md)                            | 23 组已审核 SVG／PNG，含任务页面、执行循环与聊天    |
 | [路线图](./roadmap.md)                             | 按版本记录进度、已实现执行及剩余能力                |
 | [打包与发布](./releasing.md)                       | 历史发布记录及后续 GitHub／Marketplace 版本更新流程 |
 | [许可说明](./licensing.md)                         | MIT 许可证及随包第三方声明                          |
@@ -37,3 +37,8 @@
 - [0.0.4](./release-notes-0.0.4.md)：当前源码与本地 VSIX，尚未发布。
 - [0.0.3](./release-notes-0.0.3.md)：此前本地源码版本，尚未发布。
 - [0.0.2](./release-notes-0.0.2.md)：模型查询、设置和 Git 准备基础。
+
+- [过程提示与紧凑聊天提案](./chat-progress-proposal.md)：已审核并实现：活动状态、公开过程、图标缩放、最小化和任务名分支。
+
+- [故障恢复](./execution-recovery.md)：宿主实现、公开上下文、进程与证据限制。
+- [恢复界面提案](./recovery-proposal.md)：场景 21–23，2026-11-22 已审核并接入界面。

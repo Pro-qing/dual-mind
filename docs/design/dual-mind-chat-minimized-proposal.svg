@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>19. 面板与系统输出最小化 — 已审核</title><desc>静态示例：右侧证据面板收成44像素窄条；显示新记录和错误计数，系统消息保留错误标记。</desc><style>text {font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif;}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="#171a20" />
+<rect x="0" y="0" width="1440" height="34" rx="0" fill="#11151b" stroke="#11151b" />
+<text x="24" y="23" font-size="13" fill="#e7edf6" font-weight="400">DualMind / 任务聊天修订</text>
+<text x="995" y="23" font-size="13" fill="#a4b0c1" font-weight="400">设计提案 · 已审核 · 2026-11-22</text>
+<rect x="24" y="51" width="104" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="34" y="72" font-size="13" fill="#e7edf6" font-weight="500">← 返回主页</text>
+<text x="148" y="75" font-size="24" fill="#e7edf6" font-weight="600">修复登录校验</text>
+<rect x="352" y="56" width="155" height="24" rx="12" fill="#20252e" stroke="#8db8fa" />
+<text x="362" y="73" font-size="12" fill="#8db8fa" font-weight="400">Reviewer 审查中 · 1/5</text>
+<rect x="908" y="51" width="80" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="918" y="72" font-size="13" fill="#e7edf6" font-weight="500">暂停</text>
+<rect x="1000" y="51" width="92" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1010" y="72" font-size="13" fill="#e7edf6" font-weight="500">预览修改</text>
+<rect x="1104" y="51" width="92" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1114" y="72" font-size="13" fill="#e7edf6" font-weight="500">编辑任务</text>
+<rect x="1208" y="51" width="96" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1218" y="72" font-size="13" fill="#e7edf6" font-weight="500">语言 / 设置</text>
+<rect x="1316" y="51" width="100" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1326" y="72" font-size="13" fill="#e7edf6" font-weight="500">停止执行</text>
+<text x="24" y="108" font-size="14" fill="#8db8fa" font-weight="400">分支  dualmind/修复登录校验-a1b2c3d4</text>
+<rect x="24" y="124" width="686" height="38" rx="8" fill="#20252e" stroke="#394351" />
+<text x="38" y="149" font-size="14" fill="#8db8fa" font-weight="600">Worker</text>
+<text x="128" y="149" font-size="13" fill="#a4b0c1" font-weight="400">实现模型 · 当前任务</text>
+<rect x="722" y="124" width="694" height="38" rx="8" fill="#20252e" stroke="#394351" />
+<text x="736" y="149" font-size="14" fill="#8dd8be" font-weight="600">Reviewer</text>
+<text x="842" y="149" font-size="13" fill="#a4b0c1" font-weight="400">审查模型 · 当前任务</text>
+<rect x="24" y="178" width="1334" height="648" rx="8" fill="#20252e" stroke="#394351" />
+<rect x="1372" y="178" width="44" height="648" rx="8" fill="#20252e" stroke="#394351" />
+<text x="40" y="207" font-size="15" fill="#e7edf6" font-weight="600">任务聊天</text>
+<rect x="1172" y="186" width="170" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1182" y="207" font-size="13" fill="#e7edf6" font-weight="500">恢复工具与证据 · 3</text>
+<path d="M24 220H1358" stroke="#394351" />
+<rect x="42" y="232" width="1298" height="39" rx="8" fill="#223344" stroke="#436386" />
+<text x="56" y="258" font-size="14" fill="#8dd8be" font-weight="500">◌  Reviewer · 执行命令：登录回归测试</text>
+<text x="1112" y="258" font-size="13" fill="#a4b0c1" font-weight="400">本次操作 00:06</text>
+<rect x="42" y="287" width="1220" height="118" rx="8" fill="#252c36" stroke="#394351" />
+<rect x="42" y="287" width="3" height="118" rx="1" fill="#8db8fa" stroke="#8db8fa" />
+<text x="56" y="314" font-size="14" fill="#8db8fa" font-weight="600">Worker · 成果提交 · v1</text>
+<rect x="1220.0" y="295" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(1227.0 302.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="58" y="341" font-size="16" fill="#e7edf6" font-weight="400">已增加提交锁和失败状态恢复，补充了 4 个回归用例。</text>
+<text x="58" y="370" font-size="16" fill="#e7edf6" font-weight="400">已提交验收，等待 Reviewer 独立核查。</text>
+<rect x="42" y="419" width="1220" height="200" rx="8" fill="#252c36" stroke="#394351" />
+<rect x="42" y="419" width="3" height="200" rx="1" fill="#8dd8be" stroke="#8dd8be" />
+<text x="56" y="446" font-size="14" fill="#8dd8be" font-weight="600">Reviewer · 公开过程 · 此次模型输出已结束</text>
+<rect x="1220.0" y="427" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(1227.0 434.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="58" y="474" font-size="16" fill="#e7edf6" font-weight="400">我会独立检查重复提交和失败恢复，再对照验收项给出结论。</text>
+<text x="58" y="507" font-size="14" fill="#e7edf6" font-weight="600">本次核查内容</text>
+<text x="58" y="535" font-size="15" fill="#e7edf6" font-weight="400">• 表单校验与错误提示   • 重复提交保护   • 会话过期恢复</text>
+<text x="58" y="568" font-size="14" fill="#a4b0c1" font-weight="400">本次核查尚未完成，命令结果见工具与证据。</text>
+<text x="58" y="601" font-size="13" fill="#a4b0c1" font-weight="400">查看执行详情  ›</text>
+<rect x="42" y="636" width="1298" height="52" rx="8" fill="#3a272d" stroke="#394351" />
+<text x="58" y="668" font-size="14" fill="#f3a7ab" font-weight="500">系统 · 上次检查失败 · 1 条错误 · 已最小化</text>
+<rect x="1256" y="647" width="70" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1266" y="668" font-size="13" fill="#e7edf6" font-weight="500">恢复</text>
+<path d="M24 705H1358" stroke="#394351" />
+<text x="38" y="729" font-size="13" fill="#a4b0c1" font-weight="400">补充问题或修改要求</text>
+<rect x="38" y="740" width="1306" height="45" rx="8" fill="#171a20" stroke="#394351" />
+<text x="50" y="768" font-size="14" fill="#a4b0c1" font-weight="400">继续输入，Shift+Enter 换行…</text>
+<text x="38" y="811" font-size="12" fill="#a4b0c1" font-weight="400">执行中的消息将在交接时处理</text>
+<rect x="1268" y="791" width="76" height="30" rx="8" fill="#325c8f" stroke="#394351" />
+<text x="1278" y="812" font-size="13" fill="#e7edf6" font-weight="500">发送</text>
+<rect x="1378" y="190" width="32" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1388" y="211" font-size="13" fill="#e7edf6" font-weight="500">‹</text>
+<text x="1386" y="257" font-size="14" fill="#a4b0c1" font-weight="400">证</text>
+<text x="1386" y="281" font-size="14" fill="#a4b0c1" font-weight="400">据</text>
+<rect x="1380" y="310" width="28" height="28" rx="14" fill="#325c8f" stroke="#8db8fa" />
+<text x="1389" y="330" font-size="13" fill="#e7edf6" font-weight="400">3</text>
+<rect x="1380" y="348" width="28" height="28" rx="14" fill="#3a272d" stroke="#f3a7ab" />
+<text x="1389" y="368" font-size="13" fill="#f3a7ab" font-weight="400">1</text>
+<text x="1386" y="410" font-size="13" fill="#a4b0c1" font-weight="400">新</text>
+<text x="1386" y="431" font-size="13" fill="#a4b0c1" font-weight="400">增</text>
+<text x="24" y="851" font-size="15" fill="#e7edf6" font-weight="600">B · 最小化：聊天获得更多宽度，系统输出仍能被发现</text>
+<text x="24" y="879" font-size="13" fill="#a4b0c1" font-weight="400">44 px 窄条保留恢复入口、新记录数和错误提示。恢复后保留原筛选范围、展开项和滚动位置。</text>
+</svg>

@@ -14,10 +14,12 @@ DualMind’s local React workbench is available as a GitHub preview. Start with 
 6. New Git commits must include both English and Simplified Chinese. Use `type(scope): English summary / 中文摘要` for the subject (scope is optional); any body must also provide corresponding explanations of the reason, behavior and actual validation in both languages. See [Git commit messages](./docs/en/development.md#git-commit-messages) for the format.
 7. Describe the problem, resulting behavior, documentation review, links to both development-log entries and validation in a pull request. Include SVG revisions when proposing UI changes.
 
-The 17 existing [interface designs](./docs/en/design.md) are approved and retained. Future interface changes should include an updated SVG proposal for explicit review before implementation. Reserved directories should gain code only when a concrete feature needs it.
+The 23 existing [interface designs](./docs/en/design.md) are approved and retained. Future interface changes should include an updated SVG proposal for explicit review before implementation. Reserved directories should gain code only when a concrete feature needs it.
 
 Follow the [code of conduct](./CODE_OF_CONDUCT.md). Use the [security policy](./SECURITY.md) for sensitive reports. Do not place credentials in issues, commits, examples, or screenshots.
 
 ## License and contacts
 
 The project uses the [MIT License](./LICENSE); see the [licensing notes](./docs/en/licensing.md). No CLA or transfer of ownership is currently requested. General coordination uses repository issues and PRs. Security reports use the verified GitHub private channel in [SECURITY](./SECURITY.md). A separate private maintainer contact remains **not configured**.
+
+Recovery scenes 21–23 were [approved](./docs/en/recovery-proposal.md) on 2026-11-22 and are implemented in development source.

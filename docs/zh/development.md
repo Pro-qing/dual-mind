@@ -122,13 +122,13 @@ CI 各组合运行环境及本地存储／React 测试、格式、类型、lint�
 
 ## 限制资源的模型验证
 
-本地测试串行执行，JavaScript 堆上限为 512 MiB，保留单项 30 秒超时。每次独立运行验证命令：本地检查总内存 1 GiB、独立批次超时 60 秒，包含真实命令超时测试的综合 `npm run check` 总超时 180 秒；Electron 总内存 2 GiB、整体超时 300 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
+本地测试串行执行，JavaScript 堆上限为 512 MiB，保留单项 30 秒超时（Windows 原生测试为 90 秒）。每次独立运行验证命令：本地检查总内存 1 GiB、独立批次超时 60 秒，包含真实命令超时测试的综合 `npm run check` 总超时 180 秒；Electron 总内存 2 GiB、整体超时 300 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
 
 设置 `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` 后，`npm test` 与 `npm run test:ui` 复用已安装 VS Code；未设置时保留自动下载。无显示环境使用 `xvfb-run -a`。测试使用隔离用户配置；真实 Webview 测试启动本地模拟服务，在原生密码框输入测试密钥，验证查询、选择、保存重载、中英文及窄窗口布局，不读取个人凭据；模型请求只发往本地模拟端点，不调用付费服务。
 
 ## 执行能力验证
 
-执行测试使用临时仓库、本地 SSE 服务和测试凭据。真实命令测试已纳入常规 `npm run test:local`，无需 `DUALMIND_TEST_SYSTEMD` 或任何用户级 systemd 会话。覆盖原样参数、工作目录、环境隔离、启动错误、非零退出、取消、超时、输出上限及遗留子进程清理；测试将 systemd 工具替换为失败桩，确认运行器不调用它们。
+执行测试使用临时仓库、本地 SSE 服务和测试凭据。真实命令测试已纳入常规 `npm run test:local`，无需 `DUALMIND_TEST_SYSTEMD` 或任何用户级 systemd 会话。覆盖原样参数、工作目录、环境继承、启动错误、非零退出、取消、超时、输出上限及遗留子进程清理；测试将 systemd 工具替换为失败桩，确认运行器不调用它们。
 
 ```bash
 nvm use
@@ -150,3 +150,9 @@ VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 ## 任务聊天开发记录
 
 参见[开发日志](./development-log.md)与[任务聊天验证记录](./task-chat-validation.md)。新增测试覆盖跨运行分页、消息幂等与脱敏、只读答复、三种 Git 策略的未提交成果续接、交接排队、暂停／停止／重载、轮次上限、新证据、IME 和证据抽屉状态。
+
+## 原生 shell 命令
+
+两个角色现共用[通用 shell 执行层](./shell-execution.md)，自动继承环境，并允许 Reviewer 独立验证，无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
+
+恢复测试包含模拟端点、独立子进程强制退出及重新创建执行服务；只修改临时仓库。恢复界面审核前，真实 UI 回归仅验证原有布局与交互，不能计为新按钮已通过验证。见[恢复机制](./execution-recovery.md)。

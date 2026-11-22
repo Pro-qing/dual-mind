@@ -1,3 +1,5 @@
+import { taskBranchSlug, taskBranchName, branchSuffixLengths } from '../../src/git/branchNames';
+import { realpath } from 'node:fs/promises';
 import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs/promises';
@@ -12,7 +14,7 @@ import {
 import { fixture, taskInput } from './fixtures';
 
 async function harness(t: TestContext, commit = true) {
-  const root = await mkdtemp(join(tmpdir(), 'dualmind git test-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'dualmind git test-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const repo = join(root, 'source'),
     storage = join(root, 'storage');
@@ -81,7 +83,7 @@ test('prepares separate task branches, preserves the source and freezes baseline
   ]);
   assert.deepEqual(first, same);
   assert.notEqual(first.directory, other.directory);
-  assert.equal(first.branch, `dualmind/task/${a}/worker`);
+  assert.equal(first.branch, taskBranchName(a, 'task', 8));
   assert.equal(first.baseCommit, original);
   const worker = await h.service.files(a, 'worker'),
     reviewer = await h.service.files(a, 'reviewer');
@@ -178,7 +180,9 @@ test('supports an existing worktree as source and rejects submodules', async (t)
 test('rejects unregistered collisions and recovers only matching interrupted preparations', async (t) => {
   const h = await harness(t);
   const id = await h.task();
-  await h.run('branch', `dualmind/task/${id}/worker`);
+  for (const length of branchSuffixLengths) {
+    await h.run('branch', taskBranchName(id, 'task', length));
+  }
   await assert.rejects(h.service.prepare(id), { code: 'workspaceConflict' });
   assert.equal(h.f.workspace.values.has(taskGitStorageKey), false);
   const recovery = await h.task();
@@ -211,11 +215,15 @@ test('rejects path traversal, links and Git metadata and revokes role access wit
   const prepared = await h.service.prepare(id);
   const writer = await h.service.files(id, 'worker'),
     reader = await h.service.files(id, 'reviewer');
-  await symlink(h.repo, join(prepared.directory, 'escape'));
+  await symlink(
+    h.repo,
+    join(prepared.directory, 'escape'),
+    process.platform === 'win32' ? 'junction' : 'dir',
+  );
   assert.equal(await writer.commandDirectory('.'), prepared.directory);
   await mkdir(join(prepared.directory, 'nested'));
   assert.equal(await writer.commandDirectory('nested'), join(prepared.directory, 'nested'));
-  assert.ok(!('commandDirectory' in reader));
+  assert.equal(await reader.commandDirectory('.'), prepared.directory);
   for (const directory of ['..', '/tmp', '.git', 'escape', 'nested/../', 'file.txt', 'missing']) {
     await assert.rejects(writer.commandDirectory(directory), { code: 'commandDirectoryInvalid' });
   }
@@ -247,7 +255,7 @@ test('suppresses checkout hooks, content filters, external diff and textconv pro
   const id = await h.task();
   const marker = join(h.root, 'unexpected-execution'),
     program = join(h.root, 'dangerous.sh');
-  await writeFile(program, `#!/bin/sh\nprintf 'executed' > '${marker}'\n`);
+  await writeFile(program, `#!/bin/sh\nprintf 'executed' > '${marker.replaceAll('\\', '/')}'\n`);
   await chmod(program, 0o700);
   const hooks = join(h.root, 'hooks');
   await mkdir(hooks);
@@ -281,16 +289,21 @@ test('limits process output and time, and does not inherit repository redirectio
       GIT_CONFIG_VALUE_0: '/absent',
     },
   });
-  assert.equal((await redirected.checked(['rev-parse', '--show-toplevel'], h.repo)).trim(), h.repo);
+  assert.equal(
+    await realpath((await redirected.checked(['rev-parse', '--show-toplevel'], h.repo)).trim()),
+    h.repo,
+  );
   await assert.rejects(new GitProcess({ env: h.env, maxBytes: 1 }).version(), {
     code: 'outputTooLarge',
   });
-  const fake = join(h.root, 'slow-git');
-  await writeFile(fake, '#!/bin/sh\nexec sleep 10\n');
-  await chmod(fake, 0o700);
-  await assert.rejects(new GitProcess({ executable: fake, timeoutMs: 40 }).version(), {
-    code: 'gitTimeout',
-  });
+  if (process.platform !== 'win32') {
+    const fake = join(h.root, 'slow-git');
+    await writeFile(fake, '#!/bin/sh\nexec sleep 10\n');
+    await chmod(fake, 0o700);
+    await assert.rejects(new GitProcess({ executable: fake, timeoutMs: 40 }).version(), {
+      code: 'gitTimeout',
+    });
+  }
 });
 
 test('preserves unrelated directories and refuses redirected task storage before touching the source', async (t) => {
@@ -317,7 +330,11 @@ test('preserves unrelated directories and refuses redirected task storage before
     { ...h.ports, storageRoot: () => join(h.root, 'redirect') },
     h.git,
   );
-  await symlink(h.repo, join(h.root, 'redirect'));
+  await symlink(
+    h.repo,
+    join(h.root, 'redirect'),
+    process.platform === 'win32' ? 'junction' : 'dir',
+  );
   const original = await h.run('status', '--porcelain=v1');
   await assert.rejects(redirected.prepare(await h.task()), { code: 'invalidPath' });
   assert.equal(await h.run('status', '--porcelain=v1'), original);
@@ -355,13 +372,13 @@ test('persists intent before Git creation, retries untouched intent and preserve
     new TaskWorkspaces(h.ports, new InterruptedGit({ env: h.env })).prepare(other),
     { code: 'gitFailed' },
   );
-  await h.run('branch', `dualmind/task/${other}/worker`);
+  await h.run('branch', taskBranchName(other, 'task', 8));
   await assert.rejects(h.service.prepare(other), { code: 'workspaceConflict' });
   assert.equal(
-    (await h.run('show-ref', '--verify', `refs/heads/dualmind/task/${other}/worker`))
+    (await h.run('show-ref', '--verify', `refs/heads/${taskBranchName(other, 'task', 8)}`))
       .trim()
       .split(' ')[1],
-    `refs/heads/dualmind/task/${other}/worker`,
+    `refs/heads/${taskBranchName(other, 'task', 8)}`,
   );
 });
 
@@ -501,4 +518,111 @@ test('direct registrations recover consistent interrupted switches and preserve 
       .entries[0].baseCommit,
     first.baseCommit,
   );
+});
+
+test('managed branches normalize Unicode task names, truncate by code point and retain immutable identity', async (t) => {
+  const cases = [
+    [' 修复 登录 / FIX 登录.. ', '修复-登录-fix-登录'],
+    ['ＦＩＸ Café e\u0301', 'fix-café-é'],
+    ['---[😀]../@{*?\\~:^', 'task'],
+    ['中'.repeat(60), '中'.repeat(48)],
+    ['A'.repeat(47) + '---B', 'a'.repeat(47)],
+  ];
+  // ASCII capitals are lowercased; Unicode accents survive normalization.
+  for (const [name, expected] of cases) {
+    assert.equal(taskBranchSlug(name), expected);
+  }
+  const h = await harness(t),
+    id = await h.task();
+  const binding = await h.service.prepare(id, undefined, '修复 登录 / FIX 登录..');
+  assert.equal(binding.branch, taskBranchName(id, '修复-登录-fix-登录', 8));
+  assert.deepEqual(binding.branchNaming, {
+    version: 2,
+    slug: '修复-登录-fix-登录',
+    suffixLength: 8,
+  });
+  assert.equal((await h.service.prepare(id, undefined, '改过的标题')).branch, binding.branch);
+  assert.equal(
+    (await new TaskWorkspaces(h.ports, h.git).binding(id, binding)).branch,
+    binding.branch,
+  );
+  const other = await h.service.prepare(await h.task(), undefined, '修复 登录 / FIX 登录..');
+  assert.notEqual(other.branch, binding.branch);
+});
+
+test('branch collisions lengthen the suffix without adopting existing branches', async (t) => {
+  const h = await harness(t);
+  for (const occupied of [1, 2]) {
+    const id = await h.task();
+    for (const length of branchSuffixLengths.slice(0, occupied)) {
+      await h.run('branch', taskBranchName(id, '修复', length));
+    }
+    const binding = await h.service.prepare(id, undefined, '修复');
+    assert.equal(binding.branchNaming!.suffixLength, branchSuffixLengths[occupied]);
+    assert.equal(binding.branch, taskBranchName(id, '修复', branchSuffixLengths[occupied]));
+    for (const length of branchSuffixLengths.slice(0, occupied)) {
+      assert.ok(
+        (
+          await h.run('show-ref', '--verify', `refs/heads/${taskBranchName(id, '修复', length)}`)
+        ).includes(binding.baseCommit),
+      );
+    }
+  }
+});
+
+test('legacy managed branches and interrupted intents remain reusable without renaming', async (t) => {
+  const h = await harness(t),
+    id = await h.task();
+  const created = await h.service.prepare(id, undefined, 'New title');
+  const branch = `dualmind/task/${id}/worker`;
+  await h.git.checked(['branch', '-m', branch], created.directory);
+  const legacy = { ...created, branch };
+  delete legacy.branchNaming;
+  await h.f.workspace.update(taskGitStorageKey, { version: 1, entries: [legacy] });
+  const restored = await new TaskWorkspaces(h.ports, h.git).prepare(id, undefined, 'Changed title');
+  assert.equal(restored.branch, branch);
+  assert.equal(restored.branchNaming, undefined);
+  const next = await h.task();
+  class Interrupted extends GitProcess {
+    override async checked(args: readonly string[], cwd: string) {
+      if (args[0] === 'worktree' && args[1] === 'add') {
+        throw new Error('Interrupted');
+      }
+      return super.checked(args, cwd);
+    }
+  }
+  await assert.rejects(new TaskWorkspaces(h.ports, new Interrupted({ env: h.env })).prepare(next), {
+    code: 'gitFailed',
+  });
+  const registry = h.f.workspace.get<{ version: number; entries: TaskGitWorkspace[] }>(
+    taskGitStorageKey,
+    { version: 1, entries: [] },
+  );
+  const intent = registry.entries.find((e) => e.taskId === next)!;
+  intent.branch = `dualmind/task/${next}/worker`;
+  delete intent.branchNaming;
+  await h.f.workspace.update(taskGitStorageKey, registry);
+  assert.equal((await h.service.prepare(next, undefined, 'Another title')).branch, intent.branch);
+});
+
+test('managed registry and bindings reject forged naming identity', async (t) => {
+  const h = await harness(t),
+    id = await h.task();
+  const created = await h.service.prepare(id, undefined, '修复');
+  for (const patch of [
+    { branch: taskBranchName('00000000-0000-0000-0000-000000000000', '修复', 8) },
+    { branchNaming: { ...created.branchNaming!, slug: '../other' } },
+    { branchNaming: { ...created.branchNaming!, version: 99 } },
+    { branchNaming: { ...created.branchNaming!, suffixLength: 9 } },
+  ]) {
+    await h.f.workspace.update(taskGitStorageKey, {
+      version: 1,
+      entries: [{ ...created, ...patch }],
+    });
+    assert.throws(() => h.service.preparedTaskIds(), { code: 'storageFailed' });
+  }
+  await h.f.workspace.update(taskGitStorageKey, { version: 1, entries: [created] });
+  await assert.rejects(h.service.binding(id, { ...created, branch: 'dualmind/forged-12345678' }), {
+    code: 'workspaceChanged',
+  });
 });

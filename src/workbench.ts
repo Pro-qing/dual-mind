@@ -165,7 +165,7 @@ export class Workbench implements vscode.Disposable {
   /** Host-only Git preparation; execution owns when this is called. */
   async prepareTaskWorkspace(taskId: string) {
     const task = (await this.store.snapshot()).tasks.find((item) => item.id === taskId);
-    return this.taskWorkspaces.prepare(taskId, task?.git);
+    return this.taskWorkspaces.prepare(taskId, task?.git, task?.name);
   }
   async open(): Promise<void> {
     if (this.panel) {

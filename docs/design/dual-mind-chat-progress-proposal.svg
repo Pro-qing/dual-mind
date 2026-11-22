@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>18. 公开过程与紧凑消息 — 已审核</title><desc>静态示例：宽屏聊天显示活动状态和公开过程；长消息内部滚动，系统输出可最小化。</desc><style>text {font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif;}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="#171a20" />
+<rect x="0" y="0" width="1440" height="34" rx="0" fill="#11151b" stroke="#11151b" />
+<text x="24" y="23" font-size="13" fill="#e7edf6" font-weight="400">DualMind / 任务聊天修订</text>
+<text x="995" y="23" font-size="13" fill="#a4b0c1" font-weight="400">设计提案 · 已审核 · 2026-11-22</text>
+<rect x="24" y="51" width="104" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="34" y="72" font-size="13" fill="#e7edf6" font-weight="500">← 返回主页</text>
+<text x="148" y="75" font-size="24" fill="#e7edf6" font-weight="600">修复登录校验</text>
+<rect x="352" y="56" width="155" height="24" rx="12" fill="#20252e" stroke="#8db8fa" />
+<text x="362" y="73" font-size="12" fill="#8db8fa" font-weight="400">Worker 执行中 · 1/5</text>
+<rect x="908" y="51" width="80" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="918" y="72" font-size="13" fill="#e7edf6" font-weight="500">暂停</text>
+<rect x="1000" y="51" width="92" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1010" y="72" font-size="13" fill="#e7edf6" font-weight="500">预览修改</text>
+<rect x="1104" y="51" width="92" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1114" y="72" font-size="13" fill="#e7edf6" font-weight="500">编辑任务</text>
+<rect x="1208" y="51" width="96" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1218" y="72" font-size="13" fill="#e7edf6" font-weight="500">语言 / 设置</text>
+<rect x="1316" y="51" width="100" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1326" y="72" font-size="13" fill="#e7edf6" font-weight="500">停止执行</text>
+<text x="24" y="108" font-size="14" fill="#8db8fa" font-weight="400">分支  dualmind/修复登录校验-a1b2c3d4</text>
+<rect x="24" y="124" width="686" height="38" rx="8" fill="#20252e" stroke="#394351" />
+<text x="38" y="149" font-size="14" fill="#8db8fa" font-weight="600">Worker</text>
+<text x="128" y="149" font-size="13" fill="#a4b0c1" font-weight="400">实现模型 · 当前任务</text>
+<rect x="722" y="124" width="694" height="38" rx="8" fill="#20252e" stroke="#394351" />
+<text x="736" y="149" font-size="14" fill="#8dd8be" font-weight="600">Reviewer</text>
+<text x="842" y="149" font-size="13" fill="#a4b0c1" font-weight="400">审查模型 · 当前任务</text>
+<rect x="24" y="178" width="1018" height="648" rx="8" fill="#20252e" stroke="#394351" />
+<rect x="1056" y="178" width="360" height="648" rx="8" fill="#20252e" stroke="#394351" />
+<text x="40" y="207" font-size="15" fill="#e7edf6" font-weight="600">任务聊天</text>
+<rect x="889" y="186" width="138" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="899" y="207" font-size="13" fill="#e7edf6" font-weight="500">工具与证据</text>
+<path d="M24 220H1042" stroke="#394351" />
+<rect x="42" y="232" width="982" height="39" rx="8" fill="#223344" stroke="#436386" />
+<text x="56" y="258" font-size="14" fill="#8db8fa" font-weight="500">◌  Worker · 等待模型响应</text>
+<text x="805" y="258" font-size="13" fill="#a4b0c1" font-weight="400">本次请求已用 00:18</text>
+<rect x="287" y="284" width="720" height="72" rx="8" fill="#263748" stroke="#42678d" />
+<text x="303" y="310" font-size="14" fill="#e7edf6" font-weight="600">你 · 原始需求</text>
+<rect x="965.0" y="291" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(972.0 298.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="303" y="338" font-size="15" fill="#e7edf6" font-weight="400">修复登录校验，补充空密码、过期会话和重复提交的测试。</text>
+<rect x="42" y="370" width="945" height="210" rx="8" fill="#252c36" stroke="#394351" />
+<rect x="42" y="370" width="3" height="210" rx="1" fill="#8dd8be" stroke="#8dd8be" />
+<text x="56" y="397" font-size="14" fill="#8dd8be" font-weight="600">Reviewer · 执行方案 · v1</text>
+<rect x="945.0" y="378" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(952.0 385.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="58" y="422" font-size="15" fill="#e7edf6" font-weight="400">目标：登录失败时给出明确反馈，重复请求不重复创建会话。</text>
+<text x="58" y="452" font-size="14" fill="#e7edf6" font-weight="400">1. 检查登录表单及认证接口。</text>
+<text x="58" y="476" font-size="14" fill="#e7edf6" font-weight="400">2. 补充空密码、错误密码与过期会话用例。</text>
+<text x="58" y="500" font-size="14" fill="#e7edf6" font-weight="400">3. Worker 实施修改；Reviewer 独立运行验证。</text>
+<text x="58" y="524" font-size="14" fill="#a4b0c1" font-weight="400">验收 A1 · 命令验证：登录回归测试通过。</text>
+<text x="58" y="548" font-size="14" fill="#a4b0c1" font-weight="400">验收 A2 · 阅读审查：提示文案可理解，状态转换一致。</text>
+<rect x="974" y="420" width="4" height="140" rx="2" fill="#394351" stroke="#394351" />
+<rect x="974" y="425" width="4" height="46" rx="2" fill="#a4b0c1" stroke="#a4b0c1" />
+<text x="58" y="568" font-size="12" fill="#a4b0c1" font-weight="400">正文局部滚动 · 点击展开图标查看完整方案</text>
+<rect x="42" y="592" width="945" height="101" rx="8" fill="#252c36" stroke="#394351" />
+<rect x="42" y="592" width="3" height="101" rx="1" fill="#8db8fa" stroke="#8db8fa" />
+<text x="56" y="619" font-size="14" fill="#8db8fa" font-weight="600">Worker · 公开过程 · 本次请求前的记录</text>
+<rect x="945.0" y="600" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(952.0 607.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="58" y="643" font-size="15" fill="#e7edf6" font-weight="400">已找到重复提交的入口，下一步会增加提交期间的按钮状态检查。</text>
+<text x="58" y="675" font-size="12" fill="#a4b0c1" font-weight="400">过程文字不代表验证已通过。</text>
+<path d="M24 705H1042" stroke="#394351" />
+<text x="38" y="729" font-size="13" fill="#a4b0c1" font-weight="400">补充问题或修改要求</text>
+<rect x="38" y="740" width="990" height="45" rx="8" fill="#171a20" stroke="#394351" />
+<text x="50" y="768" font-size="14" fill="#a4b0c1" font-weight="400">继续输入，Shift+Enter 换行…</text>
+<text x="38" y="811" font-size="12" fill="#a4b0c1" font-weight="400">执行中的消息将在交接时处理</text>
+<rect x="952" y="791" width="76" height="30" rx="8" fill="#325c8f" stroke="#394351" />
+<text x="962" y="812" font-size="13" fill="#e7edf6" font-weight="500">发送</text>
+<text x="1070" y="205" font-size="16" fill="#e7edf6" font-weight="600">工具与证据</text>
+<rect x="1276" y="186" width="42" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1286" y="207" font-size="13" fill="#e7edf6" font-weight="500">—</text>
+<rect x="1326" y="186" width="74" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1336" y="207" font-size="13" fill="#e7edf6" font-weight="500">× 关闭</text>
+<text x="1070" y="233" font-size="12" fill="#a4b0c1" font-weight="400">全部记录 · 原始输出独立展开</text>
+<path d="M1056 248H1416" stroke="#394351" />
+<rect x="1070" y="262" width="332" height="140" rx="8" fill="#20252e" stroke="#394351" />
+<text x="1084" y="288" font-size="14" fill="#8db8fa" font-weight="500">Worker · 登录回归测试</text>
+<rect x="1297" y="299" width="91" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1307" y="320" font-size="13" fill="#e7edf6" font-weight="500">— 最小化</text>
+<text x="1084" y="355" font-size="14" fill="#8dd8be" font-weight="400">通过 · 退出码 0 · v1</text>
+<text x="1084" y="383" font-size="13" fill="#a4b0c1" font-weight="400">查看完整命令与输出  ›</text>
+<rect x="1070" y="416" width="332" height="55" rx="8" fill="#3a272d" stroke="#394351" />
+<text x="1084" y="439" font-size="13" fill="#f3a7ab" font-weight="600">系统 · 命令执行失败</text>
+<text x="1084" y="458" font-size="11" fill="#f3a7ab" font-weight="400">错误 1 · 已最小化</text>
+<rect x="1322" y="428" width="66" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1332" y="449" font-size="13" fill="#e7edf6" font-weight="500">恢复</text>
+<rect x="1070" y="486" width="332" height="74" rx="8" fill="#20252e" stroke="#394351" />
+<text x="1084" y="512" font-size="14" fill="#8dd8be" font-weight="400">Reviewer · 读取测试文件</text>
+<rect x="1358.0" y="524" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(1365.0 531.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="1074" y="611" font-size="13" fill="#a4b0c1" font-weight="400">最小化后保留标题和错误标记。</text>
+<text x="1074" y="636" font-size="13" fill="#a4b0c1" font-weight="400">新输出不会强制打开记录。</text>
+<text x="24" y="851" font-size="15" fill="#e7edf6" font-weight="600">A · 宽屏：状态始终可见，长消息只占有限高度</text>
+<text x="24" y="879" font-size="13" fill="#a4b0c1" font-weight="400">每条消息可展开／紧凑；标题与操作固定，正文滚动。公开过程只展示模型已公开的文字。</text>
+</svg>

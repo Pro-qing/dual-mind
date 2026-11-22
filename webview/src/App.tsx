@@ -1,3 +1,4 @@
+import { restoreChatViews, type ChatView, type WorkbenchViewState } from './chatViewState';
 import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
 import { restoreNavigation, type Navigation } from './navigation';
@@ -29,15 +30,34 @@ export function App({
   bridge,
   initialNavigation,
   onNavigation,
+  initialChatViews,
+  onViewState,
 }: {
   snapshot: AppSnapshot;
   bridge: Bridge;
   initialNavigation?: unknown;
   onNavigation?(value: Navigation): void;
+  initialChatViews?: unknown;
+  onViewState?(value: WorkbenchViewState): void;
 }) {
   const [navigation, setNavigation] = useState<Navigation>(() =>
     restoreNavigation(initialNavigation, snapshot.tasks),
   );
+  const [chatViews, setChatViews] = useState(() =>
+    restoreChatViews(initialChatViews, snapshot.tasks),
+  );
+  const updateChatView = useCallback((taskId: string, patch: Partial<ChatView>) => {
+    setChatViews((current) => {
+      const next = { ...current[taskId], ...patch };
+      if (JSON.stringify(current[taskId]) === JSON.stringify(next)) {
+        return current;
+      }
+      return { ...current, [taskId]: next };
+    });
+  }, []);
+  useEffect(() => {
+    onViewState?.({ version: 1, navigation, chats: restoreChatViews(chatViews, snapshot.tasks) });
+  }, [navigation, chatViews, snapshot.tasks, onViewState]);
   const view = navigation.view;
   const settingsView = view !== 'home' && view !== 'task';
   const [preview, setPreview] = useState(false);
@@ -213,6 +233,8 @@ export function App({
         snapshot,
         execution,
         executionEvents,
+        chatViews,
+        updateChatView,
         execute,
         pending,
         ...modelQueries,

@@ -14,10 +14,12 @@ DualMind 的本地 React 工作台现已提供 GitHub 预览版，请先阅读[�
 6. 新的 Git commit 必须使用英文和简体中文双语说明；标题采用 `type(scope): English summary / 中文摘要`（scope 可省略），正文如有也须双语对应，涵盖变更原因、行为及实际验证。具体格式见[Git 提交信息](./docs/zh/development.md#git-提交信息)。
 7. PR 说明问题、修改后的行为、文档核对结果、双语开发日志链接及验证结果；提议界面调整时附上 SVG 修订。
 
-现有 17 组[界面设计](./docs/zh/design.md)已审核通过并保留。后续界面变更应提供更新后的 SVG 提案，明确审核通过后再实现。预留目录只在实际功能需要时加入代码。
+现有 23 组[界面设计](./docs/zh/design.md)已审核通过并保留。后续界面变更应提供更新后的 SVG 提案，明确审核通过后再实现。预留目录只在实际功能需要时加入代码。
 
 请遵守[行为准则](./CODE_OF_CONDUCT.zh.md)，敏感问题按[安全说明](./SECURITY.zh.md)处理。不要在 Issue、提交、示例或截图中放入凭据。
 
 ## 许可和联系
 
 项目采用 [MIT 许可证](./LICENSE)，详见[许可说明](./docs/zh/licensing.md)。当前不要求 CLA 或所有权转让。常规协作使用仓库 Issue 和 PR。安全报告使用[安全说明](./SECURITY.zh.md)中已验证的 GitHub 私密渠道；独立维护者私密联系方式仍为**尚未配置**。
+
+恢复界面新增场景 21–23 已于 2026-11-22 [审核通过](./docs/zh/recovery-proposal.md)并接入开发源码。

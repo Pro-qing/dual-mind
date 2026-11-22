@@ -64,7 +64,7 @@ export function ExecutionDetailView({
     return (
       <div className="command-evidence">
         <strong>
-          {c.name} ·{' '}
+          {tr(c.agent ?? 'worker')} · {c.name} ·{' '}
           {tr(
             c.purpose === 'verify'
               ? 'commandVerification'
@@ -78,7 +78,7 @@ export function ExecutionDetailView({
           {tr('planVersion')} {c.planVersion} · {tr('exitCode')} {c.exitCode}
         </p>
         <pre>
-          {c.program} {c.args.map((arg) => JSON.stringify(arg)).join(' ')}
+          {c.command ?? `${c.program} ${c.args.map((arg) => JSON.stringify(arg)).join(' ')}`}
           {'\n'}
           {tr('commandCwd')}: {c.cwd}
           {'\n'}

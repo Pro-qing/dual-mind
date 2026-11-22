@@ -1,3 +1,4 @@
+import { RecoveryStore } from './recovery';
 import { OperationError, errorText } from '../shared/errors';
 import { appendFile, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
@@ -207,11 +208,19 @@ export class RunRecords {
       }
     }
   }
-  async conversation(taskId: string, before?: string): Promise<ConversationPage> {
-    if (before !== undefined && (typeof before !== 'string' || before.length > 200)) {
+  async conversation(
+    taskId: string,
+    before?: string,
+    includeProcess = false,
+  ): Promise<ConversationPage> {
+    if (
+      typeof includeProcess !== 'boolean' ||
+      (before !== undefined && (typeof before !== 'string' || before.length > 200))
+    ) {
       throw new OperationError('conversationUnavailable');
     }
     const messages = await this.messages(taskId);
+    const processMessages = new Map<string, TaskMessage>();
     for (const run of this.runs.filter((r) => r.taskId === taskId)) {
       for (const event of await this.history(
         run.id,
@@ -219,7 +228,34 @@ export class RunRecords {
         Number.MAX_SAFE_INTEGER,
       )) {
         const detail = event.detail;
-        if (detail && detail.type !== 'command') {
+        if (
+          includeProcess &&
+          event.kind === 'text' &&
+          event.requestId &&
+          (event.agent === 'worker' || event.agent === 'reviewer')
+        ) {
+          const key = JSON.stringify([event.runId, event.agent, event.requestId]);
+          const existing = processMessages.get(key);
+          if (existing) {
+            existing.text += event.text;
+            existing.sequence = Math.max(existing.sequence!, event.sequence);
+          } else {
+            const message: TaskMessage = {
+              id: `${event.runId}:process:${String(event.sequence).padStart(10, '0')}`,
+              taskId,
+              time: event.time,
+              role: event.agent,
+              kind: 'process',
+              text: event.text,
+              runId: event.runId,
+              requestId: event.requestId,
+              sequence: event.sequence,
+              round: event.round,
+            };
+            processMessages.set(key, message);
+            messages.push(message);
+          }
+        } else if (detail && detail.type !== 'command') {
           messages.push({
             id: `${event.runId}:${String(event.sequence).padStart(10, '0')}`,
             taskId,
@@ -294,16 +330,36 @@ export class RunRecords {
         grouped.set(key, structuredClone(event));
       }
     }
+    const summary = {
+      records: grouped.size,
+      errors: [...grouped.values()].filter(
+        (event) =>
+          event.kind === 'error' ||
+          Boolean(event.fault) ||
+          (event.detail?.type === 'command' && !event.detail.command.ok),
+      ).length,
+    };
     const ordered = [...grouped.values()]
       .sort((a, b) => eventCursor(a).localeCompare(eventCursor(b)))
       .filter((e) => !before || eventCursor(e) < before);
     const page = ordered.slice(-80);
     return {
       events: page,
+      summary,
       before: ordered.length > page.length ? eventCursor(page[0]) : undefined,
     };
   }
+  recovery(runId: string) {
+    const root = this.root();
+    if (!root) {
+      throw new OperationError('executionStorageUnavailable');
+    }
+    return new RecoveryStore(join(root, 'recovery'), runId);
+  }
   async removeTask(taskId: string) {
+    for (const run of this.runs.filter((run) => run.taskId === taskId)) {
+      await this.recovery(run.id).remove();
+    }
     this.runs = this.runs.filter((run) => run.taskId !== taskId);
     await this.save();
   }

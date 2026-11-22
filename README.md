@@ -10,7 +10,7 @@ DualMind is an AI pair-programming extension project for VS Code. It brings task
 
 **Source 0.0.4 · Local version record · Unpublished**
 
-The React workbench supports local tasks, connection settings, Reviewer presets, and English / Simplified Chinese. Source 0.0.4 provides independent role histories, Worker execution, read-only review and an activity-bar entry. Tasks may use dedicated worktrees or directly edit a selected local branch; applying dedicated-worktree results back to the original workspace remains planned. The optional conversation preview is explicitly read-only example content.
+The React workbench supports local tasks, connection settings, Reviewer presets, and English / Simplified Chinese. Source 0.0.4 provides independent role histories, Worker execution, independent Reviewer inspection and verification and an activity-bar entry. Tasks may use dedicated worktrees or directly edit a selected local branch; applying dedicated-worktree results back to the original workspace remains planned. The optional conversation preview is explicitly read-only example content.
 
 Historical 0.0.1 publication: available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) as **Pro-qing.dual-mind**, version **0.0.1**, published 2026-11-18 with the Preview label. [GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) was also published on 2026-11-18. [Release notes](./docs/en/release-notes-preview-2.md).
 
@@ -29,7 +29,7 @@ The execution flow follows **Request → Reviewer plan → Worker implementation
 - **Connection settings:** Save OpenAI-compatible endpoints and independent agent model defaults, with API keys stored by VS Code.
 - **Model discovery:** Save a connection with an optional model, set its key in the native password prompt, explicitly query models, then search/select or manually enter IDs for defaults and tasks. Queries verify list access only.
 - **Task execution:** Stream Worker/Reviewer output, plan with Reviewer, let Worker implement and verify autonomously in a dedicated worktree or selected local branch, and iterate through acceptance and revised plans, pause/continue/stop and inspect results. Use the DualMind activity-bar icon to open the workbench.
-- **Follow-up:** Ask about results or continue changes directly. Reviewer answers read-only or issues a new plan, processes queued messages at handoffs and retains bound directories and uncommitted artifacts.
+- **Follow-up:** Ask about results or continue changes directly. Reviewer answers after inspection or issues a new plan, processes queued messages at handoffs and retains bound directories and uncommitted artifacts.
 - **Reviewer presets:** Edit bilingual built-in instructions or manage custom roles in their original language.
 - **Language selection:** Follow VS Code or choose English / Simplified Chinese without rewriting saved task content.
 - **Example preview:** Explore the intended conversations and parallel-task appearance without creating records or sending requests.
@@ -44,7 +44,7 @@ Independent parallel sessions, automatic editor context and explicit application
 
 ![Approved DualMind parallel-task design reference](./docs/design/dual-mind-workbench.png)
 
-The 17 approved SVG/PNG pairs remain design references: scenes 1–7 cover the original workbench and model selection, 8–11 task pages, 12–13 planning and acceptance, and 14–17 [task chat and follow-up](./docs/en/task-chat-proposal.md). Current source implements single-task execution and chat. The image above retains the original workbench design; illustrated parallel execution remains planned. The published 0.0.1 artifact retains its original behavior. [Original workbench SVG](./docs/design/dual-mind-workbench.svg) · [Full design gallery](./docs/en/design.md).
+The 23 approved SVG/PNG pairs remain design references: scenes 1–7 cover the original workbench and model selection, 8–11 task pages, 12–13 planning and acceptance, 14–17 [task chat and follow-up](./docs/en/task-chat-proposal.md), 18–20 activity and compact chat, and 21–23 failure recovery. Current source implements single-task execution and chat. The image above retains the original workbench design; illustrated parallel execution remains planned. The published 0.0.1 artifact retains its original behavior. [Original workbench SVG](./docs/design/dual-mind-workbench.svg) · [Full design gallery](./docs/en/design.md).
 
 ## Documentation and contribution
 
@@ -58,3 +58,9 @@ The 17 approved SVG/PNG pairs remain design references: scenes 1–7 cover the o
 ## License
 
 [MIT License](./LICENSE). [Licensing and bundled notices](./docs/en/licensing.md).
+
+See [shell execution and independent verification](./docs/en/shell-execution.md) for automatic environment inheritance, supported shells, evidence rules and platform validation status.
+
+The approved chat controls show current activity and public process, use icon-only message sizing, and preserve per-task minimized evidence preferences. See [the chat revision](./docs/en/chat-progress-proposal.md).
+
+Failure recovery includes per-operation records, continuation of the saved role and bounded retries. [Approved recovery controls](./docs/en/recovery-proposal.md) now provide Continue execution, role/phase notices and retry status. See [behavior and limits](./docs/en/execution-recovery.md).

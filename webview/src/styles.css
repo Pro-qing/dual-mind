@@ -1922,3 +1922,214 @@ label > textarea {
 .message-state {
   margin-right: 12px;
 }
+
+/* Approved 2026-11-22: compact messages, activity, and recoverable evidence minimization. */
+.chat-message-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.chat-message-header h3 {
+  flex: 1;
+  min-width: 0;
+  margin: 4px 0;
+}
+.chat-message-actions,
+.evidence-panel-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.task-content:has(.task-chat) .chat-icon-button,
+.chat-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.chat-message-body {
+  max-height: 240px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+}
+.chat-message-body.body-expanded {
+  max-height: none;
+  overflow: visible;
+}
+.chat-message-body:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, #80b7ff);
+  outline-offset: -1px;
+}
+.chat-message.message-minimized .chat-message-header {
+  margin-bottom: 0;
+}
+.chat-message [hidden],
+.evidence-record [hidden] {
+  display: none;
+}
+.process-message {
+  background: color-mix(in srgb, #86b6fa 5%, var(--vscode-editor-background, #1e1e1e));
+}
+.chat-messages {
+  overflow-anchor: none;
+}
+.chat-toolbar > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.chat-activity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--dm-line);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.activity-description {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.activity-time {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.activity-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--dm-line);
+  border-top-color: #8db8fa;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: activity-spin 1s linear infinite;
+}
+@keyframes activity-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.chat-count,
+.chat-error-badge,
+.chat-result-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.chat-count {
+  background: #325c8f;
+  color: #fff;
+}
+.chat-error-badge {
+  color: var(--vscode-errorForeground, #f3a7ab);
+  border: 1px solid currentColor;
+}
+.chat-result-badge {
+  color: #8dd8be;
+}
+.task-chat.with-evidence-rail {
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 12px;
+}
+.evidence-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 2px;
+  border: 1px solid var(--dm-line);
+  border-radius: 8px;
+  min-width: 0;
+}
+.evidence-rail .chat-count,
+.evidence-rail .chat-error-badge {
+  max-width: 38px;
+  overflow: hidden;
+}
+.evidence-item {
+  position: relative;
+}
+.evidence-item .record-actions {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+.evidence-item summary {
+  padding-right: 42px;
+}
+.evidence-item summary .chat-error-badge,
+.evidence-item summary .chat-result-badge {
+  margin-left: 6px;
+}
+.evidence-record .evidence-record-content {
+  padding: 0;
+}
+.evidence-record-content > pre,
+.evidence-record-content > div {
+  margin: 0;
+  padding: 10px;
+}
+@media (max-width: 1099px) {
+  .chat-message-body {
+    max-height: 180px;
+  }
+  .chat-message-body.body-expanded {
+    max-height: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activity-spinner {
+    animation: none;
+  }
+}
+
+.recovery-notice {
+  margin: 10px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-inputValidation-errorBorder, #be777d);
+  border-radius: 6px;
+  background: color-mix(in srgb, #be777d 12%, var(--vscode-editor-background, #1e1e1e));
+  flex-shrink: 0;
+  max-height: 240px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.recovery-notice[data-restoring='true'] {
+  border-color: var(--dm-accent);
+  background: color-mix(in srgb, #86b6fa 8%, var(--vscode-editor-background, #1e1e1e));
+}
+.recovery-notice p {
+  margin: 6px 0;
+}
+.recovery-notice .error-notice {
+  margin: 6px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.recovery-position {
+  opacity: 0.8;
+}
+.retry-countdown {
+  color: var(--vscode-descriptionForeground, #adc5e4);
+}
+@media (max-width: 1099px) {
+  .recovery-notice {
+    margin: 8px;
+    padding: 8px 10px;
+    max-height: 180px;
+  }
+}

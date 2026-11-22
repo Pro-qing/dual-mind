@@ -10,7 +10,7 @@ DualMind 是一个面向 VS Code 的 AI 结对编程插件项目，将任务准�
 
 **当前源码 0.0.4 · 本地版本记录 · 尚未发布**
 
-React 工作台支持本地任务、连接设置、Reviewer 预设和中英文切换。0.0.4 已提供独立角色历史、Worker 执行、只读 Reviewer 审查和活动栏入口；任务可使用专用 worktree 或直接修改选定本地分支，将专用目录成果应用回原工作区仍待实现，可选示例继续保持只读。
+React 工作台支持本地任务、连接设置、Reviewer 预设和中英文切换。0.0.4 已提供独立角色历史、Worker 执行、Reviewer 独立探查与验证和活动栏入口；任务可使用专用 worktree 或直接修改选定本地分支，将专用目录成果应用回原工作区仍待实现，可选示例继续保持只读。
 
 历史发布记录：0.0.1 已于 2026-11-18 上架 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind)，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**，带有 Preview 标记。[GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 同日发布。[发布说明](./docs/zh/release-notes-preview-2.md)。
 
@@ -29,7 +29,7 @@ React 工作台支持本地任务、连接设置、Reviewer 预设和中英文�
 - **连接设置：** 保存 OpenAI 兼容接口与两个智能体的独立模型默认值，由 VS Code 保存 API 密钥。
 - **模型查询：** 显式查询候选模型，支持搜索、选择与手动输入；查询只验证列表访问。
 - **任务执行：** 在专用 worktree 或选定本地分支中执行 Reviewer 规划、Worker 自主实施与验证、Reviewer 验收和下一轮方案交接，支持流式输出、暂停／继续／停止及差异预览。可从活动栏图标进入。
-- **持续追问：** 直接询问结果或继续修改；Reviewer 只读答复或制定新方案，执行中补充在交接处理，沿用已有目录和未提交成果。
+- **持续追问：** 直接询问结果或继续修改；Reviewer 探查后答复或制定新方案，执行中补充在交接处理，沿用已有目录和未提交成果。
 - **Reviewer 预设：** 编辑内置角色的双语指令，或管理保留原文的自定义角色。
 - **语言选择：** 跟随 VS Code，或手动选择简体中文／English，不改写已保存的任务内容。
 - **示例预览：** 查看预期对话及并行任务外观，不创建记录，也不发送请求。
@@ -44,7 +44,7 @@ React 工作台支持本地任务、连接设置、Reviewer 预设和中英文�
 
 ![已审核的 DualMind 并行任务设计参考](./docs/design/dual-mind-workbench.png)
 
-现有 17 组已审核 SVG／PNG 保留为设计参考：场景 1–7 为原工作台与模型选择，8–11 为任务页面，12–13 为方案与验收循环，14–17 为[任务聊天与持续追问](./docs/zh/task-chat-proposal.md)。当前源码已实现单任务执行和聊天；上图保留原工作台设计，图中的并行执行仍待实现。已发布的 0.0.1 制品保持原有行为。[原工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
+现有 23 组已审核 SVG／PNG 保留为设计参考：场景 1–7 为原工作台与模型选择，8–11 为任务页面，12–13 为方案与验收循环，14–17 为[任务聊天与持续追问](./docs/zh/task-chat-proposal.md)，18–20 为过程提示和紧凑聊天，21–23 为故障恢复。当前源码已实现单任务执行和聊天；上图保留原工作台设计，图中的并行执行仍待实现。已发布的 0.0.1 制品保持原有行为。[原工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
 
 ## 文档与参与贡献
 
@@ -58,3 +58,9 @@ React 工作台支持本地任务、连接设置、Reviewer 预设和中英文�
 ## 许可
 
 [MIT 许可证](./LICENSE)。[许可及第三方声明](./docs/zh/licensing.md)。
+
+自动环境继承、shell 选择、证据规则和平台验证状态见[通用 shell 执行与独立验证](./docs/zh/shell-execution.md)。
+
+已审核聊天控件显示当前活动和公开过程，消息缩放仅使用图标，并按任务保留证据最小化偏好。见[聊天修订说明](./docs/zh/chat-progress-proposal.md)。
+
+故障恢复已实现，包括逐操作日志、原角色接续和有限重试；[已审核恢复界面](./docs/zh/recovery-proposal.md)已接入继续执行、角色／阶段提示和重试状态。行为和限制见[恢复说明](./docs/zh/execution-recovery.md)。

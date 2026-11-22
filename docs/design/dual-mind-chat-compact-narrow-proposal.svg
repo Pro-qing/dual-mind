@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>20. 窄屏与展开阅读 — 已审核</title><desc>静态示例：窄屏入口保留新记录提示；紧凑消息内部滚动，完整展开保持字号，错误记录可恢复。</desc><style>text {font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif;}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="#171a20" />
+<rect x="0" y="0" width="1440" height="34" rx="0" fill="#11151b" stroke="#11151b" />
+<text x="24" y="23" font-size="13" fill="#e7edf6" font-weight="400">DualMind / 任务聊天修订</text>
+<text x="995" y="23" font-size="13" fill="#a4b0c1" font-weight="400">设计提案 · 已审核 · 2026-11-22</text>
+<text x="28" y="72" font-size="21" fill="#e7edf6" font-weight="600">窄屏 · 长消息紧凑</text>
+<text x="752" y="72" font-size="21" fill="#e7edf6" font-weight="600">窄屏 · 完整展开与系统输出</text>
+<rect x="28" y="91" width="660" height="726" rx="8" fill="#20252e" stroke="#394351" />
+<text x="44" y="120" font-size="20" fill="#e7edf6" font-weight="600">修复登录校验</text>
+<rect x="430" y="101" width="240" height="24" rx="12" fill="#20252e" stroke="#8db8fa" />
+<text x="440" y="118" font-size="12" fill="#8db8fa" font-weight="400">dualmind/修复登录校验-a1b2c3d4</text>
+<text x="44" y="150" font-size="13" fill="#a4b0c1" font-weight="400">Worker · 实现模型    Reviewer · 审查模型</text>
+<path d="M28 166H688" stroke="#394351" />
+<text x="44" y="192" font-size="15" fill="#e7edf6" font-weight="600">任务聊天</text>
+<rect x="458" y="174" width="214" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="468" y="195" font-size="13" fill="#e7edf6" font-weight="500">恢复工具与证据 · 3 / 错误 1</text>
+<rect x="44" y="210" width="628" height="40" rx="8" fill="#223344" stroke="#436386" />
+<text x="58" y="236" font-size="14" fill="#8dd8be" font-weight="400">◌ Reviewer · 接收模型输出 · 00:09</text>
+<path d="M28 693H688" stroke="#394351" />
+<text x="42" y="717" font-size="13" fill="#a4b0c1" font-weight="400">补充问题或修改要求</text>
+<rect x="42" y="728" width="632" height="45" rx="8" fill="#171a20" stroke="#394351" />
+<text x="54" y="756" font-size="14" fill="#a4b0c1" font-weight="400">继续输入，Shift+Enter 换行…</text>
+<text x="42" y="799" font-size="12" fill="#a4b0c1" font-weight="400">执行中的消息将在交接时处理</text>
+<rect x="598" y="779" width="76" height="30" rx="8" fill="#325c8f" stroke="#394351" />
+<text x="608" y="800" font-size="13" fill="#e7edf6" font-weight="500">发送</text>
+<rect x="752" y="91" width="660" height="726" rx="8" fill="#20252e" stroke="#394351" />
+<text x="768" y="120" font-size="20" fill="#e7edf6" font-weight="600">修复登录校验</text>
+<rect x="1154" y="101" width="240" height="24" rx="12" fill="#20252e" stroke="#8db8fa" />
+<text x="1164" y="118" font-size="12" fill="#8db8fa" font-weight="400">dualmind/修复登录校验-a1b2c3d4</text>
+<text x="768" y="150" font-size="13" fill="#a4b0c1" font-weight="400">Worker · 实现模型    Reviewer · 审查模型</text>
+<path d="M752 166H1412" stroke="#394351" />
+<text x="768" y="192" font-size="15" fill="#e7edf6" font-weight="600">任务聊天</text>
+<rect x="1182" y="174" width="214" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1192" y="195" font-size="13" fill="#e7edf6" font-weight="500">恢复工具与证据 · 3 / 错误 1</text>
+<rect x="768" y="210" width="628" height="40" rx="8" fill="#223344" stroke="#436386" />
+<text x="782" y="236" font-size="14" fill="#8dd8be" font-weight="400">◌ Reviewer · 接收模型输出 · 00:09</text>
+<path d="M752 693H1412" stroke="#394351" />
+<text x="766" y="717" font-size="13" fill="#a4b0c1" font-weight="400">补充问题或修改要求</text>
+<rect x="766" y="728" width="632" height="45" rx="8" fill="#171a20" stroke="#394351" />
+<text x="778" y="756" font-size="14" fill="#a4b0c1" font-weight="400">继续输入，Shift+Enter 换行…</text>
+<text x="766" y="799" font-size="12" fill="#a4b0c1" font-weight="400">执行中的消息将在交接时处理</text>
+<rect x="1322" y="779" width="76" height="30" rx="8" fill="#325c8f" stroke="#394351" />
+<text x="1332" y="800" font-size="13" fill="#e7edf6" font-weight="500">发送</text>
+<rect x="44" y="266" width="604" height="226" rx="8" fill="#252c36" stroke="#394351" />
+<rect x="44" y="266" width="3" height="226" rx="1" fill="#8dd8be" stroke="#8dd8be" />
+<text x="58" y="293" font-size="14" fill="#8dd8be" font-weight="600">Reviewer · 执行方案 · v1</text>
+<rect x="606.0" y="274" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(613.0 281.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="60" y="316" font-size="15" fill="#e7edf6" font-weight="400">目标：修复登录错误提示与重复提交。</text>
+<text x="60" y="343" font-size="14" fill="#e7edf6" font-weight="400">1. 检查登录接口和现有测试。</text>
+<text x="60" y="366" font-size="14" fill="#e7edf6" font-weight="400">2. 实现请求状态保护。</text>
+<text x="60" y="389" font-size="14" fill="#e7edf6" font-weight="400">3. 覆盖失败恢复与过期会话。</text>
+<text x="60" y="412" font-size="14" fill="#e7edf6" font-weight="400">4. 独立运行回归检查。</text>
+<text x="60" y="435" font-size="14" fill="#e7edf6" font-weight="400">A1：正确显示错误且可再次提交。</text>
+<text x="60" y="458" font-size="14" fill="#e7edf6" font-weight="400">A2：重复提交只产生一次请求。</text>
+<rect x="636" y="313" width="4" height="168" rx="2" fill="#394351" stroke="#394351" />
+<rect x="636" y="318" width="4" height="56" rx="2" fill="#a4b0c1" stroke="#a4b0c1" />
+<rect x="44" y="506" width="604" height="108" rx="8" fill="#252c36" stroke="#394351" />
+<rect x="44" y="506" width="3" height="108" rx="1" fill="#8dd8be" stroke="#8dd8be" />
+<text x="58" y="533" font-size="14" fill="#8dd8be" font-weight="600">Reviewer · 公开过程</text>
+<rect x="606.0" y="514" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(613.0 521.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>展开消息</title><path d="M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5" /></g><text x="60" y="557" font-size="15" fill="#e7edf6" font-weight="400">正在对照验收项核查测试覆盖，</text>
+<text x="60" y="584" font-size="15" fill="#e7edf6" font-weight="400">会补充一次独立验证。</text>
+<rect x="44" y="628" width="628" height="50" rx="8" fill="#3a272d" stroke="#394351" />
+<text x="58" y="658" font-size="13" fill="#f3a7ab" font-weight="500">系统 · 命令失败 · 已最小化</text>
+<rect x="590" y="637" width="66" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="600" y="658" font-size="13" fill="#e7edf6" font-weight="500">恢复</text>
+<rect x="768" y="266" width="604" height="356" rx="8" fill="#252c36" stroke="#394351" />
+<rect x="768" y="266" width="3" height="356" rx="1" fill="#8dd8be" stroke="#8dd8be" />
+<text x="782" y="293" font-size="14" fill="#8dd8be" font-weight="600">Reviewer · 执行方案 · v1</text>
+<rect x="1330.0" y="274" width="30" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<g transform="translate(1337.0 281.0)" stroke="#e7edf6" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><title>紧凑显示</title><path d="M14 2 9 7m0-4v4h4M2 14l5-5m-4 0h4v4" /></g><text x="784" y="318" font-size="15" fill="#e7edf6" font-weight="400">目标：修复登录错误提示与重复提交。</text>
+<text x="784" y="351" font-size="14" fill="#e7edf6" font-weight="400">1. 检查登录接口和现有测试。</text>
+<text x="784" y="380" font-size="14" fill="#e7edf6" font-weight="400">2. 实现请求状态保护。</text>
+<text x="784" y="409" font-size="14" fill="#e7edf6" font-weight="400">3. 覆盖失败恢复与过期会话。</text>
+<text x="784" y="438" font-size="14" fill="#e7edf6" font-weight="400">4. 独立运行回归检查。</text>
+<text x="784" y="467" font-size="14" fill="#e7edf6" font-weight="400">验收 A1 · 错误提示与恢复状态正确。</text>
+<text x="784" y="496" font-size="14" fill="#e7edf6" font-weight="400">验收 A2 · 重复提交只产生一次请求。</text>
+<text x="784" y="525" font-size="14" fill="#e7edf6" font-weight="400">验收 A3 · 过期会话提示重新登录。</text>
+<text x="784" y="554" font-size="14" fill="#e7edf6" font-weight="400">验收 A4 · 独立回归检查通过。</text>
+<rect x="768" y="636" width="628" height="50" rx="8" fill="#3a272d" stroke="#394351" />
+<text x="782" y="658" font-size="13" fill="#f3a7ab" font-weight="500">系统 · 命令失败</text>
+<text x="782" y="675" font-size="11" fill="#a4b0c1" font-weight="400">失败提示仍可见，详细输出可以恢复。</text>
+<rect x="1314" y="646" width="66" height="30" rx="8" fill="#252c36" stroke="#394351" />
+<text x="1324" y="667" font-size="13" fill="#e7edf6" font-weight="500">恢复</text>
+<text x="24" y="851" font-size="15" fill="#e7edf6" font-weight="600">C · 窄屏：紧凑正文最多 180 px；展开后随聊天列表滚动</text>
+<text x="24" y="879" font-size="13" fill="#a4b0c1" font-weight="400">最小化抽屉后在工具栏恢复。输入框保持可达，读历史不被新内容拉走，支持键盘和减少动画。</text>
+</svg>

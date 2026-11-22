@@ -2,6 +2,14 @@ import { t } from './i18n';
 import { modelErrorCodes, type ErrorCode, type Locale, type ModelErrorCode } from './model';
 
 export const errorMessages = {
+  toolArgumentsInvalid: [
+    'Tool {tool}, call {callId}: {path} expects {expected}; received {actual}.',
+    '工具 {tool}，调用 {callId}：{path} 应为 {expected}，实际为 {actual}。',
+  ],
+  toolCorrectionLimit: [
+    'Tool arguments remained invalid after two correction attempts.',
+    '工具参数经两次纠正后仍然无效。',
+  ],
   messageInvalid: [
     'Enter 1–50,000 characters and a valid message ID.',
     '请输入 1–50,000 个字符，并使用有效消息 ID。',
@@ -71,6 +79,22 @@ export const errorMessages = {
   invalidExecution: ['Invalid execution request.', '执行请求无效，请重新打开工作台后重试。'],
   unsupportedExecution: ['Unsupported execution operation.', '不支持该执行操作。'],
   inactiveExecution: ['This execution is no longer active.', '该次执行已结束或已停止。'],
+  recoveryInvalid: [
+    'Recovery records are missing, damaged or inconsistent. Original records were preserved.',
+    '恢复记录缺失、损坏或不一致，原始记录已保留。',
+  ],
+  recoveryUnavailable: [
+    'This run has no usable recovery point or has been superseded.',
+    '此运行没有可用恢复点，或已被后续运行取代。',
+  ],
+  recoveryProcessUnknown: [
+    'The previous command may still be running. Its termination could not be verified.',
+    '上次命令可能仍在运行，无法确认进程已经停止。',
+  ],
+  inferenceQuota: [
+    'The model account has no available quota. Fix the account or select another model before continuing.',
+    '模型账号额度不足，请处理账号额度或更换模型后继续执行。',
+  ],
   resumeRequiresPause: ['Pause the task before continuing.', '请先暂停任务，再继续执行。'],
   feedbackRequiresPause: [
     'Pause the task before adding feedback; enter 1–50,000 characters.',
@@ -121,8 +145,8 @@ export const errorMessages = {
   ],
   toolNotAllowed: ['Tool is not allowed for this role.', '当前角色无权使用该工具。'],
   reviewerReadOnly: [
-    'Reviewer cannot write files, delete files or execute commands.',
-    'Reviewer 只能读取文件，不能写入、删除文件或执行命令。',
+    'Reviewer cannot write or delete source files.',
+    'Reviewer 不能写入或删除源代码文件。',
   ],
   unknownCheck: ['Unknown saved check ID.', '指定的检查命令不存在，请检查命令配置。'],
   invalidToolArguments: ['Invalid tool arguments.', '工具参数无效，请检查参数名称、类型和取值。'],
@@ -137,8 +161,8 @@ export const errorMessages = {
   ],
   executionRecordInvalid: ['Invalid execution record.', '执行记录格式无效。'],
   executionInterrupted: [
-    'Execution was interrupted by host shutdown; restart explicitly.',
-    '宿主关闭导致执行中断，请手动重新执行。',
+    'Execution was interrupted by host shutdown; saved records were preserved.',
+    '宿主关闭导致执行中断，已保存的记录和文件保持原样。',
   ],
   executionStorageUnavailable: [
     'Execution storage is unavailable.',
@@ -156,8 +180,8 @@ export const errorMessages = {
     '命令须包含唯一 ID、名称、可执行程序、参数列表，以及 10–900 秒的超时时间。',
   ],
   commandPlatformUnsupported: [
-    'Local task commands currently require Linux.',
-    '本地任务命令目前需要 Linux 环境。',
+    'Local task commands require Linux, macOS or Windows.',
+    '本地任务命令需要 Linux、macOS 或 Windows。',
   ],
   commandNotFound: [
     'Cannot start command {name}: executable {program} was not found.',

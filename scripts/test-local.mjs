@@ -30,7 +30,7 @@ const child = spawn(
     '--max-old-space-size=512',
     '--test',
     '--test-concurrency=1',
-    '--test-timeout=30000',
+    `--test-timeout=${process.platform === 'win32' ? 90000 : 30000}`,
     ...outputs,
   ],
   {

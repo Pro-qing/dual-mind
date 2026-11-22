@@ -94,6 +94,7 @@ for (const protocol of ['chatCompletions', 'responses'] as const) {
     });
     try {
       let text = '';
+      let progress = 0;
       const turn = await new Inference().turn(
         { baseUrl: `${server.url}/gateway`, key: 'test-key', model: 'fixture', protocol },
         [{ role: 'system', content: 'Own role instructions' }],
@@ -102,8 +103,12 @@ for (const protocol of ['chatCompletions', 'responses'] as const) {
         (delta) => {
           text += delta;
         },
+        () => {
+          progress++;
+        },
       );
       assert.equal(text, 'Hello');
+      assert.equal(progress, 1);
       assert.equal(turn.calls[0].arguments, '{"path":"file.txt"}');
       assert.ok(received.includes('Own role instructions'));
       assert.ok(!received.includes('test-key'));
@@ -118,8 +123,8 @@ for (const protocol of ['chatCompletions', 'responses'] as const) {
     }
   });
 }
-test('inference rejects redirects, malformed/incomplete streams, unknown tools and partial arguments', async () => {
-  for (const scenario of ['redirect', 'invalid', 'incomplete', 'tool', 'arguments']) {
+test('inference rejects redirects, malformed/incomplete streams, unknown tools', async () => {
+  for (const scenario of ['redirect', 'invalid', 'incomplete', 'tool']) {
     const server = await modelServer((_req, res) => {
       if (scenario === 'redirect') {
         res.writeHead(302, { Location: 'http://127.0.0.1:1' });
@@ -236,5 +241,269 @@ test('inference enforces timeout, cancellation, response and context limits', as
     );
   } finally {
     await large.close();
+  }
+});
+
+for (const protocol of ['chatCompletions', 'responses'] as const) {
+  test(`${protocol} reports response progress without publishing tool arguments or private reasoning`, async () => {
+    const server = await modelServer((_req, res) =>
+      send(
+        res,
+        protocol === 'responses'
+          ? [
+              { type: 'response.reasoning.delta', delta: 'PRIVATE_REASONING' },
+              {
+                type: 'response.function_call_arguments.delta',
+                delta: '{"path":"PRIVATE_ARGUMENT"}',
+              },
+              {
+                type: 'response.completed',
+                response: {
+                  status: 'completed',
+                  output: [
+                    {
+                      type: 'function_call',
+                      call_id: 'id',
+                      name: 'read_file',
+                      arguments: '{"path":"PRIVATE_ARGUMENT"}',
+                    },
+                    { type: 'reasoning', encrypted_content: 'PRIVATE_STATE' },
+                  ],
+                },
+              },
+            ]
+          : [
+              {
+                choices: [
+                  {
+                    index: 0,
+                    delta: {
+                      reasoning_content: 'PRIVATE_REASONING',
+                      tool_calls: [
+                        {
+                          index: 0,
+                          id: 'id',
+                          function: { name: 'read_file', arguments: '{"path":"PRIVATE_ARGUMENT"}' },
+                        },
+                      ],
+                    },
+                    finish_reason: 'tool_calls',
+                  },
+                ],
+              },
+              '[DONE]',
+            ],
+      ),
+    );
+    try {
+      let text = '',
+        progress = 0;
+      const result = await new Inference().turn(
+        { baseUrl: server.url, model: 'test', protocol, key: 'test-key' },
+        [],
+        definitions,
+        new AbortController().signal,
+        (delta) => {
+          text += delta;
+        },
+        () => {
+          progress++;
+        },
+      );
+      assert.equal(progress, 1);
+      assert.equal(text, '');
+      assert.equal(result.calls[0].name, 'read_file');
+    } finally {
+      await server.close();
+    }
+  });
+  test(`${protocol} timeout before response ends without public output or progress`, async () => {
+    const server = await modelServer(() => undefined);
+    try {
+      let progress = 0,
+        text = '';
+      await assert.rejects(
+        new Inference({ timeoutMs: 50, maxBytes: 1024, contextBytes: 4096 }).turn(
+          { baseUrl: server.url, model: 'test', protocol, key: 'test-key' },
+          [],
+          definitions,
+          new AbortController().signal,
+          (delta) => {
+            text += delta;
+          },
+          () => {
+            progress++;
+          },
+        ),
+        { code: 'inferenceTimeout' },
+      );
+      assert.equal(progress, 0);
+      assert.equal(text, '');
+    } finally {
+      await server.close();
+    }
+  });
+}
+
+for (const protocol of ['chatCompletions', 'responses'] as const) {
+  test(`${protocol} retries only the model request before the first valid stream event`, async () => {
+    let requests = 0;
+    const waits: number[] = [];
+    const started: number[] = [];
+    const server = await modelServer((req, res) => {
+      req.resume();
+      req.on('end', () => {
+        if (++requests < 3) {
+          res.writeHead(503, { 'Retry-After': '0' });
+          res.end('temporary');
+          return;
+        }
+        send(
+          res,
+          protocol === 'responses'
+            ? [{ type: 'response.completed', response: { status: 'completed', output: [] } }]
+            : [
+                { choices: [{ index: 0, delta: { content: 'done' }, finish_reason: 'stop' }] },
+                '[DONE]',
+              ],
+        );
+      });
+    });
+    try {
+      await new Inference().turn(
+        { baseUrl: `${server.url}/gateway`, model: 'fixture', key: 'key', protocol },
+        [],
+        definitions,
+        new AbortController().signal,
+        () => {},
+        undefined,
+        (attempt) => {
+          waits.push(attempt);
+        },
+        (attempt) => {
+          started.push(attempt);
+        },
+      );
+      assert.equal(requests, 3);
+      assert.deepEqual(waits, [2, 3]);
+      assert.deepEqual(started, [2, 3]);
+    } finally {
+      await server.close();
+    }
+  });
+}
+for (const status of [401, 402, 429]) {
+  test(`authentication and quota failures never retry (${status})`, async () => {
+    let requests = 0;
+    const server = await modelServer((req, res) => {
+      req.resume();
+      req.on('end', () => {
+        requests++;
+        res.writeHead(status);
+        res.end(
+          JSON.stringify({
+            error: {
+              code: status === 401 ? 'authentication' : 'insufficient_quota',
+              message: 'secret-body-must-not-be-returned',
+            },
+          }),
+        );
+      });
+    });
+    try {
+      await assert.rejects(
+        new Inference().turn(
+          { baseUrl: server.url, model: 'fixture', key: 'key', protocol: 'responses' },
+          [],
+          definitions,
+          new AbortController().signal,
+          () => {},
+        ),
+        (error: unknown) => {
+          assert.equal(
+            (error as { code: string }).code,
+            status === 401 ? 'inferenceAuth' : 'inferenceQuota',
+          );
+          assert.ok(!JSON.stringify(error).includes('secret-body'));
+          return true;
+        },
+      );
+      assert.equal(requests, 1);
+    } finally {
+      await server.close();
+    }
+  });
+}
+test('retry-after beyond the shared request budget stops without an early retry', async () => {
+  let requests = 0;
+  const server = await modelServer((req, res) => {
+    req.resume();
+    req.on('end', () => {
+      requests++;
+      res.writeHead(429, { 'Retry-After': '120' });
+      res.end('slow down');
+    });
+  });
+  try {
+    await assert.rejects(
+      new Inference({ timeoutMs: 1000, maxBytes: 1024, contextBytes: 4096 }).turn(
+        { baseUrl: server.url, model: 'fixture', key: 'key', protocol: 'responses' },
+        [],
+        definitions,
+        new AbortController().signal,
+        () => {},
+      ),
+      { code: 'inferenceHttp' },
+    );
+    assert.equal(requests, 1);
+  } finally {
+    await server.close();
+  }
+});
+test('retry waiting can be cancelled and a partial stream is never retried', async () => {
+  let requests = 0;
+  let partial = false;
+  const server = await modelServer((req, res) => {
+    req.resume();
+    req.on('end', () => {
+      requests++;
+      if (partial) {
+        res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+        res.write('data: {"type":"response.output_text.delta","delta":"partial"}\n\n');
+        setTimeout(() => res.destroy(), 20);
+      } else {
+        res.writeHead(503);
+        res.end('temporary');
+      }
+    });
+  });
+  const endpoint = {
+    baseUrl: server.url,
+    model: 'fixture',
+    key: 'key',
+    protocol: 'responses' as const,
+  };
+  try {
+    const controller = new AbortController();
+    await assert.rejects(
+      new Inference().turn(
+        endpoint,
+        [],
+        definitions,
+        controller.signal,
+        () => {},
+        undefined,
+        () => controller.abort(),
+      ),
+      { code: 'executionStopped' },
+    );
+    assert.equal(requests, 1);
+    partial = true;
+    await assert.rejects(
+      new Inference().turn(endpoint, [], definitions, new AbortController().signal, () => {}),
+    );
+    assert.equal(requests, 2);
+  } finally {
+    await server.close();
   }
 });

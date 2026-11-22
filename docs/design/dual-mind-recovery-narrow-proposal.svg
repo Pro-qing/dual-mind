@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>23. 窄屏恢复与进程状态阻塞 — 待审核</title><desc>静态恢复界面提案。所有任务、错误、耗时及进度均为示例，不是运行结果。</desc><style>text {font-family:"Noto Sans CJK SC","DejaVu Sans",sans-serif}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="#171a20"/>
+<text x="24" y="30" font-size="15" fill="#e7edf6" font-weight="400">DualMind / 故障恢复</text>
+<text x="1040" y="30" font-size="13" fill="#a4b0c1" font-weight="400">设计提案 · 待审核 · 2026-11-22</text>
+<rect x="160" y="65" width="470" height="750" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="180" y="100" font-size="22" fill="#e7edf6" font-weight="600">修复登录校验</text>
+<text x="180" y="130" font-size="13" fill="#a4b0c1" font-weight="400">第 1 / 5 轮 · 工作区和文件已保留</text>
+<rect x="180" y="150" width="124" height="34" rx="8" fill="#284c70" stroke="#8db8fa"/>
+<text x="192" y="173" font-size="14" fill="#e7edf6" font-weight="400">▶ 继续执行</text>
+<rect x="316" y="150" width="104" height="34" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="328" y="173" font-size="14" fill="#e7edf6" font-weight="400">重新执行</text>
+<rect x="434" y="150" width="170" height="34" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="446" y="173" font-size="14" fill="#e7edf6" font-weight="400">输出 · 1 错误</text>
+<rect x="180" y="204" width="430" height="145" rx="8" fill="#35262c" stroke="#f3a3a3"/>
+<text x="195" y="232" font-size="15" fill="#f3a3a3" font-weight="600">Worker · 实现阶段 · 已中断</text>
+<text x="195" y="265" font-size="13" fill="#e7edf6" font-weight="400">上次命令的最终结果未确认。</text>
+<text x="195" y="290" font-size="13" fill="#e7edf6" font-weight="400">先检查已有修改和输出，再决定是否重跑。</text>
+<text x="195" y="330" font-size="12" fill="#a4b0c1" font-weight="400">原始错误与操作记录仍保留</text>
+<rect x="180" y="365" width="430" height="210" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="196" y="395" font-size="14" fill="#8db8fa" font-weight="600">Worker · 公开过程</text>
+<rect x="564" y="376" width="28" height="28" rx="8" fill="#20252e" stroke="#394351"/>
+<path d="M571 387h5V382m9 11h-5v5" fill="none" stroke="#a4b0c1" stroke-width="1.5"/>
+<text x="196" y="430" font-size="14" fill="#e7edf6" font-weight="400">已修改登录输入校验。</text>
+<text x="196" y="459" font-size="14" fill="#e7edf6" font-weight="400">测试命令开始后，扩展意外关闭。</text>
+<text x="196" y="488" font-size="14" fill="#e7edf6" font-weight="400">恢复时先核对磁盘上的现有结果。</text>
+<rect x="180" y="593" width="430" height="42" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="195" y="620" font-size="13" fill="#f3a3a3" font-weight="400">系统输出 · 已最小化 · 1 个错误</text>
+<text x="573" y="620" font-size="16" fill="#e7edf6" font-weight="400">□</text>
+<rect x="180" y="664" width="430" height="110" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="194" y="695" font-size="13" fill="#a4b0c1" font-weight="400">补充说明将在点击继续后处理</text>
+<rect x="484" y="722" width="110" height="34" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="496" y="745" font-size="14" fill="#e7edf6" font-weight="400">发送</text>
+<rect x="790" y="65" width="470" height="750" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="810" y="100" font-size="22" fill="#e7edf6" font-weight="600">修复登录校验</text>
+<text x="810" y="130" font-size="13" fill="#a4b0c1" font-weight="400">第 1 / 5 轮 · 工作区和文件已保留</text>
+<rect x="810" y="150" width="124" height="34" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="822" y="173" font-size="14" fill="#e7edf6" font-weight="400">▶ 继续执行</text>
+<rect x="946" y="150" width="104" height="34" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="958" y="173" font-size="14" fill="#e7edf6" font-weight="400">重新执行</text>
+<rect x="1064" y="150" width="170" height="34" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="1076" y="173" font-size="14" fill="#e7edf6" font-weight="400">输出 · 1 错误</text>
+<rect x="810" y="204" width="430" height="145" rx="8" fill="#35262c" stroke="#f3a3a3"/>
+<text x="825" y="232" font-size="15" fill="#f3a3a3" font-weight="600">Worker · 实现阶段 · 已中断</text>
+<text x="825" y="265" font-size="13" fill="#e7edf6" font-weight="400">无法确认上次命令进程已经停止。</text>
+<text x="825" y="290" font-size="13" fill="#e7edf6" font-weight="400">请处理遗留进程，再点击继续重新检查。</text>
+<text x="825" y="330" font-size="12" fill="#a4b0c1" font-weight="400">原始错误与操作记录仍保留</text>
+<rect x="810" y="365" width="430" height="210" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="826" y="395" font-size="14" fill="#8db8fa" font-weight="600">Worker · 公开过程</text>
+<rect x="1194" y="376" width="28" height="28" rx="8" fill="#20252e" stroke="#394351"/>
+<path d="M1201 387h5V382m9 11h-5v5" fill="none" stroke="#a4b0c1" stroke-width="1.5"/>
+<text x="826" y="430" font-size="14" fill="#e7edf6" font-weight="400">已修改登录输入校验。</text>
+<text x="826" y="459" font-size="14" fill="#e7edf6" font-weight="400">测试命令开始后，扩展意外关闭。</text>
+<text x="826" y="488" font-size="14" fill="#e7edf6" font-weight="400">恢复时先核对磁盘上的现有结果。</text>
+<rect x="810" y="593" width="430" height="42" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="825" y="620" font-size="13" fill="#f3a3a3" font-weight="400">系统输出 · 已最小化 · 1 个错误</text>
+<text x="1203" y="620" font-size="16" fill="#e7edf6" font-weight="400">□</text>
+<rect x="810" y="664" width="430" height="110" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="824" y="695" font-size="13" fill="#a4b0c1" font-weight="400">补充说明将在点击继续后处理</text>
+<rect x="1114" y="722" width="110" height="34" rx="8" fill="#20252e" stroke="#394351"/>
+<text x="1126" y="745" font-size="14" fill="#e7edf6" font-weight="400">发送</text>
+<text x="160" y="855" font-size="15" fill="#a4b0c1" font-weight="400">窄屏：恢复入口始终可见；输出最小化不隐藏错误。</text>
+</svg>

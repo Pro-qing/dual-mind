@@ -12,7 +12,7 @@
 | [Development](./development.md)                         | nvm, build commands, debugging, and tests                                               |
 | [Architecture](./architecture.md)                       | Implemented workbench, storage boundaries, branding assets, and module responsibilities |
 | [Host/UI protocol](./protocol.md)                       | Settings/model queries, execution messages, role handoffs and Git bindings              |
-| [UI design](./design.md)                                | 17 approved SVG/PNG scenes covering task pages, execution and chat                      |
+| [UI design](./design.md)                                | 23 approved SVG/PNG scenes covering task pages, execution and chat                      |
 | [Roadmap](./roadmap.md)                                 | Versioned progress, implemented execution and remaining capabilities                    |
 | [Packaging and releases](./releasing.md)                | Publication history and the workflow for future GitHub / Marketplace versions           |
 | [Licensing](./licensing.md)                             | MIT license and bundled third-party notices                                             |
@@ -37,3 +37,8 @@ The [development log](./development-log.md) records code/documentation review, d
 - [0.0.4](./release-notes-0.0.4.md): current source and local VSIX, unpublished.
 - [0.0.3](./release-notes-0.0.3.md): previous local source version, unpublished.
 - [0.0.2](./release-notes-0.0.2.md): model discovery, settings and Git preparation foundations.
+
+- [Activity and compact-chat proposal](./chat-progress-proposal.md): approved and implemented: activity, public process, icon-only message sizing, minimization and task-based branches.
+
+- [Failure recovery](./execution-recovery.md): host implementation, public context, process and evidence limits.
+- [Recovery UI proposal](./recovery-proposal.md): scenes 21–23, approved and integrated on 2026-11-22.

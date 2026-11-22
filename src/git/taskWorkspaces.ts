@@ -1,3 +1,9 @@
+import {
+  taskBranchSlug,
+  taskBranchName,
+  branchSuffixLengths,
+  validManagedBranch,
+} from './branchNames';
 import { OperationError } from '../shared/errors';
 import { randomUUID, createHash } from 'node:crypto';
 import { constants } from 'node:fs';
@@ -24,6 +30,7 @@ interface Ports {
   taskExists(taskId: string): Promise<boolean>;
 }
 export interface TaskReader {
+  commandDirectory(relativePath: string): Promise<string>;
   listFiles(): Promise<string[]>;
   readFile(relativePath: string): Promise<string>;
   status(): Promise<string>;
@@ -31,7 +38,6 @@ export interface TaskReader {
   fingerprint(): Promise<string>;
 }
 export interface TaskWriter extends TaskReader {
-  commandDirectory(relativePath: string): Promise<string>;
   writeFile(relativePath: string, contents: string): Promise<void>;
   deleteFile(relativePath: string): Promise<void>;
 }
@@ -163,8 +169,10 @@ export class TaskWorkspaces {
         (entry.strategy !== undefined &&
           !['managed', 'current', 'branch'].includes(entry.strategy.mode)) ||
         ((entry.strategy?.mode ?? 'managed') === 'managed'
-          ? entry.branch !== `dualmind/task/${entry.taskId}/worker`
-          : !entry.branch || entry.directory !== entry.repository) ||
+          ? !validManagedBranch(entry)
+          : entry.branchNaming !== undefined ||
+            !entry.branch ||
+            entry.directory !== entry.repository) ||
         !['preparing', 'ready'].includes(entry.phase)
       ) {
         fail('storageFailed', 'Invalid task Git registry; existing records were preserved.');
@@ -238,8 +246,11 @@ export class TaskWorkspaces {
     if (
       !registered.some(
         (block) =>
-          block.split('\n').includes(`worktree ${directory}`) &&
-          block.split('\n').includes(`branch refs/heads/${record.branch}`),
+          block
+            .split('\n')
+            .some(
+              (line) => line.startsWith('worktree ') && path.resolve(line.slice(9)) === directory,
+            ) && block.split('\n').includes(`branch refs/heads/${record.branch}`),
       )
     ) {
       fail('workspaceChanged', `Git no longer registers the task directory ${directory}.`);
@@ -292,6 +303,8 @@ export class TaskWorkspaces {
       record.repository !== source.repository ||
       record.commonDir !== source.commonDir ||
       record.directory !== registered.directory ||
+      record.branch !== registered.branch ||
+      JSON.stringify(record.branchNaming) !== JSON.stringify(registered.branchNaming) ||
       JSON.stringify(record.strategy ?? { mode: 'managed' }) !==
         JSON.stringify(registered.strategy ?? { mode: 'managed' })
     ) {
@@ -387,7 +400,11 @@ export class TaskWorkspaces {
       .some(
         (block) =>
           block.split('\n').includes(`branch ${ref}`) &&
-          !block.split('\n').includes(`worktree ${repository}`),
+          !block
+            .split('\n')
+            .some(
+              (line) => line.startsWith('worktree ') && path.resolve(line.slice(9)) === repository,
+            ),
       );
     if (occupied) {
       fail('workspaceConflict', `Branch is checked out in another worktree: ${branch}`);
@@ -424,7 +441,11 @@ export class TaskWorkspaces {
     await this.save(record);
     return structuredClone(record);
   }
-  async prepare(taskId: string, strategy?: GitStrategy): Promise<TaskGitWorkspace> {
+  async prepare(
+    taskId: string,
+    strategy?: GitStrategy,
+    taskName = 'task',
+  ): Promise<TaskGitWorkspace> {
     const source = await this.source(taskId);
     return serialized(`repository:${source.commonDir}`, () =>
       serialized(`registry:${source.storage}`, async () => {
@@ -513,12 +534,39 @@ export class TaskWorkspaces {
           );
         }
         if (!record) {
+          if (await exists(directory)) {
+            fail('workspaceConflict', `Unregistered task directory already exists: ${directory}.`);
+          }
+          const slug = taskBranchSlug(taskName);
+          let selectedBranch: { branch: string; suffixLength: 8 | 12 | 32 } | undefined;
+          for (const suffixLength of branchSuffixLengths) {
+            const candidate = taskBranchName(taskId, slug, suffixLength);
+            await this.git.checked(['check-ref-format', '--branch', candidate], source.repository);
+            const existing = await this.git.run(
+              ['show-ref', '--verify', '--quiet', `refs/heads/${candidate}`],
+              source.repository,
+            );
+            if (existing.code === 1) {
+              selectedBranch = { branch: candidate, suffixLength };
+              break;
+            }
+            if (existing.code !== 0) {
+              fail('gitFailed', 'Cannot determine task branch availability.');
+            }
+          }
+          if (!selectedBranch) {
+            fail(
+              'workspaceConflict',
+              `All generated branch names are occupied for task ${taskId}.`,
+            );
+          }
           record = {
             taskId,
             repository: source.repository,
             commonDir: source.commonDir,
             directory,
-            branch: `dualmind/task/${taskId}/worker`,
+            branch: selectedBranch.branch,
+            branchNaming: { version: 2, slug, suffixLength: selectedBranch.suffixLength },
             sourceBranch: branch.stdout.trim(),
             baseCommit: head.stdout.trim(),
             phase: 'preparing',
@@ -659,6 +707,36 @@ export class TaskWorkspaces {
       return target;
     };
     const reader: TaskReader = {
+      commandDirectory: async (relative: string) => {
+        await guard();
+        if (
+          !relative ||
+          relative.includes('\0') ||
+          relative.includes('\\') ||
+          path.isAbsolute(relative) ||
+          path.win32.isAbsolute(relative)
+        ) {
+          throw new OperationError('commandDirectoryInvalid');
+        }
+        const parts = relative === '.' ? [] : relative.split('/');
+        if (
+          parts.some(
+            (part) => !part || part === '.' || part === '..' || part.toLowerCase() === '.git',
+          )
+        ) {
+          throw new OperationError('commandDirectoryInvalid');
+        }
+        let directory = record.directory;
+        for (const part of parts) {
+          directory = path.join(directory, part);
+          const stat = await lstat(directory).catch(() => undefined);
+          if (!stat?.isDirectory() || stat.isSymbolicLink()) {
+            throw new OperationError('commandDirectoryInvalid');
+          }
+        }
+        return directory;
+      },
+
       fingerprint: async () => {
         await guard();
         const hash = createHash('sha256');
@@ -796,35 +874,6 @@ export class TaskWorkspaces {
     }
     return Object.freeze({
       ...reader,
-      commandDirectory: async (relative: string) => {
-        await guard();
-        if (
-          !relative ||
-          relative.includes('\0') ||
-          relative.includes('\\') ||
-          path.isAbsolute(relative) ||
-          path.win32.isAbsolute(relative)
-        ) {
-          throw new OperationError('commandDirectoryInvalid');
-        }
-        const parts = relative === '.' ? [] : relative.split('/');
-        if (
-          parts.some(
-            (part) => !part || part === '.' || part === '..' || part.toLowerCase() === '.git',
-          )
-        ) {
-          throw new OperationError('commandDirectoryInvalid');
-        }
-        let directory = record.directory;
-        for (const part of parts) {
-          directory = path.join(directory, part);
-          const stat = await lstat(directory).catch(() => undefined);
-          if (!stat?.isDirectory() || stat.isSymbolicLink()) {
-            throw new OperationError('commandDirectoryInvalid');
-          }
-        }
-        return directory;
-      },
       writeFile: async (relative: string, contents: string) => {
         await guard();
         if (typeof contents !== 'string' || Buffer.byteLength(contents) > fileLimit) {

@@ -82,11 +82,11 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 - 交接排除完整会话、内部分析、无关工具记录和凭据。交接文本是需要评估的内容，不能替换接收方角色指令。
 - 按执行实例和角色分发结果及取消事件。已取消或被替代的执行不能将迟到输出追加到任一历史。重试必须能够区分尝试身份，避免旧尝试的迟到结果覆盖当前尝试或进入另一个角色。
 
-模拟服务执行测试现已捕获两种协议，验证角色历史隔离、只读审查以及检查通过后的完成条件。验收不读取个人 API 凭据或发起付费请求。
+模拟服务执行测试现已捕获两种协议，验证角色历史隔离、Reviewer 独立验证以及检查通过后的完成条件。验收不读取个人 API 凭据或发起付费请求。
 
 ## 内部 Git 工作目录服务
 
-开发分支新增仅宿主调用的 `prepare(taskId)` 和 `files(taskId, role)`，它们仍由执行服务在宿主内部调用，增加可选任务 Git 策略字段。宿主解析已保存任务、源仓库及存储目录，仅接受指定模式的已有本地分支名称，不接受任意路径或 Git 命令。返回的文件接口在生命周期内固定宿主选定的角色；Reviewer 只有列表、读取、状态和差异接口，Worker 额外具有写入能力。审查通过不能修改文件或触发合并。
+开发分支新增仅宿主调用的 `prepare(taskId)` 和 `files(taskId, role)`，它们仍由执行服务在宿主内部调用，增加可选任务 Git 策略字段。宿主解析已保存任务、源仓库及存储目录，仅接受指定模式的已有本地分支名称，不接受任意路径或 Git 命令。返回的文件接口在生命周期内固定宿主选定的角色；两个角色都有列表、读取、状态、差异、指纹与经校验的命令目录接口，Worker 额外具有写入能力。审查通过不能修改文件或触发合并。
 
 准备返回登记的基准、分支、目录和阶段。错误区分 Git 缺失／版本不足、工作区信任或形态、任务／仓库／提交缺失、分离 HEAD、子模块、源目录有修改、冲突、归属变化、存储失败、非法路径、输出上限和超时。失败时保留意图记录及部分资源，错误指出关联位置，不直接返回 Git 原始 stderr。删除任务或变更工作区／绑定后撤销文件访问。
 
@@ -98,7 +98,7 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 `dualMind.execution.v1` 保存工作区命令预设和执行摘要。每次执行的 JSONL 历史保存在工作区扩展存储中，位于任务文件之外，每页最多 80 条事件。API 密钥和 Responses 私有推理内容不写入日志。兼容连接新增可选 `protocol: chatCompletions | responses`，缺省使用 Chat Completions，不重写旧记录。请求保留网关前缀，不自动回退到另一协议。
 
-状态包括 preparing、planning、worker、checking、reviewer、answering、pausing、paused、stopping，以及终态 answered／stopped／completed／roundLimit／failed／interrupted。answered 仅表示只读答复完成，不是验收通过。暂停仍占用工作区名额；停止须在取消请求和命令结束后确认。宿主重载将未完成执行标记中断，手动重新执行创建新执行 ID，不重放旧调用。宿主拒绝编辑活动任务及修改关联连接的地址／协议／密钥。删除活动任务先停止执行，再移除可见执行历史，保留 Git 成果。
+状态包括 preparing、planning、worker、checking、reviewer、answering、pausing、paused、stopping，以及终态 answered／stopped／completed／roundLimit／failed／interrupted。answered 仅表示答疑完成，不是验收通过。暂停仍占用工作区名额；停止须在取消请求和命令结束后确认。宿主重载将未完成执行标记中断，手动重新执行创建新执行 ID，不重放旧调用。宿主拒绝编辑活动任务及修改关联连接的地址／协议／密钥。删除活动任务先停止执行，再移除可见执行历史，保留 Git 成果。
 
 初始规划通过 `submit_plan` 下发方案，`finish_work` 提交成果，`submit_review` 给出验收结论；普通文本不能替代这些工具。每次 Worker 提交后，宿主执行已启用的附加检查，接受验收前核验成果指纹和各项真实证据。双方历史从不合并；手动应用／提交／合并不属于此协议。
 
@@ -118,7 +118,7 @@ TaskPlan 包含宿主分配的 version、objective、requirements、steps、crit
 
 Worker 的 finish_work 包含 summary、completedSteps、逐验收项 evidence（criterionId、commandIds、evidence）及 unresolved；宿主补充 planVersion 和 revision。Reviewer 的 submit_review 包含 verdict、summary、逐项 acceptance（带 passed），拒绝必须有 nextPlan。审批须覆盖全部验收项，实际证据和附加检查必须有效；不能以模型提供的成功字符串替代真实命令记录。
 
-run_command 接受 name、program、args、可选 cwd（默认 .）、purpose（prepare／verify／explore）、criterionIds 和可选 timeoutSeconds（默认 180）。verify 必须关联当前命令验收项。命令 ID 由宿主生成，与模型工具调用 ID 不同。CommandEvidence 保存实际命令、目录、超时、用途、验收项、方案版本、轮次、前后指纹、结果及可选结构化错误。输出通过同一命令事件的连续文本块保留，read_command_output 支持按字符分页。参数、结果、交接和事件在传输／持久化前脱敏。
+run_command 接收 name、command（shell 文本）、可选 cwd（默认 dot）、purpose（prepare／verify／explore）、criterionIds 和可选 timeoutSeconds（默认 180）。规划／答疑仅允许 explore。宿主填写证据 ID、agent、phase、planVersion（尚无方案时为 0），并记录 shell、指纹、输出及结果。Reviewer 可引用自己在验收阶段生成的 verify 记录。旧预设保留 program／args，缺少 agent 的历史命令按 Worker 解释。read_command_output 继续分页读取完整脱敏输出。见[通用 shell 执行](./shell-execution.md)。
 
 RunSummary 可选 plan、submission、review 保存当前展示所需内容。RunEvent 新增 plan／submission 种类及可选 detail 判别联合（plan、submission、review、command），完整历史保留各版本。旧字段及旧记录继续可读；planning 是新增可暂停阶段。各角色仅收到阶段允许的工具，完整工具批次的嵌套类型与限制先校验后执行。
 
@@ -140,3 +140,23 @@ RunSummary 可选 plan、submission、review 保存当前展示所需内容。Ru
 `RunSummary` 增加可选 `kind: conversation | execution`、`previousRunId` 与 `sourceMessageIds`。`answering` 可暂停，`answered` 为纯答复终态，不能当作验收通过；旧运行省略 kind 时仍作为执行。原来的执行、历史和配置接口保持兼容。新增 `messageInvalid`、`messageConflict`、`continuationUnavailable`、`conversationUnavailable` 使用统一双语错误表。
 
 `submit_answer` 参数为非空 `answer`，仅在消息处理阶段提供；同一工具批次不能混用两个完成工具。该阶段也可提交完整 `submit_plan`，活动方案修订仍须保留验收项并说明原因。模型处理历史继续按角色隔离；公开交接包含原始需求、用户补充、上次方案／成果／验收和真实命令信息，旧命令记录不得验证新运行成果。
+
+## 原生 shell 命令
+
+两个角色现共用[通用 shell 执行层](./shell-execution.md)，自动继承环境，并允许 Reviewer 独立验证，无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
+
+## 可选活动状态与公开过程接口
+
+`ExecutionSnapshot.activity` 是可选的临时字段，包含 `id`、`taskId`、`runId`、`agent`、`phase`、`stage`、`startedAt`，以及可选 `requestId`、`tool`、`commandId`、`label`。stage 为 waiting／receiving／tool／command。快照与订阅只包含脱敏元数据，不含模型私有协议或原始命令参数。活动不存入执行记录，宿主重启后不恢复。
+
+`conversation` 请求增加可选布尔 `includeProcess`，默认 false 兼容现有客户端。开启后 `TaskMessage.kind` 可为 `process`，包含 `requestId`。公开文本按运行、角色和请求归并，从完整运行历史投影后再分页，不依赖最近 80 个事件。首个事件提供稳定 ID／时间，sequence 更新为最后包含的事件以定位证据。缺少角色的旧文本仍只在证据中展示。原日志不重写，答复和提交仍是独立消息；已审核聊天界面发送 `includeProcess: true`，旧客户端继续使用默认投影。
+
+`TaskWorkspaces.prepare(taskId, strategy?, taskName?)` 接收宿主读取的任务标题，旧内部调用者默认 `task`。新专用绑定增加可选版本 2 命名元数据；无元数据的旧绑定保留原名称。伪造任务后缀、不匹配的命名元数据和登记分支变化均被拒绝。
+
+`EvidencePage.summary` 可选包含 `{records, errors}`，统计所请求范围内分页前的全部归并记录。同一记录的流式块只计一次；结构化错误、error 类型或失败命令证据计入错误。面板最小化时界面继续读取全范围计数，与面板上次打开时的记录数比较，不改变用户当前证据范围；需要时另行读取范围内的显示列表。
+
+## 故障恢复
+
+宿主现已保存角色、阶段、操作结果和执行位置，支持失败及重载后从原运行继续，使用当前模型连接并保持原方案、工作轮次和未提交文件。只读 `read_operation` 可读取旧操作；恢复不依赖最近 80 条界面事件。普通工具失败仍返回模型；尚未收到有效流事件的临时连接故障最多请求三次，含等待共用 120 秒预算。认证、额度和协议问题不自动重试。
+
+带播放图标的**继续执行**可接续暂停及符合条件的失败／中断运行。固定恢复提示显示角色、阶段、保存位置和阻塞原因，证据面板最小化时仍可查看。恢复检查与可取消的重试等待使用宿主真实状态和请求次数，倒计时仅在界面更新。“重新执行”仍创建新运行。设计见[已审核恢复界面](./recovery-proposal.md)，日志、进程与证据限制见[恢复说明](./execution-recovery.md)。

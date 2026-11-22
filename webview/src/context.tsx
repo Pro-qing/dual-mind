@@ -1,3 +1,4 @@
+import type { ChatView } from './chatViewState';
 import type {
   ExecutionAction,
   ExecutionReply,
@@ -15,6 +16,8 @@ export interface UIContextValue {
   snapshot: AppSnapshot;
   execution: ExecutionSnapshot;
   executionEvents: RunEvent[];
+  chatViews: Record<string, ChatView>;
+  updateChatView(taskId: string, patch: Partial<ChatView>): void;
   execute(action: ExecutionAction): Promise<ExecutionReply>;
   pending: boolean;
   models: Record<string, ModelQueryState>;

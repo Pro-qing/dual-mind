@@ -225,33 +225,30 @@ test('tool validation enforces nested arrays, roles, paths as literal values and
   const tools = agentTools('worker');
   const args = {
     name: 'Check',
-    program: 'node',
-    args: ['literal;$(text)', 'a b'],
+    command: 'node --version | cat',
     purpose: 'verify',
     criterionIds: ['cancel'],
   };
   assert.deepEqual(validateTool(call('run_command', args), tools), args);
   for (const patch of [
-    { args: 'shell string' },
+    { command: ['wrong type'] },
     { timeoutSeconds: 901 },
     { criterionIds: [12] },
     { arbitrary: true },
-    { program: 'x\0y' },
+    { command: 'x\0y' },
   ]) {
     assert.throws(() => validateTool(call('run_command', { ...args, ...patch }), tools), {
-      code: 'invalidToolArguments',
+      code: 'toolArgumentsInvalid',
     });
   }
-  assert.throws(() => validateTool(call('run_command', args), agentTools('reviewer')), {
-    code: 'toolNotAllowed',
-  });
+  assert.deepEqual(validateTool(call('run_command', args), agentTools('reviewer')), args);
   assert.throws(
     () =>
       validateTool(
         call('submit_plan', { ...input, criteria: [{ ...input.criteria[0], injected: true }] }),
         agentTools('planning'),
       ),
-    { code: 'invalidToolArguments' },
+    { code: 'toolArgumentsInvalid' },
   );
 });
 test('empty command settings are automatic; legacy custom commands and explicit disabled values survive', () => {
@@ -269,4 +266,98 @@ test('empty command settings are automatic; legacy custom commands and explicit 
   assert.throws(() => validateConfig({ ...config, customCommandsEnabled: 'false' }), {
     code: 'commandConfigInvalid',
   });
+});
+
+test('Reviewer can supply independent verification while stale, failed and unsubmitted Worker records remain invalid', () => {
+  const independent: CommandEvidence = {
+    ...command,
+    id: 'reviewer-test',
+    agent: 'reviewer',
+    phase: 'reviewer',
+    command: 'npm test',
+  };
+  const accepted = {
+    ...review,
+    acceptance: [{ ...review.acceptance[0], commandIds: [independent.id] }],
+  };
+  const submitted = { ...submission, evidence: [{ ...submission.evidence[0], commandIds: [] }] };
+  validateReview(
+    accepted,
+    plan,
+    submitted,
+    new Map([[independent.id, independent]]),
+    'current',
+    [],
+    false,
+  );
+  for (const patch of [
+    { agent: 'worker' as const },
+    { phase: 'planning' as const },
+    { planVersion: 0 },
+    { exitCode: 1 },
+    { ok: false },
+    { after: 'changed' },
+    { purpose: 'explore' as const },
+  ]) {
+    assert.throws(
+      () =>
+        validateReview(
+          accepted,
+          plan,
+          submitted,
+          new Map([[independent.id, { ...independent, ...patch }]]),
+          'current',
+          [],
+          false,
+        ),
+      { code: 'evidenceInvalid' },
+    );
+  }
+  assert.throws(
+    () =>
+      validateReview(
+        accepted,
+        plan,
+        submitted,
+        new Map([
+          [independent.id, independent],
+          ['later', { ...independent, id: 'later', ok: false, exitCode: 1 }],
+        ]),
+        'current',
+        [],
+        false,
+      ),
+    { code: 'evidenceInvalid' },
+  );
+  for (const phase of ['planning', 'answering'] as const) {
+    const definitions = agentTools(phase);
+    const call = {
+      id: 'probe',
+      name: 'run_command',
+      arguments: JSON.stringify({
+        name: 'Inspect',
+        command: 'git status',
+        purpose: 'explore',
+        criterionIds: [],
+      }),
+    };
+    assert.equal(validateTool(call, definitions).purpose, 'explore');
+    assert.throws(
+      () =>
+        validateTool(
+          {
+            ...call,
+            arguments: JSON.stringify({
+              name: 'Test',
+              command: 'npm test',
+              purpose: 'verify',
+              criterionIds: ['cancel'],
+            }),
+          },
+          definitions,
+        ),
+      { code: 'toolArgumentsInvalid' },
+    );
+    assert.ok(!definitions.some((d) => ['write_file', 'delete_file'].includes(d.name)));
+  }
 });

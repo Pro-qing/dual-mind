@@ -1,6 +1,8 @@
+import type { ExecutionEnvironmentSummary } from './environment';
 import type { AppError } from './errors';
 import type { GitStrategy, RepositoryInfo } from './model';
 export interface TaskGitWorkspace {
+  branchNaming?: { version: 2; slug: string; suffixLength: 8 | 12 | 32 };
   strategy?: GitStrategy;
   headCommit?: string;
   taskId: string;
@@ -16,6 +18,7 @@ export interface TaskGitWorkspace {
 export type Protocol = 'chatCompletions' | 'responses';
 export type Agent = 'worker' | 'reviewer';
 export type RunStatus =
+  | 'recovering'
   | 'answering'
   | 'answered'
   | 'preparing'
@@ -46,6 +49,14 @@ export interface PresetCommand {
   args: string[];
   timeoutSeconds: number;
 }
+export interface ShellCommand {
+  id: string;
+  name: string;
+  command: string;
+  shell: import('./environment').ExecutionShell;
+  timeoutSeconds: number;
+}
+export type ExecutableCommand = PresetCommand | ShellCommand;
 export interface ExecutionConfig {
   customCommandsEnabled?: boolean;
   prepare: PresetCommand[];
@@ -90,6 +101,10 @@ export interface ReviewResult {
   planVersion: number;
 }
 export interface CommandEvidence {
+  command?: string;
+  agent?: Agent;
+  phase?: Agent | 'planning' | 'answering' | 'preparing' | 'checking';
+  shell?: import('./environment').ExecutionShell;
   id: string;
   name: string;
   program: string;
@@ -107,13 +122,25 @@ export interface CommandEvidence {
   reason?: string;
   fault?: AppError;
   presetId?: string;
+  environmentId?: string;
 }
 export type ExecutionDetail =
   | { type: 'plan'; plan: TaskPlan }
   | { type: 'submission'; submission: WorkSubmission }
   | { type: 'review'; review: ReviewResult }
   | { type: 'command'; command: CommandEvidence };
+export interface RunRecovery {
+  generation: number;
+  attempts: number;
+  available: boolean;
+  agent?: Agent;
+  phase?: string;
+  operation?: string;
+  step?: 'processes' | 'workspace' | 'environment' | 'artifacts';
+  blocked?: import('./errors').AppError;
+}
 export interface RunSummary {
+  recovery?: RunRecovery;
   kind?: 'conversation' | 'execution';
   previousRunId?: string;
   sourceMessageIds?: string[];
@@ -127,6 +154,7 @@ export interface RunSummary {
   git?: TaskGitWorkspace;
   directory?: string;
   branch?: string;
+  environment?: ExecutionEnvironmentSummary;
   models?: Record<Agent, { connectionName: string; model: string; protocol: Protocol }>;
   error?: string;
   fault?: AppError;
@@ -151,12 +179,13 @@ export interface RunEvent {
   time: string;
 }
 export interface TaskMessage {
+  requestId?: string;
   round?: number;
   id: string;
   taskId: string;
   time: string;
   role: 'user' | Agent | 'system';
-  kind: 'message' | 'answer' | 'plan' | 'submission' | 'review' | 'error' | 'legacy';
+  kind: 'message' | 'answer' | 'plan' | 'submission' | 'review' | 'error' | 'legacy' | 'process';
   text: string;
   status?: 'pending' | 'processing' | 'handled';
   runId?: string;
@@ -169,10 +198,27 @@ export interface ConversationPage {
   before?: string;
 }
 export interface EvidencePage {
+  summary?: { records: number; errors: number };
   events: RunEvent[];
   before?: string;
 }
+export interface ExecutionActivity {
+  id: string;
+  taskId: string;
+  runId: string;
+  agent: Agent;
+  phase: Agent | 'planning' | 'answering' | 'preparing' | 'checking';
+  stage: 'waiting' | 'receiving' | 'tool' | 'command';
+  retry?: { attempt: number; delayMs: number; retryAt?: string; requesting?: boolean };
+  startedAt: string;
+  requestId?: string;
+  tool?: string;
+  commandId?: string;
+  label?: string;
+}
 export interface ExecutionSnapshot {
+  /** Ephemeral operation metadata; absent after pause, stop or host restart. */
+  activity?: ExecutionActivity;
   conversationVersion?: number;
   preparedTaskIds?: string[];
   config: ExecutionConfig;
@@ -181,7 +227,7 @@ export interface ExecutionSnapshot {
 export type ExecutionAction =
   | { kind: 'message.send'; taskId: string; messageId: string; text: string }
   | { kind: 'messages.resume'; taskId: string }
-  | { kind: 'conversation'; taskId: string; before?: string }
+  | { kind: 'conversation'; taskId: string; before?: string; includeProcess?: boolean }
   | { kind: 'evidence'; taskId: string; runId?: string; through?: number; before?: string }
   | { kind: 'git.branches' }
   | { kind: 'config.save'; config: ExecutionConfig }

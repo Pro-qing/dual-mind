@@ -2,6 +2,8 @@
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
+**New approved revision:** [Activity, compact chat and minimization](./chat-progress-proposal.md), scenes 18–20. Approved November 22, 2026 with icon-only sizing buttons; implemented. The 17 earlier approvals remain intact. These remain static design references.
+
 **New approved proposal:** [Task chat and follow-up](./task-chat-proposal.md) adds scenes 14–17: wide chat, a narrow evidence drawer, queued messages and follow-up after execution. The four designs are approved; implementation is complete; see [actual task chat validation](./task-chat-validation.md).
 
 **New approved revision:** [Dual-agent planning and acceptance](./execution-cycle-proposal.md), approved 2026-11-20; implemented; see [validation coverage](./execution-cycle-validation.md).
@@ -9,7 +11,7 @@
 
 **Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
 
-**There are currently 17 approved SVG/PNG pairs.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, and 14–17 current task chat and follow-up. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; dedicated-worktree application and parallel execution remain planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
+**There are currently 23 approved SVG/PNG pairs.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, 14–17 task chat and follow-up, 18–20 activity and compact-chat controls, and 21–23 failure recovery. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; dedicated-worktree application and parallel execution remain planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
 
 Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. Early scenes use English labels; later revisions mainly use Simplified Chinese. Each group has explanations in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
 
@@ -37,7 +39,7 @@ Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains e
 
 ## Historical descriptions of scenes 1–7
 
-The following sections preserve the original workbench/model-selection context, including its two columns, draft terminology and intended parallel interactions; they do not describe all current capabilities. Scenes 8–11 and 12–13 record the intermediate task-page and execution-cycle revisions. Scenes 14–17 and the usage guide describe current chat layout.
+The following sections preserve the original workbench/model-selection context, including its two columns, draft terminology and intended parallel interactions; they do not describe all current capabilities. Scenes 8–11 and 12–13 record the intermediate task-page and execution-cycle revisions. Scenes 14–20 and the usage guide describe current chat layout.
 
 ### 1. Parallel task workbench
 
@@ -149,7 +151,7 @@ Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection setti
 
 ## Review and implementation gate
 
-The owner has approved the existing 17 designs. Future interface changes require an updated SVG proposal and explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
+The owner has approved the existing 23 designs. Future interface changes require an updated SVG proposal and explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
 
 See [Architecture](./architecture.md) for implemented module responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. Implemented settings/execution messages, role handoffs and file-access boundaries are documented there.
 
@@ -165,8 +167,20 @@ npm run docs:check
 npm run format:check
 ```
 
-Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair (currently 17), requires the original baseline scenes 1–7, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Updating designs or documentation does not indicate that a public VSIX has been rebuilt or replaced. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
+Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair (currently 23), requires the original baseline scenes 1–7, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Updating designs or documentation does not indicate that a public VSIX has been rebuilt or replaced. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
 
 ## Execution interface in the development branch
 
-The actual settings tabs are API Connections, Defaults for new tasks, Task execution and Reviewer Roles. The activity-bar icon opens a native task sidebar and the singleton workbench. Current detail uses scenes 14–17: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with progress output and command details expanded in evidence. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace. The original two-column, parallel-execution and apply-result controls remain historical designs; see [Usage](./usage.md) for current behavior and [task chat validation](./task-chat-validation.md) for actual coverage.
+The actual settings tabs are API Connections, Defaults for new tasks, Task execution and Reviewer Roles. The activity-bar icon opens a native task sidebar and the singleton workbench. Current detail uses scenes 14–17: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with public process cards in chat and original command details in evidence; scenes 18–20 add activity, icon-only sizing and minimization. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace. The original two-column, parallel-execution and apply-result controls remain historical designs; see [Usage](./usage.md) for current behavior and [task chat validation](./task-chat-validation.md) for actual coverage.
+
+## Approved additions: November 22, 2026
+
+| Scene                          | Source                                                      | Preview                                                     |
+| ------------------------------ | ----------------------------------------------------------- | ----------------------------------------------------------- |
+| 18. Public process / 公开过程  | [SVG](../design/dual-mind-chat-progress-proposal.svg)       | [PNG](../design/dual-mind-chat-progress-proposal.png)       |
+| 19. Minimized panel / 最小化   | [SVG](../design/dual-mind-chat-minimized-proposal.svg)      | [PNG](../design/dual-mind-chat-minimized-proposal.png)      |
+| 20. Narrow messages / 窄屏消息 | [SVG](../design/dual-mind-chat-compact-narrow-proposal.svg) | [PNG](../design/dual-mind-chat-compact-narrow-proposal.png) |
+
+## Approved: execution recovery
+
+The original 20 designs remain. [Scenes 21–23](./recovery-proposal.md) were approved on 2026-11-22 and now provide failure recovery, preparation, bounded retry and narrow-screen notices. Illustrated task data and historical artwork labels remain examples.

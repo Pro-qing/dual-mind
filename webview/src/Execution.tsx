@@ -1,7 +1,9 @@
 import { ExecutionDetailView } from './RunDetail';
 import { toAppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { Icon } from './components';
+import { canResume, recoveryNoticeId } from './Recovery';
 import {
   terminalStatuses,
   type ExecutionConfig,
@@ -239,10 +241,22 @@ export function ExecutionControls({
   const [busy, setBusy] = useState(false);
   const active = execution.runs.find((item) => !terminalStatuses.includes(item.status));
   const running = run && !terminalStatuses.includes(run.status);
+  const latest = execution.runs.find((item) => item.taskId === taskId);
+  const resumable = canResume(run, latest?.id, active?.id);
+  const recovering = run?.status === 'recovering';
+  const awaitingRecovery = run && ['failed', 'interrupted'].includes(run.status);
+  const pendingActions = useRef(new Set<string>());
   const call = (action: Parameters<typeof execute>[0]) => {
+    if (pendingActions.current.has(action.kind)) {
+      return;
+    }
+    pendingActions.current.add(action.kind);
     setBusy(true);
     void execute(action)
-      .finally(() => setBusy(false))
+      .finally(() => {
+        pendingActions.current.delete(action.kind);
+        setBusy(pendingActions.current.size > 0);
+      })
       .catch(() => undefined);
   };
   const events = executionEvents.filter((event) => event.runId === run?.id);
@@ -252,7 +266,18 @@ export function ExecutionControls({
         <>
           <div className="button-row">
             <button
-              className="primary"
+              className={resumable || recovering ? 'primary' : undefined}
+              disabled={busy || !resumable || (run?.status !== 'paused' && !configured)}
+              aria-describedby={
+                awaitingRecovery || recovering ? recoveryNoticeId(taskId) : undefined
+              }
+              onClick={() => call({ kind: 'resume', runId: run!.id })}
+            >
+              <Icon name="play" />
+              {tr('resumeRun')}
+            </button>
+            <button
+              className={resumable || recovering ? undefined : 'primary'}
               disabled={busy || Boolean(active) || !configured}
               onClick={() => call({ kind: run ? 'restart' : 'start', taskId })}
             >
@@ -271,13 +296,7 @@ export function ExecutionControls({
               {tr('pause')}
             </button>
             <button
-              disabled={busy || run?.status !== 'paused'}
-              onClick={() => call({ kind: 'resume', runId: run!.id })}
-            >
-              {tr('resumeRun')}
-            </button>
-            <button
-              disabled={busy || !running || run?.status === 'stopping'}
+              disabled={(busy && !recovering) || !running || run?.status === 'stopping'}
               onClick={() => call({ kind: 'stop', runId: run!.id })}
             >
               {tr('stop')}
@@ -303,7 +322,7 @@ export function ExecutionControls({
             </div>
           )}
           {active && active.taskId !== taskId && <p className="hint">{tr('otherTaskActive')}</p>}
-          {(run?.fault || run?.error) && (
+          {!awaitingRecovery && (run?.fault || run?.error) && (
             <ErrorNotice
               error={toAppError(run.fault || run.error, 'legacyExecution')}
               locale={snapshot.locale}

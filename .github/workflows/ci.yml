@@ -80,3 +80,26 @@ jobs:
       - run: npm run check
       - name: Test inside the extension host / 扩展宿主测试
         run: xvfb-run -a npm test
+
+  native-shells:
+    name: Native commands / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - name: Preserve LF checkout / 保持 LF 换行
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run package

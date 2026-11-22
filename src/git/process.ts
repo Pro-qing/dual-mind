@@ -101,7 +101,7 @@ export class GitProcess {
         this.options.executable || 'git',
         [
           '-c',
-          'core.hooksPath=/dev/null',
+          `core.hooksPath=${process.platform === 'win32' ? 'NUL' : '/dev/null'}`,
           '-c',
           'core.fsmonitor=false',
           '-c',

@@ -32,7 +32,7 @@ resources/        Packaged PNG icon and archived branding source
 scripts/          Build, checks, local tests and actual Webview verification
 tests/local/     Store and React interaction tests
 tests/            VS Code extension-host tests
-docs/design/     17 approved SVG/PNG design pairs
+docs/design/     23 approved SVG/PNG design pairs
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          Compatibility CI and collaboration templates
@@ -80,7 +80,7 @@ Discovery establishes access to the model-list endpoint only. Unsupported endpoi
 
 The host execution service owns one active run per workspace, independently of the Webview lifetime. It snapshots task/model/role/command configuration, uses the Git task workspace service, obtains a Reviewer plan, runs enabled preparation and drives Reviewer plan → Worker implementation/verification → additional checks → Reviewer acceptance rounds. Start, pause, continue, stop, restart and paused feedback are separate operations from local settings persistence. Approval requires valid evidence for all criteria, successful additional checks and an unchanged artifact fingerprint.
 
-`src/providers/inference.ts` adapts streaming Chat Completions and Responses without protocol fallback or automatic retries. Tools execute only after complete validated arguments; each agent retains its own protocol history. Responses reasoning items remain internal to their owning role. File tools are role-scoped, writes use atomic replacement, and Reviewer receives no command or write tools. Worker commands use structured executable and argument fields; enabled additional checks retain preset IDs. LocalCommands launches commands directly in the task directory, without implicit shell parsing, using a separate Linux process group and an environment allowlist.
+`src/providers/inference.ts` adapts streaming Chat Completions and Responses with independent role histories and validated tool batches. File writes remain Worker-only. Both roles use shell commands through `LocalCommands`; Reviewer explores during planning/answering and can prepare dependencies, build and test during acceptance. Saved presets retain literal argv. Shell selection, per-run login environment capture and process cleanup are separate modules; see [Shell execution](./shell-execution.md).
 
 Run summaries/configuration use independent workspace storage; public event history is journaled outside the repository and paged in groups of 80. Streaming UI updates are batched at 100 ms. Host restarts mark unfinished runs interrupted and never replay tool calls. API credentials remain in SecretStorage and active host memory. Histories, handoffs and command output must not expose them. The activity-bar Tree View subscribes to the same host state and opens the singleton workbench.
 
@@ -98,7 +98,7 @@ Worker hands over current artifacts and test evidence; Reviewer returns review c
 
 ## Git task workspace foundation (development branch)
 
-In dedicated mode, `src/git/` implements a lazy host service for the first execution: one `dualmind/task/<task UUID>/worker` branch and a separate worktree per task, outside the source repository under the extension's workspace storage directory. `ExecutionService` calls `TaskWorkspaces.prepare()` before its first model request; `Workbench.prepareTaskWorkspace()` remains a host integration wrapper. Opening settings, querying models or saving tasks does not prepare a workspace.
+In dedicated mode, `src/git/` implements a lazy host service for the first execution: one `dualmind/<normalized task name>-<short task ID>` branch and a separate worktree per task, outside the source repository under the extension's workspace storage directory. `ExecutionService` calls `TaskWorkspaces.prepare()` before its first model request; `Workbench.prepareTaskWorkspace()` remains a host integration wrapper. Opening settings, querying models or saving tasks does not prepare a workspace.
 
 First preparation in dedicated mode requires Git 2.25+, a trusted single-folder workspace opened at the repository root, a named branch, a commit and a clean source directory (including staged, unstaged and non-ignored untracked files). Bare repositories, submodules, detached HEAD and multiple workspace folders are rejected. An existing linked worktree can be the source. The baseline commit is frozen at first preparation; ignored/generated files are not copied. Existing prepared task files are reused even after the source moves or becomes dirty. The Git preparation service performs no source checkout, automatic commit, stash, fetch, merge, push or dependency installation; Worker may subsequently prepare project dependencies under the plan.
 
@@ -106,7 +106,7 @@ A separate `dualMind.git.workspaces.v1` host record holds the task/repository id
 
 The host binds a Worker or Reviewer file interface. Both can list/read regular files, inspect status and read tracked differences from the baseline; new untracked files are visible through status/list/read. Only Worker receives `writeFile`, including creation of ordinary subdirectories. Each access checks the task still exists, workspace trust, repository binding and worktree ownership. Absolute paths, traversal, symbolic links, hard-linked files and Git metadata are rejected. Git is invoked without a shell and with hooks, external diff, textconv, content filters and filesystem monitors disabled. LFS/filter-generated content is not downloaded or materialized by this service. Commands have a 20-second timeout and 2 MiB output limit; individual file reads/writes are limited to 2 MiB. Exceeding limits returns an error, not truncated evidence.
 
-This is a tool-interface boundary, not an operating-system sandbox: external processes or users with filesystem access can still modify the worktree. Reviewer cannot run tests or arbitrary commands through this interface; Worker execution provides test evidence. The separate execution service enforces role histories. The [context contract](./protocol.md#role-handoffs) remains applicable.
+File tools enforce a role boundary; shell execution is not an OS sandbox. Reviewer can independently run verification commands, while source implementation stays with Worker. The execution service keeps private role histories separate. See [role handoffs](./protocol.md#role-handoffs).
 
 ## Task Git strategies
 
@@ -124,14 +124,36 @@ The host records actual command arguments, relative task directory, plan version
 
 Reading review requires a reason for no command and concrete findings. Command-free tasks can complete independently. Commands require no systemd/cgroup probe and receive no memory or swap quota from the extension. Directory resolution rejects absolute paths, traversal and symlinks, but commands run with the user's permissions and this is not an OS sandbox. Each phase allows 20 model turns; command and error evidence retains output, history and redaction limits. Revisions retain acceptance IDs and verification methods to avoid silently weakening acceptance.
 
-The command runner interface now exposes only run; the available probe is removed. Cancellation, timeout, output overflow and normal parent exit all clean up the remaining process group: SIGTERM first, SIGKILL after 3 seconds if still alive, with at most 10 seconds to confirm shutdown. Exited zombies awaiting OS reaping are not considered live processes. Only after cleanup does the execution service record the post-command fingerprint. Unconfirmed termination retains commandShutdown and blocks new execution in the current host. Services deliberately leaving the process group are outside this mechanism.
+Cancellation, timeout, output overflow and parent exit all trigger process cleanup before the final fingerprint. Linux/macOS use process groups; Windows uses process ancestry, creation times and system tree termination. Unconfirmed cleanup blocks new runs. Limits and tracking boundaries are documented in [Shell execution](./shell-execution.md#lifecycle-and-validation).
 
 ## Continuing conversation and execution boundaries
 
 `RunRecords` appends user messages and Reviewer replies to `conversations/<taskId>.jsonl` in workspace extension storage. Updates reuse message IDs; conflicting content under an existing ID is rejected. Plans, submissions, reviews and system errors are projected from original run JSONL files without migration. Legacy conclusions lacking role information appear as system records. Conversation and evidence pagination are independent and deduplicate stable IDs; command and streaming-request chunks are grouped when reading evidence.
 
-`ExecutionService` reads pending messages at active-task handoffs. The `answering` phase exposes only Reviewer read tools, `submit_answer` and `submit_plan`, with no commands, writes or acceptance tool. Read-only processing uses `kind: conversation` and terminal `answered`, preserving the prior execution verdict; a modification plan promotes it to `kind: execution`. Active batches retain their round budget; idle continuation creates a linked run and must obtain new verification evidence.
+`ExecutionService` reads pending messages at active-task handoffs. The `answering` phase exposes Reviewer read tools, exploratory `run_command`, `submit_answer` and `submit_plan`, with no write/delete or acceptance tool. Question processing uses `kind: conversation` and terminal `answered`, preserving the prior execution verdict; a modification plan promotes it to `kind: execution`. Active batches retain their round budget; idle continuation creates a linked run and must obtain new verification evidence.
 
 Continuation uses `TaskWorkspaces.binding(taskId, previous.git)` to validate and reuse artifacts instead of `prepare`, which can require cleanliness or switch branches. Previous command output is readable by Reviewer but is not imported into the current valid evidence map. Stopped messages are not automatically launched; reload recovers processing messages as pending with an interruption marker. Messages, errors, answers and execution records are redacted before persistence and transport.
 
 `TaskChat.tsx` owns scrolling, sending, independent pagination and evidence panel state. Role information uses compact bars. Expanded event IDs survive updates and localization without remounting the panel. The viewport breakpoint selects a right panel or drawer with keyboard focus containment. Home, sidebar and detail ignore finished question-only sessions when selecting the latest actual execution status.
+
+## Native shell commands
+
+Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
+
+## Activity metadata and compatible branch naming
+
+Active operations expose an optional `ExecutionSnapshot.activity` with run/task/role/phase, waiting/receiving/tool/command stage, operation identity and start time. Only the first model stream event changes receiving state; timing is not logged each second. Cleanup clears activity on completion, error, pause and stop; it is held only in the active service, so reload cannot restore a stale operation. Task chat opts into public process projection as specified by the [approved UI](./chat-progress-proposal.md).
+
+New managed registrations add `branchNaming: {version: 2, slug, suffixLength}`; absence still validates the original UUID-based name. Both branch and naming metadata are checked against the registered binding. Names freeze during initial preparation and collision retries use 8/12/32 UUID characters. Existing worktree paths, direct strategies and history storage version remain unchanged.
+
+## Compact chat presentation
+
+`ChatActivity` reads ephemeral activity and calculates elapsed time locally. `ChatCard` keeps headings and icon-only controls outside the scrolling body (240 CSS pixels on wide screens, 180 below 1100 pixels); full expansion changes height only. System records retain error badges when minimized. The evidence panel supports open/minimized/closed modes with a 44-pixel desktop rail and narrow drawer restoration. New-record/error indicators use grouped host totals across the complete evidence history, not the latest 80 events.
+
+Versioned Webview state stores navigation and per-task presentation preferences, scope and evidence scroll position. It accepts legacy navigation-only data and drops unknown task IDs/fields. Public cards use stable request identities and reject older sequence updates. Message anchors protect readers from streaming and layout changes; only readers near the bottom follow new content. Hidden content stays mounted to preserve record expansion, and drawer closure restores keyboard focus. Sizing controls expose tooltips/accessible names without visible labels; reduced-motion preferences disable spinning.
+
+## Failure recovery
+
+The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
+
+The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.

@@ -18,10 +18,18 @@ export function Icon({
     | 'play'
     | 'pause'
     | 'stop'
-    | 'check';
+    | 'check'
+    | 'expand'
+    | 'compact'
+    | 'minimize'
+    | 'restore';
   className?: string;
 }) {
   const paths = {
+    expand: 'M10 2h4v4M14 2 9 7M6 14H2v-4M2 14l5-5',
+    compact: 'M14 2 9 7m0-4v4h4M2 14l5-5m-4 0h4v4',
+    minimize: 'M3 8h10',
+    restore: 'M3 5h8v8H3zM6 2h8v8',
     plus: 'M8 2v12M2 8h12',
     settings: 'M8 1v2m0 10v2M1 8h2m10 0h2M3 3l2 2m6 6 2 2M3 13l2-2m6-6 2-2M8 4a4 4 0 1 0 .01 0',
     trash: 'M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5',

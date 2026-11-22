@@ -43,6 +43,42 @@ export type AgentPhase = Agent | 'planning' | 'answering';
 export function agentTools(phase: AgentPhase): ToolDefinition[] {
   const read: ToolDefinition[] = [
     {
+      name: 'read_operation',
+      description:
+        'Read a saved public recovery operation by its host ID, including status, arguments and result. Unknown status does not mean the operation never ran. Use pagination for older or longer records.',
+      parameters: object(
+        {
+          id,
+          offset: { type: 'integer', minimum: 0 },
+          limit: { type: 'integer', minimum: 1, maximum: 12000 },
+        },
+        ['id'],
+      ),
+    },
+    {
+      name: 'run_command',
+      description:
+        'Execute a task-related command in the host-selected shell. Each call is independent; combine activation and work in this call. Prepare project dependencies as needed; do not install user or system toolchains. Verification must reference current command criteria. cwd is relative to the task, defaults to dot. Timeout defaults to 180 seconds. Commands run as the user, without an OS sandbox.',
+      parameters: object(
+        {
+          name: { ...nonempty, maxLength: 200 },
+          command: nonempty,
+          cwd: { ...nonempty, maxLength: 2048 },
+          purpose: {
+            type: 'string',
+            enum:
+              phase === 'planning' || phase === 'answering'
+                ? ['explore']
+                : ['prepare', 'verify', 'explore'],
+          },
+          criterionIds: array(id, 40),
+          timeoutSeconds: { type: 'integer', minimum: 10, maximum: 900 },
+        },
+        ['name', 'command', 'purpose', 'criterionIds'],
+      ),
+    },
+
+    {
       name: 'list_files',
       description: 'List readable task files, with pagination.',
       parameters: object(
@@ -152,23 +188,6 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
       parameters: object({ id }),
     },
     {
-      name: 'run_command',
-      description:
-        'Execute a task-related program with literal arguments. Prepare project dependencies as needed; do not install system toolchains. Verification must reference current command criteria. cwd is relative to the task, defaults to dot. Timeout defaults to 180 seconds. Commands run as the user, without an OS sandbox.',
-      parameters: object(
-        {
-          name: { ...nonempty, maxLength: 200 },
-          program: { ...nonempty, maxLength: 2048 },
-          args: array({ ...string, maxLength: 10000 }, 100),
-          cwd: { ...nonempty, maxLength: 2048 },
-          purpose: { type: 'string', enum: ['prepare', 'verify', 'explore'] },
-          criterionIds: array(id, 40),
-          timeoutSeconds: { type: 'integer', minimum: 10, maximum: 900 },
-        },
-        ['name', 'program', 'args', 'purpose', 'criterionIds'],
-      ),
-    },
-    {
       name: 'finish_work',
       description:
         'Submit artifacts for Reviewer acceptance, not task completion. Cover all current criteria and reference host command IDs. State unresolved work honestly.',
@@ -182,6 +201,75 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
   ];
 }
 
+export function toolArgumentError(
+  call: ToolCall,
+  path: string,
+  expected: string,
+  value: unknown,
+): OperationError {
+  const actual =
+    value === undefined
+      ? 'missing'
+      : value === null
+        ? 'null'
+        : Array.isArray(value)
+          ? 'array'
+          : typeof value;
+  return new OperationError('toolArgumentsInvalid', {
+    tool: call.name,
+    callId: call.id,
+    path: path.slice(0, 200),
+    expected,
+    actual,
+  });
+}
+function shapeIssue(
+  value: unknown,
+  shape: Shape,
+  path = '$',
+): { path: string; expected: string; value: unknown } | undefined {
+  if (valid(value, shape)) {
+    return undefined;
+  }
+  if (shape.type === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {
+    const record = value as Record<string, unknown>;
+    for (const key of shape.required ?? []) {
+      if (!Object.hasOwn(record, key)) {
+        return { path: `${path}.${key}`, expected: shape.properties![key].type, value: undefined };
+      }
+    }
+    for (const [key, item] of Object.entries(record)) {
+      if (!Object.hasOwn(shape.properties!, key)) {
+        return { path: `${path}.${key}`, expected: 'a declared parameter', value: item };
+      }
+      const issue = shapeIssue(item, shape.properties![key], `${path}.${key}`);
+      if (issue) {
+        return issue;
+      }
+    }
+  }
+  if (shape.type === 'array' && Array.isArray(value)) {
+    for (let index = 0; index < value.length; index++) {
+      const issue = shapeIssue(value[index], shape.items!, `${path}[${index}]`);
+      if (issue) {
+        return issue;
+      }
+    }
+  }
+  const constraints = [
+    shape.type,
+    shape.enum && `one of ${shape.enum.join(', ')}`,
+    shape.minimum !== undefined && `minimum ${shape.minimum}`,
+    shape.maximum !== undefined && `maximum ${shape.maximum}`,
+    shape.minLength !== undefined && `minLength ${shape.minLength}`,
+    shape.maxLength !== undefined && `maxLength ${shape.maxLength}`,
+    shape.minItems !== undefined && `minItems ${shape.minItems}`,
+    shape.maxItems !== undefined && `maxItems ${shape.maxItems}`,
+    shape.pattern && `pattern ${shape.pattern}`,
+    shape.type === 'string' && 'without NUL',
+  ].filter(Boolean);
+  return { path, expected: constraints.join('; '), value };
+}
 // Validate the entire tool batch before the service executes any side effects.
 interface Shape {
   type: string;
@@ -235,7 +323,7 @@ function valid(value: unknown, s: Shape): boolean {
     }
     const v = value as Record<string, unknown>;
     return (
-      (s.required || []).every((k) => k in v) &&
+      (s.required || []).every((k) => Object.hasOwn(v, k)) &&
       Object.entries(v).every(
         ([k, x]) => Object.hasOwn(s.properties!, k) && valid(x, s.properties![k]),
       )
@@ -255,10 +343,11 @@ export function validateTool(
   try {
     args = JSON.parse(call.arguments);
   } catch {
-    throw new OperationError('invalidToolArguments');
+    throw toolArgumentError(call, '$', 'a JSON object', call.arguments);
   }
-  if (!valid(args, definition.parameters as unknown as Shape)) {
-    throw new OperationError('invalidToolArguments');
+  const issue = shapeIssue(args, definition.parameters as unknown as Shape);
+  if (issue) {
+    throw toolArgumentError(call, issue.path, issue.expected, issue.value);
   }
   return args as Record<string, unknown>;
 }
@@ -332,7 +421,14 @@ export function validateReview(
     throw new OperationError('feedbackPending');
   }
   const success = (c: CommandEvidence | undefined) =>
-    c && c.ok && c.planVersion === plan.version && c.before === revision && c.after === revision;
+    c &&
+    c.ok &&
+    c.exitCode === 0 &&
+    !c.reason &&
+    !c.fault &&
+    c.planVersion === plan.version &&
+    c.before === revision &&
+    c.after === revision;
   if (
     review.verdict === 'approve' &&
     (submission.unresolved.length ||
@@ -356,7 +452,8 @@ export function validateReview(
         e.commandIds.some((id) => {
           const c = commands.get(id);
           return (
-            !work.commandIds.includes(id) ||
+            (!work.commandIds.includes(id) &&
+              !(c?.agent === 'reviewer' && c.phase === 'reviewer')) ||
             !success(c) ||
             c!.purpose !== 'verify' ||
             !c!.criterionIds.includes(criterion.id)

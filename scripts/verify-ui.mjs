@@ -91,6 +91,8 @@ const requests = [];
 let responseMode = 'success';
 const inferenceRequests = [];
 let holdWorker = false;
+let recoveryFault;
+const recoveryChecks = [];
 let readingOnly = false;
 let longCommand = false;
 let workerRequestObserved;
@@ -110,17 +112,28 @@ const server = createServer((request, response) => {
       const body = JSON.parse(raw);
       const worker = body.tools.some((tool) => (tool.function?.name || tool.name) === 'write_file');
       inferenceRequests.push({ worker, body, path: request.url });
-      const turn = worker ? ++workerTurns : ++reviewTurns;
-      if (worker && holdWorker) {
-        workerRequestObserved?.();
-        return;
-      }
       const planning = body.tools.some(
         (tool) => (tool.function?.name || tool.name) === 'submit_plan',
       );
       const answering = body.tools.some(
         (tool) => (tool.function?.name || tool.name) === 'submit_answer',
       );
+      if (
+        recoveryFault?.remaining &&
+        !planning &&
+        !answering &&
+        (recoveryFault.agent === 'worker' ? worker && workerTurns >= 1 : !worker)
+      ) {
+        recoveryFault.remaining--;
+        response.writeHead(recoveryFault.status, { 'Retry-After': '8' });
+        response.end('Local recovery fixture failure');
+        return;
+      }
+      const turn = worker ? ++workerTurns : ++reviewTurns;
+      if (worker && holdWorker) {
+        workerRequestObserved?.();
+        return;
+      }
       const messages = body.messages || body.input;
       const handoff = messages
         .flatMap((m) => {
@@ -204,13 +217,7 @@ const server = createServer((request, response) => {
                       name: 'run_command',
                       arguments: JSON.stringify({
                         name: 'Verify result',
-                        program: process.execPath,
-                        args: [
-                          '-e',
-                          longCommand
-                            ? 'require("node:fs").writeFileSync("command-started",String(process.pid));setInterval(()=>{},1000)'
-                            : 'if(require("node:fs").readFileSync("result.txt","utf8")!=="fixed")process.exit(1)',
-                        ],
+                        command: `${process.platform === 'win32' ? '& ' : ''}'${process.execPath.replaceAll("'", process.platform === 'win32' ? "''" : "'\\''")}' -e '${longCommand ? 'require("node:fs").writeFileSync("command-started",String(process.pid));setInterval(()=>{},1000)' : 'if(require("node:fs").readFileSync("result.txt","utf8")!=="fixed")process.exit(1)'}'`,
                         purpose: 'verify',
                         criterionIds: ['result'],
                       }),
@@ -897,7 +904,12 @@ try {
   await f
     .getByLabel('Task requirements', { exact: false })
     .fill(
-      'Write fixed to result.txt, run the configured check, and independently review the artifact.',
+      'Write fixed to result.txt, run the configured check, and independently review the artifact.\n' +
+        Array.from(
+          { length: 24 },
+          (_, i) =>
+            `Acceptance note ${i + 1}: preserve task state and verify the actual saved artifact.`,
+        ).join('\n'),
     );
   await f
     .getByLabel('Reviewer Connection', { exact: true })
@@ -912,6 +924,26 @@ try {
   await f.getByRole('status').filter({ hasText: 'Completed — acceptance passed' }).waitFor();
   assert.equal(workerTurns, 6);
   assert.equal(reviewTurns, 3);
+  await f.locator('.process-message').first().waitFor();
+  assert.ok(!(await f.locator('.chat-messages').innerText()).includes('reviewer-private-state'));
+  const requirementCard = f.locator('[data-message-id="requirements"]');
+  await requirementCard.scrollIntoViewIfNeeded();
+  const sizeButton = requirementCard.getByRole('button', { name: 'Expand message', exact: true });
+  assert.equal(await sizeButton.innerText(), '');
+  assert.equal(await sizeButton.locator('svg').count(), 1);
+  const body = requirementCard.locator('.chat-message-body');
+  assert.ok(
+    await body.evaluate((el) => el.scrollHeight > el.clientHeight && el.clientHeight <= 240),
+  );
+  await body.evaluate((el) => {
+    el.scrollTop = 65;
+  });
+  await sizeButton.click();
+  assert.ok(await body.evaluate((el) => el.clientHeight > 240));
+  await screenshot(page, f, 'en-chat-expanded-icons');
+  await requirementCard.getByRole('button', { name: 'Compact message', exact: true }).click();
+  await screenshot(page, f, 'en-chat-compact-icons');
+
   await click(f, 'Tools, checks and review evidence');
   await f.locator('.evidence-record').first().waitFor();
   await f.locator('.evidence-record').evaluateAll((items) =>
@@ -932,6 +964,37 @@ try {
     /Command .+ failed/,
   );
   await screenshot(page, f, 'en-command-error-history');
+  const errorRecord = f
+    .locator('.evidence-item')
+    .filter({ has: f.locator('[data-error-code="commandFailed"]') })
+    .first();
+  await errorRecord.getByRole('button', { name: 'Minimize record', exact: true }).click();
+  assert.equal(await errorRecord.getAttribute('data-minimized'), 'true');
+  assert.ok(await errorRecord.locator('summary .chat-error-badge').isVisible());
+  await errorRecord.getByRole('button', { name: 'Restore record', exact: true }).click();
+  assert.ok(await errorRecord.locator('details.evidence-record').evaluate((el) => el.open));
+  await f.locator('.evidence-list').evaluate((el) => {
+    el.scrollTop = 90;
+  });
+  const evidenceScroll = await f.locator('.evidence-list').evaluate((el) => el.scrollTop);
+  await click(f, 'Minimize evidence panel');
+  assert.ok(await f.locator('.evidence-rail').isVisible());
+  const chatWidth = await f
+    .locator('.chat-main')
+    .evaluate((el) => el.getBoundingClientRect().width);
+  await screenshot(page, f, 'en-chat-panel-minimized');
+  await f
+    .locator('.evidence-rail')
+    .getByRole('button', { name: 'Restore evidence panel', exact: true })
+    .click();
+  assert.ok(
+    (await f.locator('.chat-main').evaluate((el) => el.getBoundingClientRect().width)) < chatWidth,
+  );
+  assert.ok(
+    Math.abs((await f.locator('.evidence-list').evaluate((el) => el.scrollTop)) - evidenceScroll) <=
+      2,
+  );
+
   await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
   await f
     .locator('[data-error-code="commandFailed"]')
@@ -943,19 +1006,44 @@ try {
     /命令.+执行失败/,
   );
   await screenshot(page, f, 'zh-command-error-history');
+  await requirementCard.getByRole('button', { name: '展开消息', exact: true }).click();
+  await click(f, '最小化证据面板');
+  await screenshot(page, f, 'zh-chat-panel-minimized');
+  await click(f, '返回主页');
+  await click(f, '打开任务: Persistent UI task');
+  await f.locator('.evidence-rail').waitFor();
+  assert.equal(await requirementCard.getAttribute('data-expanded'), 'true');
+  await requirementCard.getByRole('button', { name: '紧凑显示', exact: true }).click();
+  await f
+    .locator('.evidence-rail')
+    .getByRole('button', { name: '恢复证据面板', exact: true })
+    .click();
+
   await f.getByLabel('界面语言', { exact: true }).selectOption('en');
   await screenshot(page, f, 'en-execution-complete');
   await size(820, 1040);
-  await click(f, 'Tools, checks and review evidence');
   await f.getByRole('dialog', { name: 'Tools, checks and review evidence' }).waitFor();
   await screenshot(page, f, 'en-execution-evidence-drawer');
   await f.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
   await screenshot(page, f, 'en-execution-narrow');
+  await requirementCard.scrollIntoViewIfNeeded();
+  assert.ok(
+    await body.evaluate((el) => el.scrollHeight > el.clientHeight && el.clientHeight <= 180),
+  );
+  await screenshot(page, f, 'en-chat-compact-narrow');
+  await click(f, 'Tools, checks and review evidence');
+  await click(f, 'Minimize evidence panel');
+  assert.equal(await f.getByRole('dialog').count(), 0);
+  await f.getByRole('button', { name: 'Restore evidence panel', exact: true }).waitFor();
+  await screenshot(page, f, 'en-chat-minimized-narrow');
+  await click(f, 'Restore evidence panel');
+  await f.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
+
   await size(1600, 1100);
   const taskWorktrees = await fixtureGit('worktree', 'list', '--porcelain');
   const taskDirectory = taskWorktrees
     .split('\n\n')
-    .find((block) => block.includes('refs/heads/dualmind/task/'))
+    .find((block) => block.includes('refs/heads/dualmind/'))
     .split('\n')[0]
     .slice('worktree '.length);
   assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
@@ -999,6 +1087,8 @@ try {
     .waitFor({ timeout: 60000 });
   assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
   await screenshot(page, f, 'en-chat-followup-modification');
+  await click(f, 'Tools, checks and review evidence');
+  await click(f, 'Minimize evidence panel');
   longCommand = true;
   workerTurns = 0;
   reviewTurns = 0;
@@ -1016,6 +1106,11 @@ try {
   await click(f, 'Send');
   await f.getByText('Pending', { exact: true }).waitFor();
   await screenshot(page, f, 'en-chat-queued-message');
+  await f.locator('.chat-activity').filter({ hasText: 'Running command' }).waitFor();
+  await f.locator('.evidence-rail .chat-count').waitFor();
+  assert.ok(await f.locator('.evidence-rail').isVisible());
+  await screenshot(page, f, 'en-chat-command-activity');
+
   await click(f, 'Stop');
   await f
     .getByRole('status')
@@ -1023,6 +1118,7 @@ try {
     .waitFor();
   const stoppedPid = Number(await readFile(marker, 'utf8'));
   await assert.rejects(readFile(`/proc/${stoppedPid}/stat`), { code: 'ENOENT' });
+  assert.equal(await f.locator('.activity-spinner').count(), 0);
   await screenshot(page, f, 'en-command-stopped');
   longCommand = false;
   holdWorker = true;
@@ -1031,6 +1127,8 @@ try {
   });
   await click(f, 'Restart execution');
   await nextRequest;
+  await f.locator('.chat-activity').filter({ hasText: 'Waiting for model response' }).waitFor();
+  await screenshot(page, f, 'en-chat-silent-wait');
   const requestsBeforeReload = inferenceRequests.length;
   const executingFrame = f;
   const executionDetached = page.waitForEvent('framedetached', {
@@ -1041,13 +1139,15 @@ try {
   await executionDetached;
   await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
   f = await frame(page);
-  await f.getByRole('status').filter({ hasText: 'Interrupted — restart explicitly' }).waitFor();
+  await f.getByRole('status').filter({ hasText: 'Interrupted' }).waitFor();
   assert.equal(
     inferenceRequests.length,
     requestsBeforeReload,
     'Reload must not replay model requests',
   );
   assert.equal(await readFile(join(taskDirectory, 'result.txt'), 'utf8'), 'fixed');
+  assert.equal(await f.locator('.activity-spinner').count(), 0);
+  assert.ok(await f.locator('.evidence-rail').isVisible());
   await screenshot(page, f, 'en-execution-interrupted');
   await click(f, 'Delete task: Persistent UI task');
   await screenshot(page, f, 'en-delete-task');
@@ -1231,7 +1331,7 @@ try {
   await readingDetached;
   await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
   f = await frame(page);
-  await f.getByRole('status').filter({ hasText: 'Interrupted — restart explicitly' }).waitFor();
+  await f.getByRole('status').filter({ hasText: 'Interrupted' }).waitFor();
   assert.equal(inferenceRequests.length, readingRequestCount, 'Reload never replays Worker calls');
   await f
     .getByRole('heading', { name: /Reviewer.*Execution plan · v1/ })
@@ -1239,6 +1339,83 @@ try {
     .waitFor();
   await screenshot(page, f, 'en-reading-reload-interrupted');
   holdWorker = false;
+  workerTurns = 0;
+  reviewTurns = 0;
+  const resumedFromReload = inferenceRequests.length;
+  await click(f, 'Continue execution');
+  await f
+    .getByRole('status')
+    .filter({ hasText: 'Completed — acceptance passed' })
+    .waitFor({ timeout: 60000 });
+  assert.ok(
+    JSON.stringify(inferenceRequests[resumedFromReload].body).includes('execution_recovery'),
+  );
+  assert.equal(await f.locator('.recovery-notice').count(), 0);
+  await screenshot(page, f, 'en-recovery-after-reload-complete');
+  recoveryChecks.push('explicit reload recovery');
+
+  for (const agent of ['worker', 'reviewer']) {
+    workerTurns = 0;
+    reviewTurns = 0;
+    recoveryFault = { agent, remaining: 1, status: 401 };
+    await click(f, 'Restart execution');
+    await f
+      .getByRole('status')
+      .filter({ hasText: /^Failed(?: ·|$)/ })
+      .waitFor({ timeout: 30000 });
+    const notice = f.getByRole('region', { name: 'Execution recovery' });
+    await notice.waitFor();
+    assert.ok(
+      (await notice.innerText()).includes(
+        agent === 'worker' ? 'Worker · Implementation' : 'Reviewer · Acceptance',
+      ),
+    );
+    assert.ok(await f.getByRole('button', { name: 'Continue execution', exact: true }).isEnabled());
+    assert.equal(await f.locator('.activity-spinner').count(), 0);
+    if (!(await f.locator('.evidence-rail').isVisible())) {
+      await click(f, 'Tools, checks and review evidence');
+      await click(f, 'Minimize evidence panel');
+    }
+    await screenshot(page, f, `en-recovery-${agent}-failed`);
+    if (agent === 'worker') {
+      await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+      await screenshot(page, f, 'zh-recovery-worker-failed');
+      await size(820, 1040);
+      await screenshot(page, f, 'zh-recovery-worker-narrow');
+      assert.ok(await f.getByRole('button', { name: '继续执行', exact: true }).isEnabled());
+      await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+      await screenshot(page, f, 'en-recovery-worker-narrow');
+      await size(1600, 1100);
+    }
+    const requestOffset = inferenceRequests.length;
+    // Two transient Responses failures after manually fixing the Reviewer account.
+    recoveryFault = agent === 'reviewer' ? { agent, remaining: 2, status: 503 } : undefined;
+    await click(f, 'Continue execution');
+    if (agent === 'reviewer') {
+      await f
+        .locator('.chat-activity')
+        .filter({ hasText: 'Waiting to retry' })
+        .waitFor({ timeout: 15000 });
+      await screenshot(page, f, 'en-recovery-retry-wait');
+      await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+      await size(820, 1040);
+      await f.locator('.chat-activity').filter({ hasText: '等待重试' }).waitFor();
+      await screenshot(page, f, 'zh-recovery-retry-narrow');
+      await size(1600, 1100);
+      await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+    }
+    await f
+      .getByRole('status')
+      .filter({ hasText: 'Completed — acceptance passed' })
+      .waitFor({ timeout: 60000 });
+    assert.ok(JSON.stringify(inferenceRequests[requestOffset].body).includes('execution_recovery'));
+    assert.equal(inferenceRequests[requestOffset].worker, agent === 'worker');
+    assert.ok(await f.locator('.evidence-rail').isVisible());
+    assert.equal(await f.locator('.recovery-notice').count(), 0);
+    await screenshot(page, f, `en-recovery-${agent}-complete`);
+    recoveryChecks.push(`${agent} failure continues its saved role with panel preferences`);
+  }
+  recoveryFault = undefined;
   await click(f, 'Delete task: Reading acceptance task');
   await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
   await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
@@ -1278,6 +1455,7 @@ try {
         inferenceRequests: inferenceRequests.length,
         activityBarEntry: true,
         reloadInterrupted: true,
+        recoveryChecks,
         directBranchModes: ['current', 'branch'],
       },
       null,

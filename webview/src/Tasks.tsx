@@ -469,7 +469,9 @@ function TaskDetail({
     ? execution.runs.find(
         (item) =>
           item.taskId === task.id &&
-          (item.kind !== 'conversation' || !terminalStatuses.includes(item.status)),
+          (item.kind !== 'conversation' ||
+            !terminalStatuses.includes(item.status) ||
+            ['failed', 'interrupted'].includes(item.status)),
       )
     : undefined;
   const locked = currentRun && !terminalStatuses.includes(currentRun.status);

@@ -87,17 +87,26 @@ test('conversation pagination spans runs, preserves stable IDs and recovers proc
   assert.equal((await recovered.pending(taskId))[0].fault?.code, 'executionInterrupted');
 });
 
-test('answering tools are read-only and answers cannot substitute for task acceptance', () => {
+test('answering permits exploration but not source tools or task acceptance', () => {
   const tools = agentTools('answering');
   assert.ok(tools.some((t) => t.name === 'submit_answer'));
-  for (const name of [
-    'write_file',
-    'delete_file',
-    'run_command',
-    'run_check',
-    'finish_work',
-    'submit_review',
-  ]) {
+  assert.equal(
+    validateTool(
+      {
+        id: 'explore',
+        name: 'run_command',
+        arguments: JSON.stringify({
+          name: 'Inspect',
+          command: 'git status',
+          purpose: 'explore',
+          criterionIds: [],
+        }),
+      },
+      tools,
+    ).purpose,
+    'explore',
+  );
+  for (const name of ['write_file', 'delete_file', 'run_check', 'finish_work', 'submit_review']) {
     assert.throws(
       () => validateTool({ id: 'call', name, arguments: '{}' }, tools),
       (e: unknown) => e instanceof OperationError && e.code === 'toolNotAllowed',
@@ -128,4 +137,147 @@ test('message redaction preserves text beyond the error-detail limit', async () 
     throw new Error('secret storage unavailable');
   };
   await assert.rejects(f.store.publicText(text));
+});
+
+test('public process projection merges full history by run, role and request with stable pagination', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'dualmind-process-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const f = fixture(),
+    taskId = randomUUID();
+  const records = new RunRecords(f.workspace, () => root);
+  await records.initialize();
+  const runId = randomUUID();
+  records.runs.push({
+    id: runId,
+    taskId,
+    status: 'worker',
+    round: 1,
+    maxRounds: 2,
+    createdAt: '',
+    updatedAt: '',
+    sequence: 0,
+  });
+  let sequence = 0;
+  const event = async (
+    text: string,
+    agent: 'worker' | 'reviewer' | null = 'worker',
+    requestId = 'same-request',
+  ) => {
+    sequence++;
+    await records.event({
+      runId,
+      taskId,
+      agent: agent ?? undefined,
+      requestId,
+      kind: 'text',
+      text,
+      sequence,
+      time: new Date(1700000000000 + sequence).toISOString(),
+    });
+    records.runs[0].sequence = sequence;
+  };
+  for (let n = 0; n < 100; n++) {
+    await event(`chunk-${n} `);
+  }
+  const before = (await records.conversation(taskId, undefined, true)).messages[0];
+  assert.equal(before.kind, 'process');
+  assert.equal(before.requestId, 'same-request');
+  assert.ok(before.text.startsWith('chunk-0 '));
+  assert.ok(before.text.endsWith('chunk-99 '));
+  assert.equal((await records.conversation(taskId)).messages.length, 0);
+  await event('tail');
+  const after = (await records.conversation(taskId, undefined, true)).messages[0];
+  assert.equal(after.id, before.id);
+  assert.equal(after.time, before.time);
+  assert.equal(after.sequence, 101);
+  assert.ok(after.text.endsWith('tail'));
+  await event('Reviewer-only', 'reviewer');
+  await event('Unattributed legacy text', null);
+  // A different role and subsequent requests cannot be merged into Worker text.
+  for (let n = 0; n < 45; n++) {
+    await event(`request-${n}`, 'worker', `request-${n}`);
+  }
+  await records.save();
+  const recovered = new RunRecords(f.workspace, () => root);
+  await recovered.initialize();
+  const messages = [];
+  let cursor: string | undefined;
+  do {
+    const page = await recovered.conversation(taskId, cursor, true);
+    messages.push(...page.messages);
+    cursor = page.before;
+  } while (cursor);
+  assert.equal(messages.length, 47);
+  assert.equal(new Set(messages.map((m) => m.id)).size, 47);
+  assert.equal(messages.find((m) => m.id === before.id)!.text, after.text);
+  assert.equal(messages.find((m) => m.role === 'reviewer')!.text, 'Reviewer-only');
+  assert.ok(!messages.some((m) => m.text.includes('Unattributed')));
+  const otherRun = randomUUID();
+  records.runs.push({ ...records.runs[0], id: otherRun });
+  await records.event({
+    runId: otherRun,
+    taskId,
+    sequence: 1,
+    agent: 'worker',
+    requestId: 'same-request',
+    kind: 'text',
+    text: 'New run',
+    time: '2026-11-22T00:00:00Z',
+  });
+  const latest = (await records.conversation(taskId, undefined, true)).messages;
+  assert.ok(latest.some((m) => m.runId === otherRun && m.text === 'New run'));
+  await assert.rejects(records.conversation(taskId, undefined, 'yes' as unknown as boolean), {
+    code: 'conversationUnavailable',
+  });
+});
+
+test('evidence totals count grouped records beyond pagination and do not count streaming chunks twice', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'dualmind-evidence-counts-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const f = fixture(),
+    taskId = randomUUID(),
+    runId = randomUUID();
+  const records = new RunRecords(f.workspace, () => root);
+  await records.initialize();
+  records.runs.push({
+    id: runId,
+    taskId,
+    status: 'completed',
+    round: 1,
+    maxRounds: 1,
+    createdAt: '',
+    updatedAt: '',
+    sequence: 102,
+  });
+  for (let sequence = 1; sequence <= 100; sequence++) {
+    await records.event({
+      runId,
+      taskId,
+      sequence,
+      kind: 'tool',
+      text: 'record',
+      time: new Date(1700000000000 + sequence).toISOString(),
+      ...(sequence % 2 === 0 ? { fault: { code: 'commandFailed' as const } } : {}),
+    });
+  }
+  for (const sequence of [101, 102]) {
+    await records.event({
+      runId,
+      taskId,
+      sequence,
+      kind: 'text',
+      agent: 'reviewer',
+      requestId: 'same',
+      text: 'chunk',
+      time: new Date(1700000000000 + sequence).toISOString(),
+    });
+  }
+  const page = await records.evidence(taskId);
+  assert.equal(page.events.length, 80);
+  assert.deepEqual(page.summary, { records: 101, errors: 50 });
+  assert.deepEqual(
+    (await records.evidence(taskId, undefined, undefined, page.before)).summary,
+    page.summary,
+  );
+  assert.deepEqual((await records.evidence(taskId, runId, 10)).summary, { records: 10, errors: 5 });
 });

@@ -125,7 +125,7 @@ The checker requires Git 2.25+ on PATH and prints its version, including during 
 
 ## Execution resource enforcement
 
-Task commands launch directly on the Ubuntu/Linux execution baseline, without user systemd, cgroup v2 or a user D-Bus session. The extension neither probes nor enforces memory/swap quotas. Commands default to a 180-second timeout (10–900 allowed), with a 2 MiB output cap and process-group cancellation. Programs actually used by a task must be installed. Missing executables, permission errors and launch failures are recorded as structured errors for Worker/Reviewer revision. Commands run as the current OS user and are not filesystem or network sandboxes. Command execution on other platforms is not yet supported.
+Task commands launch through native shells on Linux, macOS and Windows, without user systemd, cgroup v2 or a user D-Bus session. The extension neither probes nor enforces memory/swap quotas. Commands default to a 180-second timeout (10–900 allowed), with a 2 MiB output cap and process-group cancellation. Programs actually used by a task must be installed. Missing executables, permission errors and launch failures are recorded as structured errors for Worker/Reviewer revision. Commands run as the current OS user and are not filesystem or network sandboxes. Native macOS and Windows jobs are configured; actual passing results are still required.
 
 The initial candidate audit used Ubuntu 24.04.5 amd64, Node.js 24.22.3, Git 2.43.0 and local VS Code 1.141.0. The table describes the configured workflow, not successful remote CI for 0.0.2/0.0.3. See the [validation record](./execution-cycle-validation.md) for subsequent local Ubuntu 20.04 testing; minimum VS Code 1.100.0 and other matrix combinations were not revalidated for this runner revision.
 
@@ -137,4 +137,14 @@ Reviewer plans first; Worker prepares dependencies and runs commands as needed. 
 
 ## Continuing conversation environment
 
-Chat, read-only answers and continuation retain the Ubuntu/Linux baseline. Read-only replies start no Worker commands; continuation reuses the bound directory and requires the same branch and HEAD. Commands still run directly without reinstating systemd or fixed memory requirements. Added real UI cases use local model simulators and disposable repositories; see [task chat validation](./task-chat-validation.md).
+Chat and continuation use the same native command layer. Question replies may use Reviewer exploration commands without starting Worker; continuation reuses the bound directory and requires the same branch and HEAD. Commands still run directly without reinstating systemd or fixed memory requirements. Added real UI cases use local model simulators and disposable repositories; see [task chat validation](./task-chat-validation.md).
+
+## Native shell commands
+
+Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
+
+## Failure recovery
+
+The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
+
+The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.
