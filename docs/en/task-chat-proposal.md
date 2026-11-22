@@ -8,9 +8,9 @@ The agreed interaction uses compact role/model information, user messages on the
 
 ## 14. Wide chat with evidence panel
 
-[Editable SVG](../design/dual-mind-task-chat-proposal.svg) · [PNG preview](../design/dual-mind-task-chat-proposal.png)
+[Editable SVG](../design/v0.0.3/dual-mind-task-chat-proposal.svg) · [PNG preview](../design/v0.0.3/dual-mind-task-chat-proposal.png)
 
-![Task chat and evidence panel](../design/dual-mind-task-chat-proposal.png)
+![Task chat and evidence panel](../design/v0.0.3/dual-mind-task-chat-proposal.png)
 
 - The header retains the task name, status, branch and actions. Worker and Reviewer show only their role and model, without role descriptions, preset instructions or long progress text.
 - Chat is chronological. Users align right; AI aligns left. Each AI title identifies the role, content type and applicable execution, round and plan version. Host errors are system messages, not AI output.
@@ -21,9 +21,9 @@ The agreed interaction uses compact role/model information, user messages on the
 
 ## 15. Narrow view and evidence drawer
 
-[Editable SVG](../design/dual-mind-task-chat-narrow-proposal.svg) · [PNG preview](../design/dual-mind-task-chat-narrow-proposal.png)
+[Editable SVG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.svg) · [PNG preview](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)
 
-![Narrow chat and evidence drawer](../design/dual-mind-task-chat-narrow-proposal.png)
+![Narrow chat and evidence drawer](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)
 
 The left side shows narrow chat; the right side shows the same page with the drawer open. Below an actual viewport width of 1100 CSS pixels, the persistent sidebar becomes a drawer. Both the evidence button and message details links open it. Drawer width is capped at 430 CSS pixels and at the viewport width. Closing restores the original message position and triggering control's focus.
 
@@ -31,9 +31,9 @@ Models, task actions and long messages wrap. The message area and composer adapt
 
 ## 16. Sending messages during execution
 
-[Editable SVG](../design/dual-mind-task-chat-queued-proposal.svg) · [PNG preview](../design/dual-mind-task-chat-queued-proposal.png)
+[Editable SVG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.svg) · [PNG preview](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)
 
-![Queued messages during execution](../design/dual-mind-task-chat-queued-proposal.png)
+![Queued messages during execution](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)
 
 - The example shows Worker executing round two. A new user message appears on the right as pending, with a saved-queue notice. Neither the current plan nor the running command falsely claims to have incorporated that message.
 - Reviewer handles queued messages at the next role handoff and before final acceptance. Questions can receive read-only answers; changes require an updated plan before Worker acts. User messages are not passed directly as Worker tool instructions.
@@ -42,9 +42,9 @@ Models, task actions and long messages wrap. The message area and composer adapt
 
 ## 17. Questions and further changes after completion
 
-[Editable SVG](../design/dual-mind-task-chat-followup-proposal.svg) · [PNG preview](../design/dual-mind-task-chat-followup-proposal.png)
+[Editable SVG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.svg) · [PNG preview](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png)
 
-![Follow-up answers and further changes](../design/dual-mind-task-chat-followup-proposal.png)
+![Follow-up answers and further changes](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png)
 
 The example starts after acceptance. A user asks a question; Reviewer inspects relevant artifacts and returns an answered reply without invoking Worker, executing commands or creating a new acceptance verdict. The user then requests a change: Reviewer issues a follow-up plan, followed automatically by Worker implementation and Reviewer acceptance. Each follow-up execution links to its initiating messages and predecessor, with its round count reset from task configuration. Execution labels distinguish repeated plan version numbers.
 

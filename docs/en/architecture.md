@@ -2,11 +2,11 @@
 
 [简体中文](../zh/architecture.md) · [Documentation](./README.md)
 
-**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
+**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Page navigation and structured errors
 
-`webview/src/navigation.ts` defines `home`, `task` with a `taskId`, and settings pages with a `returnTo` location. Webview state persists navigation; creation uses the ID in the save response, and restoration verifies that the task exists. Old `workbench` state opens home. Home and detail share the task form. Native creation requests can open that form over settings and preserve the originating page on cancellation.
+`src/shared/navigation.ts` defines `home`, `task` with a `taskId`, and settings pages with a `returnTo` location. Webview state persists navigation; creation uses the ID in the save response, and restoration verifies that the task exists. Old `workbench` state opens home. Home and detail share the task form. Native creation requests can open that form over settings and preserve the originating page on cancellation.
 
 `src/shared/errors.ts` defines error identifiers, parameters, original details, and bilingual formatting. Errors receive identifiers at their source; the host redacts them before sending or persisting. Summaries and events retain structured errors, formatted in the current language when displayed. Native VS Code notifications use the same formatter, and old text records remain readable. Version-1 `status: 'draft'` is solely a storage compatibility field; the interface shows Pending or the run status.
 
@@ -32,7 +32,7 @@ resources/        Packaged PNG icon and archived branding source
 scripts/          Build, checks, local tests and actual Webview verification
 tests/local/     Store and React interaction tests
 tests/            VS Code extension-host tests
-docs/design/     23 approved SVG/PNG design pairs
+docs/design/v*/  27 approved SVG/PNG pairs grouped by development version
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          Compatibility CI and collaboration templates
@@ -62,7 +62,7 @@ The host bundle targets Node.js 20 for VS Code 1.100.0, while the development to
 
 Webview resources are limited to its built output, with a nonce-based script CSP and no direct network connections. API key entry uses a host-managed password prompt. The Webview receives only metadata and key-presence status. See the [implemented message boundary](./protocol.md).
 
-Home and detail are separate pages; the native VS Code sidebar opens task detail directly. Detail uses compact model bars, user messages on the right and AI messages on the left, independent evidence and a persistent composer. Wide windows have an approximately 360 CSS pixel evidence panel; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Task rows and actions wrap, while narrow settings and dialogs scroll without hiding their actions. Theme colors come from VS Code variables. Both UI languages use the same components and stable role IDs.
+Home and task detail share the native sidebar workbench; task selection opens detail directly. Detail uses compact model bars, user messages on the right and AI messages on the left, independent evidence and a persistent composer. Wide windows have an approximately 360 CSS pixel evidence panel; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Task rows and actions wrap, while narrow settings and dialogs scroll without hiding their actions. Theme colors come from VS Code variables. Both UI languages use the same components and stable role IDs.
 
 ## Connection verification and model discovery
 
@@ -82,7 +82,7 @@ The host execution service owns one active run per workspace, independently of t
 
 `src/providers/inference.ts` adapts streaming Chat Completions and Responses with independent role histories and validated tool batches. File writes remain Worker-only. Both roles use shell commands through `LocalCommands`; Reviewer explores during planning/answering and can prepare dependencies, build and test during acceptance. Saved presets retain literal argv. Shell selection, per-run login environment capture and process cleanup are separate modules; see [Shell execution](./shell-execution.md).
 
-Run summaries/configuration use independent workspace storage; public event history is journaled outside the repository and paged in groups of 80. Streaming UI updates are batched at 100 ms. Host restarts mark unfinished runs interrupted and never replay tool calls. API credentials remain in SecretStorage and active host memory. Histories, handoffs and command output must not expose them. The activity-bar Tree View subscribes to the same host state and opens the singleton workbench.
+Run summaries/configuration use independent workspace storage; public event history is journaled outside the repository and paged in groups of 80. Streaming UI updates are batched at 100 ms. Host restarts mark unfinished runs interrupted and never replay tool calls. API credentials remain in SecretStorage and active host memory. Histories, handoffs and command output must not expose them. The activity bar has one `dualMind.tasks` view backed by `WebviewViewProvider`. The host owns execution; disposing a view releases only page messaging and listeners.
 
 Inference requests have a 120-second deadline, 8 MiB response limit and 512 KiB request-context limit. A role has at most 20 model turns per round; public run history is bounded at 64 MiB. Exceeding a limit fails explicitly. Automatic original-workspace application, automatic Git commits/merges and concurrent task execution remain outside this milestone.
 
@@ -157,3 +157,12 @@ Versioned Webview state stores navigation and per-task presentation preferences,
 The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
 
 The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.
+
+## Native sidebar lifecycle
+
+[Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+`src/core/viewChannel.ts` binds handshake, timeout and replies to each page. Callbacks verify page identity before sending; late replies cannot reach a replacement view. Initialization retry creates a new channel, visibility changes refresh snapshots, and chat reloads from paged records. `retainContextWhenHidden` retains hidden pages; recreation restores navigation/chat preferences from Webview state and the workspace display-state mirror.
+
+`src/shared/viewState.ts` accepts only allowlisted display fields, in precedence order: current sidebar, workspace mirror, legacy tab. `view.state` mirrors preferences; `rendered` completes its handshake after saving display state. The old `dualMind.workbench` serializer starts migration without awaiting rendering, avoiding a VS Code restore deadlock. Failure keeps the old tab and retry entry. `navigation.ack` prevents consuming a new-task request twice. Execution protocols and run-record formats are unchanged.
+
+`dualMind.alignPanelCenter` invokes native panel centering only on manual request; it neither saves nor resets sidebar position. The frontend keeps the task chat mounted across Settings visits to retain drafts and reading position. Task-detail expansion uses the existing per-task display preferences.

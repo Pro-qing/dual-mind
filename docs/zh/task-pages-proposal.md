@@ -12,16 +12,16 @@
 
 每张画布均为 1440 × 900。本次提案使用简体中文主界面，场景 11 同时展示英文错误示例；实际实现根据语言设置显示一套文案。所有图形与文字均可编辑，不依赖外部图片、字体下载或脚本。底部审核说明不属于产品界面。
 
-| 场景             | SVG                                                    | PNG                                                  |
-| ---------------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| 8. 独立任务主页  | [源文件](../design/dual-mind-task-home-proposal.svg)   | [预览](../design/dual-mind-task-home-proposal.png)   |
-| 9. 独立任务详情  | [源文件](../design/dual-mind-task-detail-proposal.svg) | [预览](../design/dual-mind-task-detail-proposal.png) |
-| 10. 创建任务     | [源文件](../design/dual-mind-task-create-proposal.svg) | [预览](../design/dual-mind-task-create-proposal.png) |
-| 11. 错误与窄窗口 | [源文件](../design/dual-mind-task-states-proposal.svg) | [预览](../design/dual-mind-task-states-proposal.png) |
+| 场景             | SVG                                                           | PNG                                                         |
+| ---------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| 8. 独立任务主页  | [源文件](../design/v0.0.3/dual-mind-task-home-proposal.svg)   | [预览](../design/v0.0.3/dual-mind-task-home-proposal.png)   |
+| 9. 独立任务详情  | [源文件](../design/v0.0.3/dual-mind-task-detail-proposal.svg) | [预览](../design/v0.0.3/dual-mind-task-detail-proposal.png) |
+| 10. 创建任务     | [源文件](../design/v0.0.3/dual-mind-task-create-proposal.svg) | [预览](../design/v0.0.3/dual-mind-task-create-proposal.png) |
+| 11. 错误与窄窗口 | [源文件](../design/v0.0.3/dual-mind-task-states-proposal.svg) | [预览](../design/v0.0.3/dual-mind-task-states-proposal.png) |
 
 ### 8. 独立任务主页
 
-![独立任务主页：任务列表、新建、状态和设置](../design/dual-mind-task-home-proposal.png)
+![独立任务主页：任务列表、新建、状态和设置](../design/v0.0.3/dual-mind-task-home-proposal.png)
 
 主页展示任务名称、需求摘要、Reviewer 角色、Git 策略、轮次及当前状态。点击任务名称或“打开任务”进入详情；删除按钮是独立操作。顶部数量仅作概览，不增加筛选功能。任务较多时滚动列表；单个工作区同时执行一个任务。保留设置、新建任务和现有示例预览入口，示例仍只读。
 
@@ -29,7 +29,7 @@
 
 ### 9. 独立任务详情
 
-![新建成功后的待执行详情：需求、模型绑定、角色和手动开始](../design/dual-mind-task-detail-proposal.png)
+![新建成功后的待执行详情：需求、模型绑定、角色和手动开始](../design/v0.0.3/dual-mind-task-detail-proposal.png)
 
 详情顶部提供“返回主页”和设置入口，显示任务名称、需求、Reviewer 角色、Git 策略及轮次上限。Worker 和 Reviewer 分列，配置未齐时说明具体缺项并提供设置入口。新任务显示“待执行”和等待开始的空对话，不自动发出模型请求。
 
@@ -48,7 +48,7 @@
 
 ### 10. 创建任务
 
-![创建任务弹窗：Reviewer 缺少密钥仍可创建，之后进入待执行详情](../design/dual-mind-task-create-proposal.png)
+![创建任务弹窗：Reviewer 缺少密钥仍可创建，之后进入待执行详情](../design/v0.0.3/dual-mind-task-create-proposal.png)
 
 保留名称、需求、Reviewer 角色、Git 策略、轮次上限和两个独立模型绑定。主操作改为“创建任务”，编辑时为“保存任务”；不再设置提交草稿或确认草稿的步骤。Git 策略继续提供专用 worktree、当前分支和已有分支三种选择，选择已有分支时显示原有分支选择控件。角色列表继续支持自定义角色，编辑仍保留任务的角色快照。
 
@@ -56,7 +56,7 @@
 
 ### 11. 错误信息与窄窗口
 
-![独立状态样例：本地化错误、原始详情、历史兼容和窄窗口布局](../design/dual-mind-task-states-proposal.png)
+![独立状态样例：本地化错误、原始详情、历史兼容和窄窗口布局](../design/v0.0.3/dual-mind-task-states-proposal.png)
 
 图中的状态样例用于分别审核，不作为同时出现的产品面板。应用生成的错误使用当前语言说明原因和可采取的操作；有必要的原始详情在错误下方展开查看。切换语言后，结构化错误立即重新格式化；用户输入、命令输出、模型回答与外部原始错误保留原文。
 
@@ -74,7 +74,7 @@
 
 ```bash
 for scene in task-home task-detail task-create task-states; do
-  python3 -m cairosvg "docs/design/dual-mind-${scene}-proposal.svg" -o "docs/design/dual-mind-${scene}-proposal.png"
+  python3 -m cairosvg "docs/design/v0.0.3/dual-mind-${scene}-proposal.svg" -o "docs/design/v0.0.3/dual-mind-${scene}-proposal.png"
 done
 npm run docs:check
 npm run format:check

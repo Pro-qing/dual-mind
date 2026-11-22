@@ -2,7 +2,7 @@
 
 [简体中文](../zh/README.md) · [Project home](../../README.md)
 
-**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
+**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 | Guide                                                   | Contents                                                                                |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -12,7 +12,7 @@
 | [Development](./development.md)                         | nvm, build commands, debugging, and tests                                               |
 | [Architecture](./architecture.md)                       | Implemented workbench, storage boundaries, branding assets, and module responsibilities |
 | [Host/UI protocol](./protocol.md)                       | Settings/model queries, execution messages, role handoffs and Git bindings              |
-| [UI design](./design.md)                                | 23 approved SVG/PNG scenes covering task pages, execution and chat                      |
+| [UI design](./design.md)                                | 27 approved SVG/PNG scenes, including the native sidebar                                |
 | [Roadmap](./roadmap.md)                                 | Versioned progress, implemented execution and remaining capabilities                    |
 | [Packaging and releases](./releasing.md)                | Publication history and the workflow for future GitHub / Marketplace versions           |
 | [Licensing](./licensing.md)                             | MIT license and bundled third-party notices                                             |
@@ -34,7 +34,8 @@ The [development log](./development-log.md) records code/documentation review, d
 
 ## Local source versions
 
-- [0.0.4](./release-notes-0.0.4.md): current source and local VSIX, unpublished.
+- [0.0.5](./release-notes-0.0.5.md): current native sidebar workbench, versioned designs and local tag.
+- [0.0.4](./release-notes-0.0.4.md): earlier local source and VSIX, unpublished.
 - [0.0.3](./release-notes-0.0.3.md): previous local source version, unpublished.
 - [0.0.2](./release-notes-0.0.2.md): model discovery, settings and Git preparation foundations.
 
@@ -42,3 +43,6 @@ The [development log](./development-log.md) records code/documentation review, d
 
 - [Failure recovery](./execution-recovery.md): host implementation, public context, process and evidence limits.
 - [Recovery UI proposal](./recovery-proposal.md): scenes 21–23, approved and integrated on 2026-11-22.
+
+- [Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+- [Sidebar validation](./sidebar-workbench-validation.md): real VS Code, legacy-tab migration, widths and terminal layout.

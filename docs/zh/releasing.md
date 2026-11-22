@@ -2,7 +2,7 @@
 
 [English](../en/releasing.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.4 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-21；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.4 版本说明](./release-notes-0.0.4.md)。
+**当前源码版本：0.0.5 · 本地源码标签 `v0.0.5` · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
 ## 0.0.1 历史发布记录
 
@@ -68,7 +68,7 @@ VSCODE_TEST_VERSION=stable npm test
 
 `npm run package` 会重建扩展宿主与 Webview，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签。产物路径为 `release/dual-mind-<version>.vsix`，再次打包同一版本会覆盖本地文件；候选包和重新下载的验证副本应分别存放。构建产物、截图、VSIX 和校验文件继续由 Git 忽略。
 
-检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及全部 17 组已审核 SVG／PNG；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
+检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及按版本目录组织的全部 27 组已审核 SVG／PNG；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
 
 在隔离用户配置／扩展目录中安装包，验证图标、身份／版本、工作台、两种语言、任务创建／保存及重载恢复。该配置只启用目标扩展身份。
 
@@ -86,4 +86,4 @@ Marketplace 展示上传扩展包中的 README，提交或推送 GitHub 文档�
 
 官方参考：[扩展发布](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)、[扩展清单](https://code.visualstudio.com/api/references/extension-manifest)和 [GitHub 发布文档](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。API 凭据不得写入源码或暴露在命令参数中。
 
-历史本地源码标签 `v0.0.3` 与当前 0.0.4 本地 VSIX 均不代表已公开发布。本次版本记录提交不创建或推送标签，也不上传 Marketplace／GitHub Release；本地包及已安装版本的核对范围见版本说明。公开发布前仍需验证待发布的精确提交及目标编辑器／系统组合，再完成上述分发流程；本次实际检查见[0.0.4 版本说明](./release-notes-0.0.4.md)。
+`v0.0.5` 是用户要求的本地源码附注标签，包含侧栏实现、设计目录整理和版本更新；此次不推送标签、安装扩展或创建公开发布。历史 `v0.0.2`／`v0.0.3` 标签和旧 VSIX 保留。公开发布仍需验证精确提交及目标平台 CI，再执行上文分发流程。本次本地范围与实际验证见[0.0.5 版本说明](./release-notes-0.0.5.md)。

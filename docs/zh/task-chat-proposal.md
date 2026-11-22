@@ -8,9 +8,9 @@
 
 ## 14. 宽屏聊天与右侧证据面板
 
-[可编辑 SVG](../design/dual-mind-task-chat-proposal.svg) · [PNG 预览](../design/dual-mind-task-chat-proposal.png)
+[可编辑 SVG](../design/v0.0.3/dual-mind-task-chat-proposal.svg) · [PNG 预览](../design/v0.0.3/dual-mind-task-chat-proposal.png)
 
-![任务聊天与右侧证据面板](../design/dual-mind-task-chat-proposal.png)
+![任务聊天与右侧证据面板](../design/v0.0.3/dual-mind-task-chat-proposal.png)
 
 - 顶部保留任务名称、状态、分支及操作。Worker 和 Reviewer 只显示角色名称与模型，不展示角色职责、预设说明或长段过程文本。
 - 聊天按时间排列。用户消息靠右；AI 消息靠左，标题明确显示角色、内容类型、适用的执行批次、轮次与方案版本。宿主错误使用系统消息，不标成 AI 输出。
@@ -21,9 +21,9 @@
 
 ## 15. 窄窗口与证据抽屉
 
-[可编辑 SVG](../design/dual-mind-task-chat-narrow-proposal.svg) · [PNG 预览](../design/dual-mind-task-chat-narrow-proposal.png)
+[可编辑 SVG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.svg) · [PNG 预览](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)
 
-![窄窗口聊天与证据抽屉](../design/dual-mind-task-chat-narrow-proposal.png)
+![窄窗口聊天与证据抽屉](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)
 
 画布左侧展示窄屏聊天，右侧展示相同页面打开证据抽屉的状态。实际窗口宽度不足 1100 CSS 像素时，常驻右栏转为抽屉；“工具与证据”按钮和消息详情链接均可打开它。抽屉宽度上限 430 CSS 像素，且不能超过视口。关闭后恢复原消息位置与触发控件焦点。
 
@@ -31,9 +31,9 @@
 
 ## 16. 执行中发送补充消息
 
-[可编辑 SVG](../design/dual-mind-task-chat-queued-proposal.svg) · [PNG 预览](../design/dual-mind-task-chat-queued-proposal.png)
+[可编辑 SVG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.svg) · [PNG 预览](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)
 
-![执行中消息排队](../design/dual-mind-task-chat-queued-proposal.png)
+![执行中消息排队](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)
 
 - 示例为第二轮 Worker 执行中。用户补充要求在右侧出现并标记“待处理”，同时显示已保存的排队提示；当前方案与正在执行的命令不会假装已经采用新要求。
 - 在下一次角色交接、以及最终验收完成前，Reviewer 先处理已排队消息。纯问题可以只读答复；修改要求须形成新的方案后才交给 Worker，不能直接把用户消息当作 Worker 工具指令。
@@ -42,9 +42,9 @@
 
 ## 17. 结束后追问与继续修改
 
-[可编辑 SVG](../design/dual-mind-task-chat-followup-proposal.svg) · [PNG 预览](../design/dual-mind-task-chat-followup-proposal.png)
+[可编辑 SVG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.svg) · [PNG 预览](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png)
 
-![追问答复与继续修改](../design/dual-mind-task-chat-followup-proposal.png)
+![追问答复与继续修改](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png)
 
 示例从上次验收通过开始。用户提问后，Reviewer 读取相关成果并给出“答复 · 已回复”，不调用 Worker、不运行命令、不生成新的验收通过结论。用户随后明确提出修改，Reviewer 下发后续执行方案，再自动进入 Worker 实施和 Reviewer 验收循环。每次后续执行与触发消息、前次执行关联，轮次重新按任务配置计算；同名方案版本通过执行批次区分。
 

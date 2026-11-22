@@ -30,9 +30,11 @@ function eventId(event: RunEvent) {
 export function TaskChat({
   task,
   preview = false,
+  visible = true,
 }: {
   task: Pick<TaskDraft, 'id' | 'requirements' | 'createdAt'>;
   preview?: boolean;
+  visible?: boolean;
 }) {
   const { execution, execute, tr, snapshot, chatViews, updateChatView } = useUI();
   const [previewView, setPreviewView] = useState<ChatView>({});
@@ -151,7 +153,7 @@ export function TaskChat({
     onMinimized: (value: boolean) => changeMessage(id, 'minimizedMessages', value),
   });
   useEffect(() => {
-    if (preview) {
+    if (preview || !visible) {
       return;
     }
     let cancelled = false,
@@ -188,14 +190,14 @@ export function TaskChat({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [execute, task.id, preview]);
+  }, [execute, task.id, preview, visible]);
   const contentVersion = messages
     .map((m) => `${m.id}:${m.sequence}:${m.text.length}:${m.status ?? ''}`)
     .join('|');
   const previousContent = useRef('');
   useLayoutEffect(() => {
     const target = scroller.current;
-    if (!target) {
+    if (!target || !visible) {
       return;
     }
     const saved = anchor.current;
@@ -226,6 +228,7 @@ export function TaskChat({
     previousContent.current = contentVersion;
   }, [
     contentVersion,
+    visible,
     messages.length,
     view.expandedMessages,
     view.minimizedMessages,
@@ -328,7 +331,7 @@ export function TaskChat({
     [execute, task.id, scope, updateView],
   );
   useEffect(() => {
-    if (preview) {
+    if (preview || !visible) {
       return;
     }
     let seen = '',
@@ -344,7 +347,7 @@ export function TaskChat({
       });
     }, 120);
     return () => clearInterval(timer);
-  }, [panelOpen, preview, loadEvidence]);
+  }, [panelOpen, preview, loadEvidence, visible]);
   useEffect(() => {
     if (locate && panelOpen && events.length) {
       panel.current
@@ -354,7 +357,7 @@ export function TaskChat({
     }
   }, [locate, events, panelOpen]);
   useEffect(() => {
-    if (!panelOpen || !narrow) {
+    if (!visible || !panelOpen || !narrow) {
       return;
     }
     const previous = panelTrigger.current ?? (document.activeElement as HTMLElement | null);
@@ -401,7 +404,7 @@ export function TaskChat({
         toolbarTrigger.current?.focus();
       }
     };
-  }, [narrow, panelOpen]);
+  }, [narrow, panelOpen, visible]);
   const openEvidence = (message?: TaskMessage) => {
     panelTrigger.current = document.activeElement as HTMLElement | null;
     const next = message ? { runId: message.runId, through: message.sequence } : {};
@@ -695,8 +698,14 @@ export function TaskChat({
                     : 'chatSendHint',
               )}
             </span>
-            <button className="primary" disabled={preview || sending || !text.trim()}>
-              {tr('chatSend')}
+            <button
+              className="primary chat-send"
+              aria-label={tr('chatSend')}
+              title={tr('chatSend')}
+              disabled={preview || sending || !text.trim()}
+            >
+              <Icon name="play" />
+              <span>{tr('chatSend')}</span>
             </button>
           </div>
         </form>

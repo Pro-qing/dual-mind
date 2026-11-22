@@ -2,7 +2,7 @@
 
 [English](../en/development.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.4 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-21；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.4 版本说明](./release-notes-0.0.4.md)。
+**当前源码版本：0.0.5 · 本地源码标签 `v0.0.5` · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
 ## 开发环境
 
@@ -156,3 +156,7 @@ VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 两个角色现共用[通用 shell 执行层](./shell-execution.md)，自动继承环境，并允许 Reviewer 独立验证，无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
 
 恢复测试包含模拟端点、独立子进程强制退出及重新创建执行服务；只修改临时仓库。恢复界面审核前，真实 UI 回归仅验证原有布局与交互，不能计为新按钮已通过验证。见[恢复机制](./execution-recovery.md)。
+
+## 侧栏回归
+
+`npm run test:ui` 先运行双协议执行及聊天回归，再运行原生侧栏和旧页签迁移场景；也可使用 `node scripts/verify-sidebar.mjs` 单独验证后者。通过 `VSCODE_TEST_EXECUTABLE` 选择本机版本，或用 `VSCODE_TEST_VERSION=1.100.0` 验证最低版本。测试使用临时用户目录和工作区；真实结果见[侧栏验证](./sidebar-workbench-validation.md)。

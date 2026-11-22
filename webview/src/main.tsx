@@ -3,7 +3,11 @@ import { ErrorNotice } from './ErrorNotice';
 import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { restoreWorkbenchView, type WorkbenchViewState } from './chatViewState';
+import {
+  chooseWorkbenchView,
+  restoreWorkbenchView,
+  type WorkbenchViewState,
+} from './chatViewState';
 import { connect, type VSCodeApi } from './bridge';
 import type { AppSnapshot, Locale } from '../../src/shared/model';
 import { t } from '../../src/shared/i18n';
@@ -11,7 +15,11 @@ import './styles.css';
 
 declare function acquireVsCodeApi(): VSCodeApi;
 const api = acquireVsCodeApi();
-const saveViewState = (value: WorkbenchViewState) => api.setState(value);
+const saveViewState = (value: WorkbenchViewState) => {
+  api.setState(value);
+  api.postMessage({ type: 'view.state', state: value });
+};
+const acknowledgeNavigation = (id: string) => api.postMessage({ type: 'navigation.ack', id });
 function Root() {
   const [snapshot, setSnapshot] = useState<AppSnapshot | null>(null);
   const [error, setError] = useState<AppError | null>(null);
@@ -45,7 +53,15 @@ function Root() {
   useEffect(() => {
     if (snapshot && !reportedReady.current) {
       reportedReady.current = true;
-      api.postMessage({ type: 'rendered' });
+      api.postMessage({
+        type: 'rendered',
+        state: chooseWorkbenchView(
+          api.getState(),
+          snapshot.initialViewState,
+          undefined,
+          snapshot.tasks,
+        ),
+      });
     }
   }, [snapshot]);
   const locale: Locale =
@@ -72,7 +88,10 @@ function Root() {
       </div>
     );
   }
-  const previous = restoreWorkbenchView(api.getState(), snapshot.tasks);
+  const previous = restoreWorkbenchView(
+    chooseWorkbenchView(api.getState(), snapshot.initialViewState, undefined, snapshot.tasks),
+    snapshot.tasks,
+  );
   return (
     <>
       {error && <ErrorNotice error={error} locale={locale} />}
@@ -82,6 +101,7 @@ function Root() {
         initialNavigation={previous.navigation}
         initialChatViews={previous.chats}
         onViewState={saveViewState}
+        onNavigationHandled={acknowledgeNavigation}
       />
     </>
   );

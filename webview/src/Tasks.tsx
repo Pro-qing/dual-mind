@@ -454,17 +454,19 @@ function ResultActions({ runId, available }: { runId: string; available: boolean
 function TaskDetail({
   task,
   preview,
+  visible,
   onEdit,
   onDelete,
   onSettings,
 }: {
   task: TaskView;
   preview: boolean;
+  visible: boolean;
   onEdit(task: TaskDraft): void;
   onDelete(task: TaskDraft): void;
   onSettings(): void;
 }) {
-  const { execution, tr, pending } = useUI();
+  const { execution, tr, pending, chatViews, updateChatView } = useUI();
   const currentRun = !preview
     ? execution.runs.find(
         (item) =>
@@ -486,18 +488,6 @@ function TaskDetail({
               : tr(task.status === 'draft' ? 'pendingTask' : task.status)}
           </span>
         </div>
-        <div className="task-metadata">
-          <span>
-            {tr('gitStrategy')}:{' '}
-            {currentRun?.branch ||
-              (task.git?.mode === 'branch'
-                ? task.git.branch
-                : tr(task.git?.mode === 'current' ? 'gitCurrent' : 'gitManaged'))}
-          </span>
-          <span>
-            {tr('maximumRounds')} {task.maxRounds}
-          </span>
-        </div>
       </section>
       <div className="task-controls">
         {preview ? (
@@ -511,38 +501,60 @@ function TaskDetail({
         ) : (
           <ExecutionControls taskId={task.id} run={currentRun} onSettings={onSettings} />
         )}
-        <div className="button-row task-edit-actions">
-          <button
-            disabled={preview || pending || Boolean(locked)}
-            onClick={() => onEdit(task as TaskDraft)}
-          >
-            <Icon name="edit" />
-            {tr('editTask')}
-          </button>
-          {!preview && currentRun && (
-            <ResultActions runId={currentRun.id} available={Boolean(currentRun.directory)} />
-          )}
-          <button
-            className="danger"
-            disabled={preview || pending}
-            aria-label={`${tr('deleteTask')}: ${task.name}`}
-            onClick={() => onDelete(task as TaskDraft)}
-          >
-            <Icon name="trash" />
-            {tr('deleteTask')}
-          </button>
+      </div>
+      <details
+        className="task-details"
+        open={Boolean(chatViews[task.id]?.detailsExpanded)}
+        onToggle={(event) => updateChatView(task.id, { detailsExpanded: event.currentTarget.open })}
+      >
+        <summary>{tr('taskDetailsActions')}</summary>
+        <div className="task-details-body">
+          <div className="task-metadata">
+            <span>
+              {tr('gitStrategy')}:{' '}
+              {currentRun?.branch ||
+                (task.git?.mode === 'branch'
+                  ? task.git.branch
+                  : tr(task.git?.mode === 'current' ? 'gitCurrent' : 'gitManaged'))}
+            </span>
+            <span>
+              {tr('maximumRounds')} {task.maxRounds}
+            </span>
+          </div>
+          <div className="button-row task-edit-actions">
+            <button
+              disabled={preview || pending || Boolean(locked)}
+              onClick={() => onEdit(task as TaskDraft)}
+            >
+              <Icon name="edit" />
+              {tr('editTask')}
+            </button>
+            {!preview && currentRun && (
+              <ResultActions runId={currentRun.id} available={Boolean(currentRun.directory)} />
+            )}
+            <button
+              className="danger"
+              disabled={preview || pending}
+              aria-label={`${tr('deleteTask')}: ${task.name}`}
+              onClick={() => onDelete(task as TaskDraft)}
+            >
+              <Icon name="trash" />
+              {tr('deleteTask')}
+            </button>
+          </div>
+          <div className="model-bars">
+            <AgentPanel agent="worker" task={task} example={preview} />
+            <AgentPanel agent="reviewer" task={task} example={preview} />
+          </div>{' '}
         </div>
-      </div>
-      <div className="model-bars">
-        <AgentPanel agent="worker" task={task} example={preview} />
-        <AgentPanel agent="reviewer" task={task} example={preview} />
-      </div>
-      <TaskChat key={task.id} task={task} preview={preview} />
+      </details>
+      <TaskChat key={task.id} task={task} preview={preview} visible={visible} />
     </main>
   );
 }
 export function Tasks({
   taskId,
+  visible = true,
   preview,
   onPreviewChange,
   onSettings,
@@ -552,6 +564,7 @@ export function Tasks({
   onDeleted,
 }: {
   taskId?: string;
+  visible?: boolean;
   preview: boolean;
   onPreviewChange(value: boolean): void;
   onSettings(): void;
@@ -630,6 +643,7 @@ export function Tasks({
       )}
       {current ? (
         <TaskDetail
+          visible={visible}
           key={current.id}
           task={current}
           preview={preview}

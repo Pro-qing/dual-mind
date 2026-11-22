@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>25. 辅助侧栏：文件、代码与任务并排 — 待审核</title><desc>DualMind 原生侧栏工作台静态设计提案，2026-11-22。任务、代码、错误、时间、计数和终端输出均为示例，不是运行或验证结果。</desc><style>text {font-family:"Noto Sans CJK SC","DejaVu Sans",sans-serif}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="26" y="35" font-size="21" fill="#e7edf6" font-weight="600" text-anchor="start">25. 辅助侧栏：文件、代码与任务并排</text>
+<text x="26" y="62" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">Right sidebar · English labels · Interrupted review with minimized output</text>
+<text x="1414" y="32" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">设计提案 · 待审核 · 2026-11-22</text>
+<rect x="24" y="92" width="1392" height="714" rx="8" fill="#1e1e1e" stroke="#3b424e"/>
+<rect x="24" y="92" width="1392" height="32" rx="0" fill="#202329" stroke="none"/>
+<text x="39" y="114" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">File   Edit   Selection   View   Go   Run   Terminal   Help</text>
+<text x="720.0" y="114" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="middle">dual-mind — Visual Studio Code</text>
+<text x="1395" y="113" font-size="18" fill="#a8b3c3" font-weight="400" text-anchor="start">×</text>
+<rect x="24" y="124" width="48" height="660" rx="0" fill="#252930" stroke="none"/>
+<g transform="translate(39 143)">
+<path d="M4 2h7l4 4v10H4zM11 2v5h4M7 10h5M7 13h5" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(39 192)">
+<path d="M12 12l4 4M13 8a5 5 0 1 1-10 0a5 5 0 1 1 10 0" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(39 241)">
+<path d="M5 5v8M5 9h6q3 0 3-4M3 2h4v3H3zM12 2h4v3h-4zM3 13h4v3H3z" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(39 290)">
+<path d="M5 3l-4 6 4 6M13 3l4 6-4 6" fill="none" stroke="#96bfff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<rect x="24" y="275" width="3" height="34" rx="0" fill="#96bfff" stroke="none"/>
+<g transform="translate(39 750)">
+<path d="M9 2v3M9 13v3M2 9h3M13 9h3M4 4l2 2M12 12l2 2M14 4l-2 2M6 12l-2 2M12 9a3 3 0 1 1-6 0a3 3 0 1 1 6 0" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<rect x="72" y="124" width="204" height="660" rx="0" fill="#202329" stroke="none"/>
+<text x="87" y="144" font-size="11" fill="#a8b3c3" font-weight="600" text-anchor="start">EXPLORER</text>
+<text x="89" y="182" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">DUAL-MIND</text>
+<text x="97" y="211" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">src</text>
+<text x="109" y="240" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">auth</text>
+<rect x="73" y="250" width="202" height="27" rx="0" fill="#284e75" stroke="none"/>
+<text x="124" y="269" font-size="12" fill="#96bfff" font-weight="400" text-anchor="start">login.ts</text>
+<text x="124" y="298" font-size="12" fill="#96bfff" font-weight="400" text-anchor="start">login.test.ts</text>
+<text x="97" y="327" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">package.json</text>
+<text x="97" y="356" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">README.md</text>
+<path d="M276 124 L276 784" fill="none" stroke="#3b424e" stroke-width="1"/>
+<rect x="276" y="124" width="740" height="32" rx="0" fill="#202329" stroke="none"/>
+<rect x="276" y="124" width="142" height="32" rx="0" fill="#1e1e1e" stroke="none"/>
+<text x="290" y="145" font-size="12" fill="#96bfff" font-weight="400" text-anchor="start">TS   login.ts    ×</text>
+<text x="292" y="178" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">src  /  auth  /  login.ts</text>
+<text x="304" y="211" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">1</text>
+<text x="324" y="211" font-size="13" fill="#96bfff" font-weight="400" text-anchor="start">export function validateLogin(value: string) {</text>
+<text x="304" y="238" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">2</text>
+<text x="324" y="238" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">  const normalized = value.trim();</text>
+<text x="304" y="265" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">3</text>
+<text x="324" y="265" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start"></text>
+<text x="304" y="292" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">4</text>
+<text x="324" y="292" font-size="13" fill="#96bfff" font-weight="400" text-anchor="start">  if (normalized.length === 0) {</text>
+<text x="304" y="319" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">5</text>
+<text x="324" y="319" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">    return { valid: false, reason: &#x27;required&#x27; };</text>
+<text x="304" y="346" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">6</text>
+<text x="324" y="346" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">  }</text>
+<text x="304" y="373" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">7</text>
+<text x="324" y="373" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start"></text>
+<text x="304" y="400" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">8</text>
+<text x="324" y="400" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">  return { valid: true, value: normalized };</text>
+<text x="304" y="427" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">9</text>
+<text x="324" y="427" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">}</text>
+<rect x="276" y="514" width="740" height="270" rx="0" fill="#1e1e1e" stroke="#3b424e"/>
+<text x="292" y="538" font-size="11" fill="#a8b3c3" font-weight="400" text-anchor="start">PROBLEMS   OUTPUT   DEBUG CONSOLE</text>
+<text x="576" y="538" font-size="11" fill="#e7edf6" font-weight="600" text-anchor="start">TERMINAL</text>
+<path d="M576 546 L635 546" fill="none" stroke="#96bfff" stroke-width="2"/>
+<g transform="translate(946 525)">
+<path d="M9 3v12M3 9h12" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(981 525)">
+<path d="M4 4l10 10M14 4L4 14" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="293" y="574" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">$ npm test</text>
+<text x="293" y="598" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">&gt; unit tests</text>
+<text x="293" y="622" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">✓ rejects empty input</text>
+<text x="293" y="646" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">✓ rejects whitespace-only input</text>
+<text x="293" y="670" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">$</text>
+<rect x="1016" y="124" width="400" height="30" rx="0" fill="#202329" stroke="none"/>
+<text x="1028" y="144" font-size="11" fill="#a8b3c3" font-weight="600" text-anchor="start">DUALMIND</text>
+<g transform="translate(1356 130)">
+<path d="M9 3v12M3 9h12" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(1386 130)">
+<rect x="3" y="8" width="2" height="2" rx="1" fill="#a8b3c3" stroke="none"/>
+<rect x="9" y="8" width="2" height="2" rx="1" fill="#a8b3c3" stroke="none"/>
+<rect x="15" y="8" width="2" height="2" rx="1" fill="#a8b3c3" stroke="none"/>
+</g>
+<rect x="1016" y="154" width="400" height="630" rx="0" fill="#202329" stroke="#3b424e"/>
+<g transform="translate(1026 163)">
+<path d="M12 3L5 9l7 6M5 9h12" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="1051" y="177" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">Tasks</text>
+<g transform="translate(1383 164)">
+<path d="M9 2v3M9 13v3M2 9h3M13 9h3M4 4l2 2M12 12l2 2M14 4l-2 2M6 12l-2 2M12 9a3 3 0 1 1-6 0a3 3 0 1 1 6 0" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path d="M1016 191 L1416 191" fill="none" stroke="#3b424e" stroke-width="1"/>
+<text x="1028" y="211" font-size="17" fill="#e7edf6" font-weight="600" text-anchor="start">Fix login validation</text>
+<text x="1028" y="235" font-size="12" fill="#ffb4b4" font-weight="400" text-anchor="start">Interrupted · Round 1 / 5</text>
+<rect x="1028" y="247" width="184" height="30" rx="5" fill="#284e75" stroke="#96bfff"/>
+<g transform="translate(1036 253)">
+<path d="M5 2l10 7-10 7z" fill="none" stroke="#e7edf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="1059" y="267" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">Continue execution</text>
+<rect x="1224" y="247" width="74" height="30" rx="5" fill="#252930" stroke="#3b424e"/>
+<text x="1235" y="267" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">Rerun</text>
+<g transform="translate(1028 281)">
+<path d="M6 3l6 6-6 6" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="1052" y="294" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">Task details &amp; actions</text>
+<rect x="1026" y="309" width="380" height="94" rx="6" fill="#3a282f" stroke="#ffb4b4"/>
+<text x="1038" y="332" font-size="13" fill="#ffb4b4" font-weight="600" text-anchor="start">Reviewer · Acceptance</text>
+<text x="1038" y="355" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">Connection timed out. Fix settings, then continue this</text>
+<text x="1038" y="375" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">review.</text>
+<path d="M1016 417 L1416 417" fill="none" stroke="#3b424e" stroke-width="1"/>
+<text x="1028" y="437" font-size="13" fill="#e7edf6" font-weight="600" text-anchor="start">Conversation</text>
+<text x="1292.828125" y="437" font-size="12" fill="#ffb4b4" font-weight="400" text-anchor="start">Output · 1 error</text>
+<g transform="translate(1389 424)">
+<path d="M3 5h12v10H3zM6 2h11v10" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<rect x="1026" y="454" width="380" height="96" rx="6" fill="#252930" stroke="#3b424e"/>
+<text x="1038" y="477" font-size="13" fill="#85d9bd" font-weight="600" text-anchor="start">Reviewer · Public update</text>
+<g transform="translate(1377 464)">
+<path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="1038" y="503" font-size="14" fill="#e7edf6" font-weight="400" text-anchor="start">Checks finished before the interruption. I will inspect</text>
+<text x="1038" y="525" font-size="14" fill="#e7edf6" font-weight="400" text-anchor="start">the saved output before continuing.</text>
+<rect x="1026" y="562" width="380" height="34" rx="6" fill="#3a282f" stroke="#3b424e"/>
+<text x="1037" y="584" font-size="12" fill="#ffb4b4" font-weight="400" text-anchor="start">System · Connection timeout</text>
+<g transform="translate(1382 570)">
+<path d="M3 5h12v10H3zM6 2h11v10" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<rect x="1411" y="457" width="3" height="216" rx="2" fill="#3b424e" stroke="none"/>
+<rect x="1411" y="526.12" width="3" height="58.32000000000001" rx="2" fill="#7c8798" stroke="none"/>
+<rect x="1016" y="686" width="400" height="98" rx="0" fill="#202329" stroke="none"/>
+<path d="M1016 686 L1416 686" fill="none" stroke="#3b424e" stroke-width="1"/>
+<rect x="1026" y="695" width="380" height="43" rx="5" fill="#1b1f25" stroke="#3b424e"/>
+<text x="1037" y="721" font-size="14" fill="#a8b3c3" font-weight="400" text-anchor="start">Add a message…</text>
+<text x="1028" y="763" font-size="11" fill="#a8b3c3" font-weight="400" text-anchor="start">Queued until resumed</text>
+<rect x="1337" y="744" width="68" height="30" rx="5" fill="#284e75" stroke="#96bfff"/>
+<text x="1348" y="764" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">Send</text>
+<path d="M1016 124 L1016 784" fill="none" stroke="#96bfff" stroke-width="1"/>
+<rect x="24" y="784" width="1392" height="22" rx="0" fill="#24547a" stroke="none"/>
+<text x="37" y="799" font-size="11" fill="#e7edf6" font-weight="400" text-anchor="start">master     0 errors    0 warnings</text>
+<text x="1402" y="799" font-size="11" fill="#e7edf6" font-weight="400" text-anchor="end">UTF-8    TypeScript    Ln 8, Col 3</text>
+<text x="27" y="838" font-size="14" fill="#96bfff" font-weight="600" text-anchor="start">使用 VS Code 原生移动</text>
+<text x="27" y="862" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">将 DualMind 移到辅助侧栏；保留文件列表，位置与宽度由 VS Code 保存。</text>
+<text x="754" y="838" font-size="14" fill="#96bfff" font-weight="600" text-anchor="start">错误与恢复入口保持可见</text>
+<text x="754" y="862" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">输出最小化后仍显示错误；“继续执行”恢复原角色和阶段。</text>
+</svg>

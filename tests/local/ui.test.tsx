@@ -74,11 +74,26 @@ async function mount(
   return f;
 }
 function click(name: string | RegExp) {
-  rtl.fireEvent.click(rtl.screen.getAllByRole('button', { name })[0]);
+  const selector = rtl.screen.queryByRole('combobox', { name: /Settings category|设置类别/ });
+  const option = selector && rtl.within(selector as HTMLElement).queryByRole('option', { name });
+  if (option) {
+    rtl.fireEvent.change(selector, { target: { value: (option as HTMLOptionElement).value } });
+    return;
+  }
+  let buttons = rtl.screen.queryAllByRole('button', { name });
+  if (!buttons.length) {
+    const details = document.querySelector<HTMLDetailsElement>('.task-details');
+    if (details && !details.open) {
+      rtl.fireEvent.click(details.querySelector('summary')!);
+      buttons = rtl.screen.queryAllByRole('button', { name });
+    }
+  }
+  assert.ok(buttons.length, `Visible button: ${String(name)}`);
+  rtl.fireEvent.click(buttons[0]);
 }
 async function settings() {
   click('Settings');
-  await rtl.screen.findByRole('button', { name: 'API Connections' });
+  await rtl.screen.findByRole('combobox', { name: 'Settings category' });
 }
 
 test('starts empty; preview is read-only and never writes real tasks', async () => {
@@ -571,9 +586,8 @@ test('defaults have a separate tab, share cached models, persist explicitly and 
   rtl.cleanup();
   await mount(f, navigation);
   assert.ok(
-    rtl.screen
-      .getByRole('button', { name: 'Defaults for new tasks' })
-      .getAttribute('aria-current') === 'page',
+    (rtl.screen.getByRole('combobox', { name: 'Settings category' }) as HTMLSelectElement).value ===
+      'defaults',
   );
   assert.equal(modelInput('Worker Model ID').value, 'cached-model');
   assert.equal(requests, 1, 'Restoring navigation must not query automatically');
@@ -889,7 +903,7 @@ test('creating a task navigates using its saved ID without executing; a failed c
   rtl.fireEvent.click(form.getByRole('button', { name: 'Create task' }));
   await rtl.screen.findByRole('heading', { name: 'Keep this new task' });
   const task = (await f.store.snapshot()).tasks[0];
-  assert.deepEqual(navigation, { view: 'task', taskId: task.id });
+  await rtl.waitFor(() => assert.deepEqual(navigation, { view: 'task', taskId: task.id }));
   assert.deepEqual(operations, []);
   assert.equal(task.status, 'draft', 'Old storage format stays compatible');
   assert.ok(!document.body.textContent?.includes('draft'));
@@ -906,10 +920,13 @@ test('native task selection and creation requests respect task routes and cancel
     queryModels: async () => ({ models: [], fetchedAt: '' }),
     onModelsInvalidated: () => () => undefined,
   };
+  const handled: string[] = [];
+  const acknowledge = (id: string) => handled.push(id);
   const result = rtl.render(
     <App
       snapshot={{ ...snapshot, navigationRequest: { id: 'select', taskId: task.id } }}
       bridge={bridge}
+      onNavigationHandled={acknowledge}
     />,
   );
   assert.ok(rtl.screen.getByRole('heading', { name: task.name }));
@@ -918,13 +935,23 @@ test('native task selection and creation requests respect task routes and cancel
     <App
       snapshot={{ ...snapshot, navigationRequest: { id: 'new', newTask: true } }}
       bridge={bridge}
+      onNavigationHandled={acknowledge}
     />,
   );
   assert.ok(rtl.screen.getByRole('dialog', { name: 'New task' }));
   click('Cancel');
+  result.rerender(
+    <App
+      snapshot={{ ...snapshot, navigationRequest: { id: 'new', newTask: true } }}
+      bridge={bridge}
+      onNavigationHandled={acknowledge}
+    />,
+  );
+  assert.equal(rtl.screen.queryByRole('dialog'), null);
+  assert.deepEqual(handled, ['select', 'new']);
   assert.equal(
-    rtl.screen.getByRole('button', { name: 'API Connections' }).getAttribute('aria-current'),
-    'page',
+    (rtl.screen.getByRole('combobox', { name: 'Settings category' }) as HTMLSelectElement).value,
+    'api',
   );
   click('Back to task');
   assert.ok(rtl.screen.getByRole('heading', { name: task.name }));
@@ -932,6 +959,7 @@ test('native task selection and creation requests respect task routes and cancel
     <App
       snapshot={{ ...snapshot, navigationRequest: { id: 'missing', taskId: 'removed' } }}
       bridge={bridge}
+      onNavigationHandled={acknowledge}
     />,
   );
   assert.ok(rtl.screen.getByRole('main', { name: 'Home' }));
@@ -952,6 +980,7 @@ test('operation failures and historical errors reformat when the user changes la
   click('Edit task');
   await rtl.within(rtl.screen.getByRole('dialog')).findByText(/Git is unavailable/);
   click('Cancel');
+  click('Settings');
   rtl.fireEvent.change(rtl.screen.getByLabelText('Language'), { target: { value: 'zh-CN' } });
   await rtl.screen.findByText(/Git 不可用/);
   rtl.cleanup();
@@ -2079,4 +2108,29 @@ test('retry countdown follows the host deadline, distinguishes the next request 
   assert.equal(document.querySelector('.activity-time'), null);
   assert.doesNotMatch(document.querySelector('.chat-activity')!.textContent!, /Request attempt/);
   h.finish();
+});
+
+test('sidebar Settings visits retain the same composer, draft and reading position', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const task = (await f.store.snapshot()).tasks[0];
+  await mount(f, { view: 'task', taskId: task.id });
+  const composer = document.querySelector<HTMLTextAreaElement>('.chat-composer textarea')!;
+  const conversation = document.querySelector<HTMLElement>('.chat-messages')!;
+  rtl.fireEvent.change(composer, { target: { value: 'Keep my unsent draft' } });
+  assert.ok(conversation);
+  Object.defineProperties(conversation, {
+    scrollHeight: { value: 1000, configurable: true },
+    clientHeight: { value: 300, configurable: true },
+  });
+  conversation.scrollTop = 125;
+  rtl.fireEvent.scroll(conversation);
+  click('Settings');
+  assert.ok(document.querySelector('.task-surface[hidden]'));
+  assert.equal(document.querySelector('.chat-composer textarea'), composer);
+  click('Task execution');
+  click('Back to task');
+  assert.equal(document.querySelector('.chat-composer textarea'), composer);
+  assert.equal(composer.value, 'Keep my unsent draft');
+  assert.equal(conversation.scrollTop, 125);
 });

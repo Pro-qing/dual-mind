@@ -8,9 +8,9 @@ Subsequent revision: [task chat and follow-up](./task-chat-proposal.md) replaces
 
 ## Task detail
 
-[Editable SVG](../design/dual-mind-execution-cycle-proposal.svg)
+[Editable SVG](../design/v0.0.3/dual-mind-execution-cycle-proposal.svg)
 
-![Planning and acceptance cycle](../design/dual-mind-execution-cycle-proposal.png)
+![Planning and acceptance cycle](../design/v0.0.3/dual-mind-execution-cycle-proposal.png)
 
 Reviewer reads requirements and relevant files, then issues a plan. Worker implements and validates it, submitting artifacts for acceptance. Reviewer either approves or supplies the next executable plan. The current plan appears before the two conversation columns, with its version, objective, revision reason, steps and acceptance criteria. Command verification and reading review have distinct labels. History retains plans, submissions, reviews and actual command evidence. The example shows a second round after unsuccessful acceptance.
 
@@ -18,9 +18,9 @@ Before execution, explain that Start first asks Reviewer to plan. During plannin
 
 ## Execution settings
 
-[Editable SVG](../design/dual-mind-execution-settings-proposal.svg)
+[Editable SVG](../design/v0.0.3/dual-mind-execution-settings-proposal.svg)
 
-![Advanced additional commands](../design/dual-mind-execution-settings-proposal.png)
+![Advanced additional commands](../design/v0.0.3/dual-mind-execution-settings-proposal.png)
 
 The default view explains the two roles. Collapsed advanced settings contain an additional-command switch. Disabled commands retain their values and hide their editors. New settings default off; existing nonempty configurations default on. Enabled preparation runs after planning; additional checks are mandatory after every submission. Failed saves retain input; active runs retain frozen settings. The right-hand annotations are design notes, not a product sidebar.
 

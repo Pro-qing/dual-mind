@@ -8,9 +8,9 @@
 
 ## 18. 宽屏：状态和公开过程
 
-[可编辑 SVG](../design/dual-mind-chat-progress-proposal.svg) · [PNG 预览](../design/dual-mind-chat-progress-proposal.png)
+[可编辑 SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg) · [PNG 预览](../design/v0.0.4/dual-mind-chat-progress-proposal.png)
 
-![公开过程与紧凑消息](../design/dual-mind-chat-progress-proposal.png)
+![公开过程与紧凑消息](../design/v0.0.4/dual-mind-chat-progress-proposal.png)
 
 聊天顶部增加活动条，显示角色、阶段、当前操作与耗时；即使模型没有输出正文，也能看见“等待模型响应”。首个有效流事件后切换为“接收模型输出”；工具和命令有独立状态。耗时由前端计算，不写每秒日志，不显示推测的百分比。暂停、停止、失败和宿主重启分别显示真实执行状态，不保留转圈提示。
 
@@ -20,9 +20,9 @@
 
 ## 19. 宽屏：证据面板和单条系统输出最小化
 
-[可编辑 SVG](../design/dual-mind-chat-minimized-proposal.svg) · [PNG 预览](../design/dual-mind-chat-minimized-proposal.png)
+[可编辑 SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg) · [PNG 预览](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)
 
-![面板及系统消息最小化](../design/dual-mind-chat-minimized-proposal.png)
+![面板及系统消息最小化](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)
 
 右侧约 360 像素的面板增加最小化按钮，收成约 44 像素窄条；聊天利用释放的宽度。窄条保留恢复入口、新记录数量和错误标记。原关闭功能保留，最小化与关闭是独立状态。新输出只更新提示，不自动恢复面板。
 
@@ -30,9 +30,9 @@
 
 ## 20. 窄屏：紧凑与完整阅读
 
-[可编辑 SVG](../design/dual-mind-chat-compact-narrow-proposal.svg) · [PNG 预览](../design/dual-mind-chat-compact-narrow-proposal.png)
+[可编辑 SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg) · [PNG 预览](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)
 
-![窄屏消息展开与最小化入口](../design/dual-mind-chat-compact-narrow-proposal.png)
+![窄屏消息展开与最小化入口](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)
 
 左侧展示长消息紧凑状态，右侧展示同一方案完整展开。窄屏正文最大高度为 180 CSS 像素；右侧证据仍使用既有抽屉，最小化后在聊天工具栏提供恢复入口和计数，不占常驻侧栏。输入区保持可达。
 

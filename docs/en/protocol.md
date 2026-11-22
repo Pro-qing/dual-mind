@@ -2,7 +2,7 @@
 
 [简体中文](../zh/protocol.md) · [Documentation](./README.md)
 
-**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
+**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Page state and error compatibility
 
@@ -160,3 +160,9 @@ The `conversation` request adds optional boolean `includeProcess` (default false
 The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
 
 The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.
+
+## Sidebar page connection and migration
+
+`dualMind.tasks` is a native WebviewView. Optional `AppSnapshot.initialViewState` contains only allowlisted display state: version, navigation and per-task expansion/minimization preferences. It contains no credentials, raw environment or recovery context. Existing page state wins, followed by the workspace mirror and legacy-tab state. Older clients ignore the added field.
+
+UI → host `view.state` mirrors display state; `navigation.ack` consumes a navigation request by ID. `rendered` may include display state; the host saves it before completing initialization and closing a legacy tab. State writes are serialized and callbacks from replaced pages cannot reply to the new page. Retrying `ready` requests a fresh snapshot. Hidden execution remains in the host; reveal refreshes snapshots and paged chat. Execution requests, run records and recovery formats are unchanged.

@@ -2,6 +2,8 @@
 
 [English](../en/design.md) · [文档索引](./README.md)
 
+[原生侧栏工作台](./sidebar-workbench-proposal.md)场景 24–27 已于 **2026-11-22 审核通过**，2026-11-23 接入源码。完整工作台由主侧栏或辅助侧栏承载，提供紧凑导航、可折叠任务详情和手动“终端仅占编辑器区域”操作。旧页签仅用于迁移；现有 27 组审核记录和历史设计保留。
+
 **新增已审核修订：**[过程提示、紧凑聊天与最小化](./chat-progress-proposal.md)提供场景 18–20。2026-11-22 已审核通过，并要求缩放按钮仅显示图标；已实现。原 17 组审核记录保留，图中仍为静态示例。
 
 **新增已审核提案：** [任务聊天与持续追问](./task-chat-proposal.md)提供场景 14–17，包含宽屏聊天、窄屏证据抽屉、消息排队和结束后追问。四组设计已审核通过，对应界面和消息流程已实现，实际覆盖见[任务聊天验证](./task-chat-validation.md)。
@@ -9,33 +11,37 @@
 **新增已审核修订：** [双 AI 方案与验收循环](./execution-cycle-proposal.md)，2026-11-20 审核通过，已实现，实际覆盖范围见[验证记录](./execution-cycle-validation.md)。
 **已审核并实现的修订：** [任务主页、详情与错误提示修订](./task-pages-proposal.md)提供场景 8–11，拆分主页和任务详情，创建后手动开始，并统一中英文错误展示。场景 8–11 已于 2026-11-20 审核通过并实现；下文场景 1–7 与历史说明保持原样。
 
-**当前源码版本：0.0.4 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-21；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.4 版本说明](./release-notes-0.0.4.md)。
+**当前源码版本：0.0.5 · 本地源码标签 `v0.0.5` · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
-**当前共有 23 组已审核 SVG／PNG。** 场景 1–7 记录原工作台与模型选择，8–11 为任务页面修订，12–13 为方案与验收循环，14–17 为任务聊天与持续追问，18–20 为过程提示及紧凑聊天控件，21–23 为故障恢复。原图及历史审核标签保持原样，图中内容均为示例。当前源码已接入模型查询、单任务执行、审查循环、聊天和独立证据面板；专用 worktree 成果应用与并行执行仍待实现。已发布的 0.0.1 保留历史行为，当前操作见[使用说明](./usage.md)。
+**当前共有 27 组已审核 SVG／PNG。** 场景 1–7 记录原工作台与模型选择，8–11 为任务页面修订，12–13 为方案与验收循环，14–17 为任务聊天与持续追问，18–20 为过程提示及紧凑聊天控件，21–23 为故障恢复，24–27 为原生侧栏。原图及历史审核标签保持原样，图中内容均为示例。当前源码已接入模型查询、单任务执行、审查循环、聊天和独立证据面板；专用 worktree 成果应用与并行执行仍待实现。已发布的 0.0.1 保留历史行为，当前操作见[使用说明](./usage.md)。
 
 每张画布均为 **1440 × 900**，采用贴近 VS Code 的深色配色，使用可编辑的 SVG 文字与矢量元素。早期场景使用英文标签，后续修订以简体中文为主，各组均有中英双语说明。SVG 没有内嵌图片、脚本、外部字体或外部资源，PNG 为渲染预览。
 
+## 按版本查找
+
+[设计归档总索引](../design/README.md)列出版本、场景和数量。0.0.1 对应场景 1–5，0.0.2 对应 6–7，0.0.3 对应 8–17，0.0.4 对应 18–23，0.0.5 对应 24–27；每个目录都有同名 SVG／PNG 和 README。目录按开发版本归属，不是每个初始标签的完整快照：场景 8–17 是初始 `v0.0.3` 标签之后的同版本修订；侧栏由此前 0.0.4 候选包的开发记录归入正式的 0.0.5 源码里程碑。历史图稿内容和标签不改写。
+
 ## 设计稿导航
 
-| 场景                 | 可编辑源文件                                               | 预览                                                       |
-| -------------------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
-| 1. 并行任务工作台    | [SVG](../design/dual-mind-workbench.svg)                   | [PNG](../design/dual-mind-workbench.png)                   |
-| 2. API 连接设置      | [SVG](../design/dual-mind-api-settings.svg)                | [PNG](../design/dual-mind-api-settings.png)                |
-| 3. Reviewer 角色设置 | [SVG](../design/dual-mind-reviewer-roles.svg)              | [PNG](../design/dual-mind-reviewer-roles.png)              |
-| 4. 新建任务          | [SVG](../design/dual-mind-new-task.svg)                    | [PNG](../design/dual-mind-new-task.png)                    |
-| 5. 删除任务          | [SVG](../design/dual-mind-delete-task.svg)                 | [PNG](../design/dual-mind-delete-task.png)                 |
-| 6. API 模型查询      | [SVG](../design/dual-mind-api-model-discovery.svg)         | [PNG](../design/dual-mind-api-model-discovery.png)         |
-| 7. 任务模型选择      | [SVG](../design/dual-mind-task-model-selection.svg)        | [PNG](../design/dual-mind-task-model-selection.png)        |
-| 8. 独立任务主页      | [SVG](../design/dual-mind-task-home-proposal.svg)          | [PNG](../design/dual-mind-task-home-proposal.png)          |
-| 9. 独立任务详情      | [SVG](../design/dual-mind-task-detail-proposal.svg)        | [PNG](../design/dual-mind-task-detail-proposal.png)        |
-| 10. 创建任务         | [SVG](../design/dual-mind-task-create-proposal.svg)        | [PNG](../design/dual-mind-task-create-proposal.png)        |
-| 11. 错误与窄窗口     | [SVG](../design/dual-mind-task-states-proposal.svg)        | [PNG](../design/dual-mind-task-states-proposal.png)        |
-| 12. 方案与验收循环   | [SVG](../design/dual-mind-execution-cycle-proposal.svg)    | [PNG](../design/dual-mind-execution-cycle-proposal.png)    |
-| 13. 附加命令设置     | [SVG](../design/dual-mind-execution-settings-proposal.svg) | [PNG](../design/dual-mind-execution-settings-proposal.png) |
-| 14. 聊天与证据面板   | [SVG](../design/dual-mind-task-chat-proposal.svg)          | [PNG](../design/dual-mind-task-chat-proposal.png)          |
-| 15. 窄窗口证据抽屉   | [SVG](../design/dual-mind-task-chat-narrow-proposal.svg)   | [PNG](../design/dual-mind-task-chat-narrow-proposal.png)   |
-| 16. 执行中消息排队   | [SVG](../design/dual-mind-task-chat-queued-proposal.svg)   | [PNG](../design/dual-mind-task-chat-queued-proposal.png)   |
-| 17. 追问与继续修改   | [SVG](../design/dual-mind-task-chat-followup-proposal.svg) | [PNG](../design/dual-mind-task-chat-followup-proposal.png) |
+| 场景                 | 可编辑源文件                                                      | 预览                                                              |
+| -------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1. 并行任务工作台    | [SVG](../design/v0.0.1/dual-mind-workbench.svg)                   | [PNG](../design/v0.0.1/dual-mind-workbench.png)                   |
+| 2. API 连接设置      | [SVG](../design/v0.0.1/dual-mind-api-settings.svg)                | [PNG](../design/v0.0.1/dual-mind-api-settings.png)                |
+| 3. Reviewer 角色设置 | [SVG](../design/v0.0.1/dual-mind-reviewer-roles.svg)              | [PNG](../design/v0.0.1/dual-mind-reviewer-roles.png)              |
+| 4. 新建任务          | [SVG](../design/v0.0.1/dual-mind-new-task.svg)                    | [PNG](../design/v0.0.1/dual-mind-new-task.png)                    |
+| 5. 删除任务          | [SVG](../design/v0.0.1/dual-mind-delete-task.svg)                 | [PNG](../design/v0.0.1/dual-mind-delete-task.png)                 |
+| 6. API 模型查询      | [SVG](../design/v0.0.2/dual-mind-api-model-discovery.svg)         | [PNG](../design/v0.0.2/dual-mind-api-model-discovery.png)         |
+| 7. 任务模型选择      | [SVG](../design/v0.0.2/dual-mind-task-model-selection.svg)        | [PNG](../design/v0.0.2/dual-mind-task-model-selection.png)        |
+| 8. 独立任务主页      | [SVG](../design/v0.0.3/dual-mind-task-home-proposal.svg)          | [PNG](../design/v0.0.3/dual-mind-task-home-proposal.png)          |
+| 9. 独立任务详情      | [SVG](../design/v0.0.3/dual-mind-task-detail-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-detail-proposal.png)        |
+| 10. 创建任务         | [SVG](../design/v0.0.3/dual-mind-task-create-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-create-proposal.png)        |
+| 11. 错误与窄窗口     | [SVG](../design/v0.0.3/dual-mind-task-states-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-states-proposal.png)        |
+| 12. 方案与验收循环   | [SVG](../design/v0.0.3/dual-mind-execution-cycle-proposal.svg)    | [PNG](../design/v0.0.3/dual-mind-execution-cycle-proposal.png)    |
+| 13. 附加命令设置     | [SVG](../design/v0.0.3/dual-mind-execution-settings-proposal.svg) | [PNG](../design/v0.0.3/dual-mind-execution-settings-proposal.png) |
+| 14. 聊天与证据面板   | [SVG](../design/v0.0.3/dual-mind-task-chat-proposal.svg)          | [PNG](../design/v0.0.3/dual-mind-task-chat-proposal.png)          |
+| 15. 窄窗口证据抽屉   | [SVG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.svg)   | [PNG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)   |
+| 16. 执行中消息排队   | [SVG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.svg)   | [PNG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)   |
+| 17. 追问与继续修改   | [SVG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.svg) | [PNG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png) |
 
 ## 场景 1–7 的历史设计说明
 
@@ -43,7 +49,7 @@
 
 ### 1. 并行任务工作台
 
-![并行任务列表与当前任务的 Worker／Reviewer 对话](../design/dual-mind-workbench.png)
+![并行任务列表与当前任务的 Worker／Reviewer 对话](../design/v0.0.1/dual-mind-workbench.png)
 
 在已认可的双栏布局旁增加可折叠的工作区任务列表，每项显示名称、Reviewer 角色、状态、轮次和删除入口。示例包含两个运行中任务、一个暂停任务和一个已完成任务。选择任务只切换当前显示的对话，不会停止其他任务。
 
@@ -53,7 +59,7 @@
 
 ### 2. API 连接设置
 
-![API 连接编辑、独立模型默认值、占用提示与连接反馈状态](../design/dual-mind-api-settings.png)
+![API 连接编辑、独立模型默认值、占用提示与连接反馈状态](../design/v0.0.1/dual-mind-api-settings.png)
 
 统一 Settings 入口包含 **API Connections** 和 **Reviewer Roles** 两个页签。连接是本机用户级的 OpenAI 兼容接口配置，包含名称、Base URL、默认模型 ID 和密钥保存状态，提供新增、保存、删除和测试操作。Worker 与 Reviewer 分别设置默认连接和模型 ID，新建任务继承这些默认值。
 
@@ -63,7 +69,7 @@
 
 ### 3. Reviewer 角色设置
 
-![四个内置 Reviewer 角色、可编辑指令、自定义角色与固定 Worker](../design/dual-mind-reviewer-roles.png)
+![四个内置 Reviewer 角色、可编辑指令、自定义角色与固定 Worker](../design/v0.0.1/dual-mind-reviewer-roles.png)
 
 四类内置预设**只改变 Reviewer**：
 
@@ -80,7 +86,7 @@
 
 ### 4. 新建任务
 
-![新建任务弹窗：选择 Reviewer 角色，API 未配齐时仍可保存草稿](../design/dual-mind-new-task.png)
+![新建任务弹窗：选择 Reviewer 角色，API 未配齐时仍可保存草稿](../design/v0.0.1/dual-mind-new-task.png)
 
 名称、需求和一个 Reviewer 角色为必填项；弹窗同时确认两个连接及模型选择，以及当前任务的轮次上限。示例特意留空 Reviewer 连接：**Create draft** 仍可用，之后开始执行前需要配齐两个智能体的 API 配置。此时禁用的“开始”操作应明确指出缺少的配置，并提供 Settings 入口。
 
@@ -88,7 +94,7 @@
 
 ### 5. 删除任务
 
-![删除确认、停止中与停止失败状态，以及空任务列表示例](../design/dual-mind-delete-task.png)
+![删除确认、停止中与停止失败状态，以及空任务列表示例](../design/v0.0.1/dual-mind-delete-task.png)
 
 确认框显示任务名称，并说明仅移除其记录及双方对话历史，保留工作区文件和其他任务。草稿、已停止、已完成或完全失败的任务可以直接 **Delete task**。运行或暂停中的任务使用 **Stop and delete**：请求停止、等待确认、再删除记录。停止期间禁用重复的破坏性操作；停止失败时保留任务和历史并允许重试。取消确认框不执行任何动作。
 
@@ -100,7 +106,7 @@
 
 ### 6. API 连接与模型查询
 
-![API 连接表单、可搜索模型 ID 及查询状态示例](../design/dual-mind-api-model-discovery.png)
+![API 连接表单、可搜索模型 ID 及查询状态示例](../design/v0.0.2/dual-mind-api-model-discovery.png)
 
 中间展示已保存的连接和展开的模型选择器，右侧卡片是供审核的独立状态示例，不代表产品会同时显示这些面板。`example-model-*`、连接名称、数量和时间均为示例，不推荐具体模型，也不假定某个账号拥有这些模型。
 
@@ -114,7 +120,7 @@
 
 ### 7. 任务模型选择
 
-![Worker／Reviewer 独立模型选择、旧 ID 保留及窄窗口排列](../design/dual-mind-task-model-selection.png)
+![Worker／Reviewer 独立模型选择、旧 ID 保留及窄窗口排列](../design/v0.0.2/dual-mind-task-model-selection.png)
 
 主面板为新建任务弹窗，两个智能体使用独立连接和模型：Worker 使用示例 OpenAI 选择，Reviewer 使用手动填写的网关 ID 且尚未配置密钥，**创建草稿**仍可用。侧边分别展示编辑草稿、切换连接和窄窗口排列，属于弹窗之外的审核参考。
 
@@ -151,7 +157,7 @@
 
 ## 审核与实现门槛
 
-所有者已批准现有 23 组设计，后续界面变更按[贡献指南](../../CONTRIBUTING.zh.md)提供新的 SVG 提案并经明确审核后实现。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
+所有者已批准现有 27 组设计，后续界面变更按[贡献指南](../../CONTRIBUTING.zh.md)提供新的 SVG 提案并经明确审核后实现。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
 
 已实现模块职责见[架构说明](./architecture.md)，任务关联和配置边界见[通信协议](./protocol.md)。其中记录已实现的设置／执行消息、角色交接与文件访问边界。
 
@@ -161,25 +167,25 @@ SVG 是可编辑源文件，每张 SVG 旁保留同名 PNG。保留已有审核�
 
 ```bash
 for scene in dual-mind-api-model-discovery dual-mind-task-model-selection; do
-  python3 -m cairosvg "docs/design/${scene}.svg" -o "docs/design/${scene}.png"
+  python3 -m cairosvg "docs/design/v0.0.2/${scene}.svg" -o "docs/design/v0.0.2/${scene}.png"
 done
 npm run docs:check
 npm run format:check
 ```
 
-逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对（当前为 23 组），要求原始基础场景 1–7 齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。更新设计或文档不代表已重建或替换公开 VSIX。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。
+逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对（当前为 27 组），要求原始基础场景 1–7 齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。更新设计或文档不代表已重建或替换公开 VSIX。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。
 
 ## 开发分支的执行界面
 
-实际设置标签为 API 连接、新任务的默认配置、任务执行、Reviewer 角色。活动栏图标打开原生任务侧栏及单例工作台。当前详情采用场景 14–17 的紧凑模型栏、用户右侧／AI 左侧聊天、常驻输入框和独立证据面板；宽屏证据栏约 360 CSS 像素，低于 1100 CSS 像素时转为宽度不超过 430 CSS 像素及视口的抽屉。聊天与证据分别分页，公开过程在聊天中显示，命令细节在证据中展开；场景 18–20 增加活动条、图标缩放和最小化。保留手动开始、暂停／继续／停止、只读追问及沿用成果继续修改。每工作区同时一个任务；原图中的双栏、并行执行及应用成果入口属于历史设计，当前行为见[使用说明](./usage.md)，实际覆盖见[任务聊天验证](./task-chat-validation.md)。
+实际设置类别为 API 连接、新任务的默认配置、任务执行、Reviewer 角色。活动栏图标打开完整原生侧栏工作台。任务次要详情默认折叠，设置类别使用选择器。当前详情采用场景 14–17 的紧凑模型栏、用户右侧／AI 左侧聊天、常驻输入框和独立证据面板；宽屏证据栏约 360 CSS 像素，低于 1100 CSS 像素时转为宽度不超过 430 CSS 像素及视口的抽屉。聊天与证据分别分页，公开过程在聊天中显示，命令细节在证据中展开；场景 18–20 增加活动条、图标缩放和最小化。保留手动开始、暂停／继续／停止、只读追问及沿用成果继续修改。每工作区同时一个任务；原图中的双栏、并行执行及应用成果入口属于历史设计，当前行为见[使用说明](./usage.md)，实际覆盖见[任务聊天验证](./task-chat-validation.md)。
 
 ## 新增已审核设计：2026-11-22
 
-| 场景                           | 源文件                                                      | 预览                                                        |
-| ------------------------------ | ----------------------------------------------------------- | ----------------------------------------------------------- |
-| 18. Public process / 公开过程  | [SVG](../design/dual-mind-chat-progress-proposal.svg)       | [PNG](../design/dual-mind-chat-progress-proposal.png)       |
-| 19. Minimized panel / 最小化   | [SVG](../design/dual-mind-chat-minimized-proposal.svg)      | [PNG](../design/dual-mind-chat-minimized-proposal.png)      |
-| 20. Narrow messages / 窄屏消息 | [SVG](../design/dual-mind-chat-compact-narrow-proposal.svg) | [PNG](../design/dual-mind-chat-compact-narrow-proposal.png) |
+| 场景                           | 源文件                                                             | 预览                                                               |
+| ------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| 18. Public process / 公开过程  | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)       |
+| 19. Minimized panel / 最小化   | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)      | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)      |
+| 20. Narrow messages / 窄屏消息 | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg) | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png) |
 
 ## 已审核：恢复执行
 

@@ -89,18 +89,34 @@ for (const [english, chinese] of pairs) {
 }
 
 const designDirectory = join(root, 'docs/design');
-const designEntries = (await readdir(designDirectory, { withFileTypes: true }))
-  .filter((entry) => entry.isFile())
-  .map((entry) => entry.name);
+async function designFiles(directory) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await designFiles(path)));
+    } else if (entry.isFile() && /\.(?:svg|png)$/.test(entry.name)) {
+      const name = relative(designDirectory, path).replaceAll('\\', '/');
+      if (!/^v\d+\.\d+\.\d+\/[^/]+\.(?:svg|png)$/.test(name)) {
+        errors.push(
+          `docs/design/${name}: expected an asset inside one v<major>.<minor>.<patch> folder`,
+        );
+      }
+      files.push(name);
+    }
+  }
+  return files;
+}
+const designEntries = await designFiles(designDirectory);
 const svgFiles = designEntries.filter((name) => name.endsWith('.svg')).sort();
 const requiredScenes = [
-  'dual-mind-workbench',
-  'dual-mind-api-settings',
-  'dual-mind-reviewer-roles',
-  'dual-mind-new-task',
-  'dual-mind-delete-task',
-  'dual-mind-api-model-discovery',
-  'dual-mind-task-model-selection',
+  'v0.0.1/dual-mind-workbench',
+  'v0.0.1/dual-mind-api-settings',
+  'v0.0.1/dual-mind-reviewer-roles',
+  'v0.0.1/dual-mind-new-task',
+  'v0.0.1/dual-mind-delete-task',
+  'v0.0.2/dual-mind-api-model-discovery',
+  'v0.0.2/dual-mind-task-model-selection',
 ];
 for (const scene of requiredScenes) {
   if (!svgFiles.includes(`${scene}.svg`)) {

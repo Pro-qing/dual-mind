@@ -8,13 +8,13 @@ DualMind 是一个面向 VS Code 的 AI 结对编程插件项目，将任务准�
 
 ## 项目状态
 
-**当前源码 0.0.4 · 本地版本记录 · 尚未发布**
+**当前源码 0.0.5 · 本地版本记录 · 尚未发布**
 
-React 工作台支持本地任务、连接设置、Reviewer 预设和中英文切换。0.0.4 已提供独立角色历史、Worker 执行、Reviewer 独立探查与验证和活动栏入口；任务可使用专用 worktree 或直接修改选定本地分支，将专用目录成果应用回原工作区仍待实现，可选示例继续保持只读。
+React 工作台支持本地任务、连接设置、Reviewer 预设和中英文切换。0.0.5 已提供独立角色历史、Worker 执行、Reviewer 独立探查与验证和活动栏入口；任务可使用专用 worktree 或直接修改选定本地分支，将专用目录成果应用回原工作区仍待实现，可选示例继续保持只读。
 
 历史发布记录：0.0.1 已于 2026-11-18 上架 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind)，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**，带有 Preview 标记。[GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) 同日发布。[发布说明](./docs/zh/release-notes-preview-2.md)。
 
-[0.0.4 版本说明](./docs/zh/release-notes-0.0.4.md)记录本次源码能力与验证；[更新日志](./CHANGELOG.zh.md)区分本地版本和历史公开制品。
+[0.0.5 版本说明](./docs/zh/release-notes-0.0.5.md)记录本次源码能力与验证；[更新日志](./CHANGELOG.zh.md)区分本地版本和历史公开制品。
 
 ## 两种互补角色
 
@@ -42,9 +42,11 @@ React 工作台支持本地任务、连接设置、Reviewer 预设和中英文�
 
 ## 界面设计
 
-![已审核的 DualMind 并行任务设计参考](./docs/design/dual-mind-workbench.png)
+![已审核的 DualMind 并行任务设计参考](./docs/design/v0.0.1/dual-mind-workbench.png)
 
-现有 23 组已审核 SVG／PNG 保留为设计参考：场景 1–7 为原工作台与模型选择，8–11 为任务页面，12–13 为方案与验收循环，14–17 为[任务聊天与持续追问](./docs/zh/task-chat-proposal.md)，18–20 为过程提示和紧凑聊天，21–23 为故障恢复。当前源码已实现单任务执行和聊天；上图保留原工作台设计，图中的并行执行仍待实现。已发布的 0.0.1 制品保持原有行为。[原工作台 SVG](./docs/design/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
+现有 27 组已审核 SVG／PNG 保留为设计参考：场景 1–7 为原工作台与模型选择，8–11 为任务页面，12–13 为方案与验收循环，14–17 为[任务聊天与持续追问](./docs/zh/task-chat-proposal.md)，18–20 为过程提示和紧凑聊天，21–23 为故障恢复，24–27 为原生侧栏。当前源码已实现单任务执行和聊天；上图保留原工作台设计，图中的并行执行仍待实现。已发布的 0.0.1 制品保持原有行为。[原工作台 SVG](./docs/design/v0.0.1/dual-mind-workbench.svg) · [完整设计稿](./docs/zh/design.md)。
+
+[原生侧栏工作台](./docs/zh/sidebar-workbench-proposal.md)场景 24–27 已于 **2026-11-22 审核通过**，2026-11-23 接入源码。完整工作台由主侧栏或辅助侧栏承载，提供紧凑导航、可折叠任务详情和手动“终端仅占编辑器区域”操作。旧页签仅用于迁移；现有 27 组审核记录和历史设计保留。
 
 ## 文档与参与贡献
 

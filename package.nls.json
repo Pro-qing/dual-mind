@@ -6,8 +6,8 @@
   "languageAuto": "Follow VS Code",
   "languageZh": "Simplified Chinese",
   "languageEn": "English",
-  "tasksView": "Tasks",
-  "tasksWelcome": "[Open workbench](command:dualMind.openWorkbench)\n[New task](command:dualMind.newTask)",
+  "tasksView": "Workbench",
   "newTaskCommand": "New Task",
-  "selectTaskCommand": "Select Task"
+  "selectTaskCommand": "Select Task",
+  "alignPanelCenter": "Keep Terminal in Editor Area"
 }

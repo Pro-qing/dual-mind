@@ -2,36 +2,43 @@ import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
 
 suite('DualMind extension host', () => {
-  test('discovers the status command and activates the extension through it', async () => {
+  const tabs = () =>
+    vscode.window.tabGroups.all
+      .flatMap((group) => group.tabs)
+      .filter((tab) => tab.input instanceof vscode.TabInputWebview && tab.label === 'DualMind');
+  test('registers the native webview and existing commands', async () => {
     const extension = vscode.extensions.getExtension('Pro-qing.dual-mind');
-    assert.ok(extension, 'The development extension must be discoverable');
+    assert.ok(extension);
     await vscode.commands.executeCommand('dualMind.showStatus');
     assert.equal(extension.isActive, true);
     const commands = await vscode.commands.getCommands(true);
-    assert.ok(commands.includes('dualMind.showStatus'));
-    assert.ok(commands.includes('dualMind.openWorkbench'));
-    assert.ok(commands.includes('dualMind.newTask'));
-    const containers = extension.packageJSON.contributes.viewsContainers.activitybar as {
+    for (const command of [
+      'dualMind.openWorkbench',
+      'dualMind.newTask',
+      'dualMind.selectTask',
+      'dualMind.alignPanelCenter',
+    ]) {
+      assert.ok(commands.includes(command));
+    }
+    const views = extension.packageJSON.contributes.views.dualMind as {
       id: string;
+      type: string;
     }[];
-    assert.ok(containers.some((container) => container.id === 'dualMind'));
-    await vscode.commands.executeCommand('dualMind.tasks.focus');
+    assert.deepEqual(
+      views.map(({ id, type }) => ({ id, type })),
+      [{ id: 'dualMind.tasks', type: 'webview' }],
+    );
   });
-  test('renders the React Webview, reuses its tab, and opens again after closing', async () => {
-    const tabs = () =>
-      vscode.window.tabGroups.all
-        .flatMap((group) => group.tabs)
-        .filter((tab) => tab.input instanceof vscode.TabInputWebview && tab.label === 'DualMind');
-    // The command resolves only after the real Webview renders its host snapshot.
+  test('renders and reuses the sidebar without creating editor tabs, including after hiding', async () => {
+    const count = tabs().length;
+    await Promise.all([
+      vscode.commands.executeCommand('dualMind.openWorkbench'),
+      vscode.commands.executeCommand('dualMind.openWorkbench'),
+    ]);
+    assert.equal(tabs().length, count);
+    await vscode.commands.executeCommand('workbench.action.closeSidebar');
     await vscode.commands.executeCommand('dualMind.openWorkbench');
-    assert.equal(tabs().length, 1);
-    const original = tabs()[0];
-    await vscode.commands.executeCommand('dualMind.openWorkbench');
-    assert.equal(tabs().length, 1);
-    assert.equal(tabs()[0], original);
-    await vscode.window.tabGroups.close(tabs());
-    await vscode.commands.executeCommand('dualMind.openWorkbench');
-    assert.equal(tabs().length, 1);
-    await vscode.window.tabGroups.close(tabs());
+    assert.equal(tabs().length, count);
+    await vscode.commands.executeCommand('dualMind.alignPanelCenter');
   });
 });

@@ -6,25 +6,25 @@
 
 ## 21. Wide failure and recovery
 
-[SVG](../design/dual-mind-recovery-failure-proposal.svg) · [PNG](../design/dual-mind-recovery-failure-proposal.png)
+[SVG](../design/v0.0.4/dual-mind-recovery-failure-proposal.svg) · [PNG](../design/v0.0.4/dual-mind-recovery-failure-proposal.png)
 
-![Wide failure recovery](../design/dual-mind-recovery-failure-proposal.png)
+![Wide failure recovery](../design/v0.0.4/dual-mind-recovery-failure-proposal.png)
 
 Keep the existing run controls and add a play icon with Continue execution. Restart, Pause and Stop remain. The interruption notice identifies Worker or Reviewer, the phase, cause and saved position. Message sizing remains icon-only. The separate retry example illustrates a cancellable attempt count; it is not displayed as active at the same time as the failure notice.
 
 ## 22. Recovery checks and bounded retries
 
-[SVG](../design/dual-mind-recovery-running-proposal.svg) · [PNG](../design/dual-mind-recovery-running-proposal.png)
+[SVG](../design/v0.0.4/dual-mind-recovery-running-proposal.svg) · [PNG](../design/v0.0.4/dual-mind-recovery-running-proposal.png)
 
-![Recovery in progress](../design/dual-mind-recovery-running-proposal.png)
+![Recovery in progress](../design/v0.0.4/dual-mind-recovery-running-proposal.png)
 
 Clicking first displays recovery checks and disables duplicate starts. Directory, model, process and artifact checks precede the resumed role. The original error and work round remain. No invented percentages or reset display preferences. Retry waiting and normal execution have distinct status text.
 
 ## 23. Narrow layout and unconfirmed processes
 
-[SVG](../design/dual-mind-recovery-narrow-proposal.svg) · [PNG](../design/dual-mind-recovery-narrow-proposal.png)
+[SVG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.svg) · [PNG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.png)
 
-![Narrow recovery](../design/dual-mind-recovery-narrow-proposal.png)
+![Narrow recovery](../design/v0.0.4/dual-mind-recovery-narrow-proposal.png)
 
 The left example can be inspected and continued; the right is blocked by uncertain process shutdown. Continue can recheck but cannot bypass this blocker. The reason stays visible, including error counts when output is minimized. Damaged records or missing recovery points explain disabled recovery and retain Restart. Messages sent during failures wait for recovery.
 

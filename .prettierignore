@@ -7,4 +7,4 @@ release/
 coverage/
 package-lock.json
 *.vsix
-docs/design/*.svg
+docs/design/**/*.svg

@@ -10,6 +10,8 @@ import { LocalCommands } from './execution/commands';
 import type { ExecutionAction, ExecutionUpdate, RunEvent } from './shared/execution';
 import { ModelQueryError } from './providers/models';
 import { t } from './shared/i18n';
+import { ViewChannel } from './core/viewChannel';
+import { chooseWorkbenchView } from './shared/viewState';
 import {
   resolveLocale,
   type ErrorCode,
@@ -17,18 +19,24 @@ import {
   type LanguageSetting,
 } from './shared/model';
 
-export const viewType = 'dualMind.workbench';
+export const viewType = 'dualMind.workbench'; // Legacy editor restoration only.
+export const viewId = 'dualMind.tasks';
+const viewStateKey = 'dualMind.sidebarViewState';
 export function getLanguage(): LanguageSetting {
   const value = vscode.workspace.getConfiguration('dualMind').get<string>('language', 'auto');
   return value === 'en' || value === 'zh-CN' ? value : 'auto';
 }
-export class Workbench implements vscode.Disposable {
-  private panel: vscode.WebviewPanel | undefined;
-  private panelDisposables: vscode.Disposable[] = [];
-  private ready: Promise<void> = Promise.resolve();
-  private resolveReady: (() => void) | undefined;
-  private rejectReady: ((error: Error) => void) | undefined;
-  private readyTimeout: ReturnType<typeof setTimeout> | undefined;
+export class Workbench implements vscode.Disposable, vscode.WebviewViewProvider {
+  private view?: vscode.WebviewView;
+  private channel?: ViewChannel<HostMessage>;
+  private readonly viewWaiters = new Set<(error?: Error) => void>();
+  private viewDisposables: vscode.Disposable[] = [];
+  private savedViewState: unknown;
+  private localViewState: unknown;
+  private legacyViewState: unknown;
+  private stateWrite: Promise<void> = Promise.resolve();
+  private navigationTail: Promise<unknown> = Promise.resolve();
+  private readonly legacyPanels = new Set<vscode.WebviewPanel>();
   private readonly store: LocalStore;
   private readonly models: ModelQueries;
   private readonly taskWorkspaces: TaskWorkspaces;
@@ -39,6 +47,7 @@ export class Workbench implements vscode.Disposable {
   private pendingEvents: RunEvent[] = [];
   private navigationRequest?: { id: string; taskId?: string; newTask?: boolean };
   constructor(private readonly context: vscode.ExtensionContext) {
+    this.savedViewState = context.workspaceState.get(viewStateKey);
     this.store = new LocalStore({
       global: context.globalState,
       workspace: context.workspaceState,
@@ -113,10 +122,9 @@ export class Workbench implements vscode.Disposable {
     );
     context.subscriptions.push(
       vscode.window.registerWebviewPanelSerializer(viewType, {
-        deserializeWebviewPanel: async (panel) => {
-          // VS Code renders the restored panel only after this callback completes.
-          // Waiting for the React acknowledgement here would block restoration.
-          this.attach(panel);
+        deserializeWebviewPanel: async (panel, state: unknown) => {
+          // Return without waiting for a rendered page; VS Code waits for this callback.
+          this.migrateLegacyPanel(panel, state);
         },
       }),
     );
@@ -142,6 +150,12 @@ export class Workbench implements vscode.Disposable {
     await this.execution.ready;
     return {
       ...snapshot,
+      initialViewState: chooseWorkbenchView(
+        this.localViewState,
+        this.savedViewState,
+        this.legacyViewState,
+        snapshot.tasks,
+      ),
       execution: this.execution.snapshot(),
       preparedTaskIds: this.taskWorkspaces.preparedTaskIds(),
       navigationRequest: this.navigationRequest,
@@ -152,15 +166,19 @@ export class Workbench implements vscode.Disposable {
     const fault = await this.store.publicError(error);
     void vscode.window.showErrorMessage(errorText(locale, fault));
   }
-  async navigate(taskId?: string, newTask = false) {
-    if (taskId) {
-      await this.store.dispatch({ kind: 'task.select', id: taskId });
-    }
-    this.navigationRequest = { id: randomUUID(), taskId, newTask };
-    await this.open();
-    await this.sendSnapshot();
-    this.navigationRequest = undefined;
-    this.changes.fire();
+  navigate(taskId?: string, newTask = false): Promise<void> {
+    const navigate = async () => {
+      if (taskId) {
+        await this.store.dispatch({ kind: 'task.select', id: taskId });
+      }
+      this.navigationRequest = { id: randomUUID(), taskId, newTask };
+      await this.open();
+      await this.sendSnapshot();
+      this.changes.fire();
+    };
+    const pending = this.navigationTail.then(navigate, navigate);
+    this.navigationTail = pending.catch(() => undefined);
+    return pending;
   }
   /** Host-only Git preparation; execution owns when this is called. */
   async prepareTaskWorkspace(taskId: string) {
@@ -168,82 +186,197 @@ export class Workbench implements vscode.Disposable {
     return this.taskWorkspaces.prepare(taskId, task?.git, task?.name);
   }
   async open(): Promise<void> {
-    if (this.panel) {
-      this.panel.reveal(vscode.ViewColumn.Active);
-    } else {
-      this.attach(
-        vscode.window.createWebviewPanel(viewType, 'DualMind', vscode.ViewColumn.Active, {
-          retainContextWhenHidden: true,
-        }),
-      );
+    await vscode.commands.executeCommand(`${viewId}.focus`);
+    if (!this.channel) {
+      await new Promise<void>((resolve, reject) => {
+        const finish = (error?: Error) => {
+          clearTimeout(timer);
+          this.viewWaiters.delete(finish);
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        };
+        const timer = setTimeout(() => finish(new OperationError('workbenchTimeout')), 20000);
+        this.viewWaiters.add(finish);
+      });
     }
-    await this.ready;
+    let channel = this.channel;
+    if (!channel || !this.view) {
+      throw new OperationError('workbenchClosed');
+    }
+    this.view.show(false);
+    if (channel.needsReload) {
+      this.resolveWebviewView(this.view, { state: this.localViewState });
+      channel = this.channel!;
+    }
+    await channel.ready;
   }
-  private attach(panel: vscode.WebviewPanel): void {
-    if (this.panel && this.panel !== panel) {
-      this.panel.dispose();
-    }
-    this.panel = panel;
-    const root = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview');
-    panel.webview.options = { enableScripts: true, localResourceRoots: [root] };
-    const nonce = randomBytes(24).toString('base64');
-    const script = panel.webview.asWebviewUri(vscode.Uri.joinPath(root, 'main.js'));
-    const styles = panel.webview.asWebviewUri(vscode.Uri.joinPath(root, 'main.css'));
-    this.ready = new Promise<void>((resolve, reject) => {
-      this.resolveReady = resolve;
-      this.rejectReady = reject;
-    });
-    void this.ready.catch(() => undefined);
-    this.readyTimeout = setTimeout(() => {
-      this.rejectReady?.(new OperationError('workbenchTimeout'));
-    }, 20000);
-    this.panelDisposables = [
-      panel.onDidDispose(() => {
-        if (this.panel === panel) {
-          this.models.dispose();
-          this.panel = undefined;
+  resolveWebviewView(view: vscode.WebviewView, context: vscode.WebviewViewResolveContext): void {
+    this.releaseView();
+    this.view = view;
+    this.localViewState = context.state;
+    const channel: ViewChannel<HostMessage> = new ViewChannel<HostMessage>(
+      () => this.channel === channel,
+      (message) => view.webview.postMessage(message),
+    );
+    this.channel = channel;
+    this.configureWebview(view.webview);
+    this.viewDisposables = [
+      view.onDidDispose(() => {
+        if (this.channel === channel) {
+          this.releaseView();
         }
-        clearTimeout(this.readyTimeout);
-        this.rejectReady?.(new OperationError('workbenchClosed'));
-        this.resolveReady = undefined;
-        this.rejectReady = undefined;
-        this.panelDisposables.forEach((disposable) => disposable.dispose());
-        this.panelDisposables = [];
       }),
-      panel.webview.onDidReceiveMessage((message: unknown) => {
-        void this.onMessage(message, panel);
+      view.onDidChangeVisibility(() => {
+        if (view.visible && channel.active) {
+          void this.sendSnapshot(channel);
+        }
+      }),
+      view.webview.onDidReceiveMessage((message: unknown) => {
+        void this.onMessage(message, channel).catch((error: unknown) => this.reportError(error));
       }),
     ];
+    view.webview.html = this.pageHtml(view.webview);
+    for (const finish of this.viewWaiters) {
+      finish();
+    }
+  }
+  private releaseView(): void {
+    this.channel?.dispose();
+    this.channel = undefined;
+    this.view = undefined;
+    for (const subscription of this.viewDisposables.splice(0)) {
+      subscription.dispose();
+    }
+  }
+  private configureWebview(webview: vscode.Webview): void {
+    webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview')],
+    };
+  }
+  private pageHtml(webview: vscode.Webview, migration = false): string {
+    const root = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview');
+    const nonce = randomBytes(24).toString('base64');
+    const script = webview.asWebviewUri(vscode.Uri.joinPath(root, 'main.js'));
+    const styles = webview.asWebviewUri(vscode.Uri.joinPath(root, 'main.css'));
     const locale = resolveLocale(getLanguage(), vscode.env.language);
-    panel.webview.html = `<!DOCTYPE html>
+    const body = migration
+      ? `<main class="boot-message"><h1>DualMind</h1><p>${t(locale, 'sidebarMigration')}</p><button id="retry">${t(locale, 'sidebarMigrationOpen')}</button></main><script nonce="${nonce}">const api=acquireVsCodeApi();document.getElementById('retry').addEventListener('click',()=>api.postMessage({type:'migration.retry'}));</script>`
+      : `<div id="root"><p class="boot-message">${t(locale, 'loading')}</p></div><script nonce="${nonce}" src="${script}"></script>`;
+    return `<!DOCTYPE html>
 <html lang="${locale}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${panel.webview.cspSource} data:; style-src ${panel.webview.cspSource}; font-src ${panel.webview.cspSource}; script-src 'nonce-${nonce}'; connect-src 'none';">
-<link rel="stylesheet" href="${styles}"><title>DualMind</title></head>
-<body><div id="root"><p class="boot-message">${t(locale, 'loading')}</p></div><script nonce="${nonce}" src="${script}"></script></body></html>`;
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource}; font-src ${webview.cspSource}; script-src 'nonce-${nonce}'; connect-src 'none';">
+<link rel="stylesheet" href="${styles}"><title>DualMind</title></head><body>${body}</body></html>`;
   }
-  private async post(message: HostMessage): Promise<void> {
-    await this.panel?.webview.postMessage(message);
+  private migrateLegacyPanel(panel: vscode.WebviewPanel, state: unknown): void {
+    this.legacyViewState ??= state;
+    this.legacyPanels.add(panel);
+    this.configureWebview(panel.webview);
+    panel.webview.html = this.pageHtml(panel.webview, true);
+    let busy = false;
+    const migrate = async () => {
+      if (busy || !this.legacyPanels.has(panel)) {
+        return;
+      }
+      busy = true;
+      try {
+        await this.open();
+        await this.stateWrite;
+        if (this.legacyPanels.has(panel)) {
+          panel.dispose();
+        }
+      } catch (error) {
+        if (this.legacyPanels.has(panel)) {
+          await this.reportError(error);
+        }
+      } finally {
+        busy = false;
+      }
+    };
+    const listener = panel.webview.onDidReceiveMessage((message: unknown) => {
+      if (
+        message &&
+        typeof message === 'object' &&
+        'type' in message &&
+        message.type === 'migration.retry'
+      ) {
+        void migrate();
+      }
+    });
+    const disposed = panel.onDidDispose(() => {
+      this.legacyPanels.delete(panel);
+      listener.dispose();
+      disposed.dispose();
+    });
+    void migrate();
   }
-  private async sendSnapshot(): Promise<void> {
-    if (!this.panel) {
+  private async post(message: HostMessage, target = this.channel): Promise<void> {
+    await target?.send(message);
+  }
+  private async sendSnapshot(target = this.channel): Promise<void> {
+    if (!target?.active) {
       return;
     }
     try {
-      await this.post({ type: 'snapshot', snapshot: await this.snapshot() });
+      await this.post({ type: 'snapshot', snapshot: await this.snapshot() }, target);
     } catch (error) {
-      await this.post({
-        type: 'fatal',
-        error: error instanceof StoreError ? error.code : 'storageFailed',
-        fault: await this.store.publicError(error),
-      });
+      await this.post(
+        {
+          type: 'fatal',
+          error: error instanceof StoreError ? error.code : 'storageFailed',
+          fault: await this.store.publicError(error),
+        },
+        target,
+      );
     }
   }
-  private async onMessage(value: unknown, source: vscode.WebviewPanel): Promise<void> {
+  private async persistViewState(value: unknown, source: ViewChannel<HostMessage>): Promise<void> {
+    if (!source.active || JSON.stringify(value ?? null).length > 2 * 1024 * 1024) {
+      return;
+    }
+    // Enqueue before reading storage: slower old snapshots must not overwrite a
+    // newer navigation or preference message.
+    this.stateWrite = this.stateWrite
+      .catch(() => undefined)
+      .then(async () => {
+        if (!source.active) {
+          return;
+        }
+        const snapshot = await this.store.snapshot();
+        if (!source.active) {
+          return;
+        }
+        const state = chooseWorkbenchView(value, undefined, undefined, snapshot.tasks);
+        if (state) {
+          await this.context.workspaceState.update(viewStateKey, state);
+          if (source.active) {
+            this.localViewState = state;
+            this.savedViewState = state;
+          }
+        }
+      });
+    await this.stateWrite;
+  }
+  private async onMessage(value: unknown, source: ViewChannel<HostMessage>): Promise<void> {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       return;
     }
     const message = value as Record<string, unknown>;
-    if (this.panel !== source) {
+    const post = (reply: HostMessage) => source.send(reply);
+    if (!source.active) {
+      return;
+    }
+    if (message.type === 'navigation.ack') {
+      if (message.id === this.navigationRequest?.id) {
+        this.navigationRequest = undefined;
+      }
+      return;
+    }
+    if (message.type === 'view.state') {
+      await this.persistViewState(message.state, source);
       return;
     }
     if (message.type === 'execution.request') {
@@ -282,9 +415,9 @@ export class Workbench implements vscode.Disposable {
         const result = ['openDirectory', 'preview'].includes(action.kind)
           ? { state: this.execution.snapshot() }
           : await this.execution.request(action);
-        await this.post({ type: 'execution.result', requestId: message.requestId, result });
+        await post({ type: 'execution.result', requestId: message.requestId, result });
       } catch (error) {
-        await this.post({
+        await post({
           type: 'execution.result',
           requestId: message.requestId,
           fault: await this.store.publicError(error),
@@ -304,8 +437,8 @@ export class Workbench implements vscode.Disposable {
       const { requestId, connectionId } = message;
       try {
         const result = await this.models.query(connectionId);
-        if (this.panel === source) {
-          await source.webview.postMessage({
+        if (source.active) {
+          await source.send({
             type: 'models.result',
             requestId,
             connectionId,
@@ -320,8 +453,8 @@ export class Workbench implements vscode.Disposable {
             : error instanceof StoreError && error.code === 'notFound'
               ? 'notFound'
               : 'storageFailed';
-        if (this.panel === source) {
-          await source.webview.postMessage({
+        if (source.active) {
+          await source.send({
             type: 'models.result',
             requestId,
             connectionId,
@@ -333,16 +466,27 @@ export class Workbench implements vscode.Disposable {
       return;
     }
     if (message.type === 'ready') {
-      await this.sendSnapshot();
+      if (source.needsReload) {
+        source.reset();
+      }
+      await this.sendSnapshot(source);
       return;
     }
     if (message.type === 'rendered') {
-      clearTimeout(this.readyTimeout);
-      this.resolveReady?.();
-      this.resolveReady = undefined;
-      this.rejectReady = undefined;
+      // Durable display state precedes closing a legacy tab after migration.
+      await this.persistViewState(message.state, source);
+      await this.stateWrite;
+      source.acknowledge();
+      if (source.active) {
+        // Restoration can resolve the sidebar independently of the focus command.
+        // Its durable render acknowledgement is the migration completion boundary.
+        for (const panel of this.legacyPanels) {
+          panel.dispose();
+        }
+      }
       return;
     }
+
     if (
       message.type !== 'request' ||
       typeof message.requestId !== 'string' ||
@@ -364,7 +508,7 @@ export class Workbench implements vscode.Disposable {
         savedTaskId = await this.store.dispatch(message.action);
       }
       this.changes.fire();
-      await this.post({
+      await post({
         type: 'result',
         requestId: message.requestId,
         ok: true,
@@ -373,7 +517,7 @@ export class Workbench implements vscode.Disposable {
       });
     } catch (error) {
       const code: ErrorCode = error instanceof StoreError ? error.code : 'storageFailed';
-      await this.post({
+      await post({
         type: 'result',
         requestId: message.requestId,
         ok: false,
@@ -383,11 +527,13 @@ export class Workbench implements vscode.Disposable {
     }
   }
   dispose(): void {
+    for (const finish of this.viewWaiters) {
+      finish(new OperationError('workbenchClosed'));
+    }
     void this.execution.shutdown();
     this.changes.dispose();
     clearTimeout(this.updateTimer);
     this.models.dispose();
-    this.panel?.dispose();
-    clearTimeout(this.readyTimeout);
+    this.releaseView();
   }
 }

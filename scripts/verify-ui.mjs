@@ -16,7 +16,7 @@ const executable =
 const version = JSON.parse(
   await readFile(join(dirname(executable), 'resources/app/package.json'), 'utf8'),
 ).version;
-const artifacts = resolve('.vscode-test/ui-validation', version);
+const artifacts = resolve('.vscode-test/ui-validation', version, 'sidebar');
 await mkdir(artifacts, { recursive: true });
 const temporary = await mkdtemp(join(tmpdir(), 'dualmind-ui-'));
 const profile = join(temporary, 'profile');
@@ -365,7 +365,7 @@ async function size(width, height) {
             });
           }
           const [minimumWidth, minimumHeight] = window.getMinimumSize();
-          actualWidth = Math.max(bounds.width, minimumWidth);
+          actualWidth = Math.max(bounds.width, minimumWidth, 700);
           window.setSize(actualWidth, Math.max(bounds.height, minimumHeight));
         }
         return actualWidth;
@@ -378,6 +378,9 @@ async function size(width, height) {
         targetWidth,
         { timeout: 3000 },
       );
+      if (await page.locator('.part.sidebar').isVisible()) {
+        await sidebarWidth(page, width < 600 ? 240 : width < 1000 ? 480 : 1200);
+      }
       return;
     } catch (error) {
       if (attempt === 2) {
@@ -414,20 +417,65 @@ async function frame(page) {
   }
   throw new Error('The React workbench did not render.');
 }
-async function taskSidebar(page, visible) {
-  const sidebar = page.locator('.part.sidebar');
-  if (!visible) {
-    await command(page, 'View: Close Primary Side Bar');
-  } else if (!(await sidebar.isVisible())) {
-    await page
-      .locator('.activitybar')
-      .getByRole('tab', { name: /DualMind/ })
-      .click();
-  }
-  await sidebar.waitFor({ state: visible ? 'visible' : 'hidden' });
+async function sidebarWidth(page, width, secondary = false) {
+  const sidebar = page.locator(secondary ? '.part.auxiliarybar' : '.part.sidebar');
+  const bounds = await sidebar.boundingBox();
+  assert.ok(bounds, 'The native sidebar is visible');
+  const edge = secondary ? bounds.x : bounds.x + bounds.width;
+  const sashes = await page.locator('.monaco-sash.vertical').evaluateAll((items) =>
+    items
+      .map((item) => {
+        const r = item.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2, height: r.height };
+      })
+      .filter((r) => r.height > 100),
+  );
+  const sash = sashes.sort((a, b) => Math.abs(a.x - edge) - Math.abs(b.x - edge))[0];
+  assert.ok(sash && Math.abs(sash.x - edge) < 10, 'Native sidebar resize sash');
+  await page.mouse.move(sash.x, sash.y);
+  await page.mouse.down();
+  await page.mouse.move(
+    sash.x + (secondary ? bounds.width - width : width - bounds.width),
+    sash.y,
+    { steps: 8 },
+  );
+  await page.mouse.up();
+  await page.waitForFunction(
+    ({ selector, width }) =>
+      Math.abs(document.querySelector(selector).getBoundingClientRect().width - width) < 8,
+    { selector: secondary ? '.part.auxiliarybar' : '.part.sidebar', width },
+  );
 }
 async function click(f, name) {
-  await f.getByRole('button', { name, exact: true }).first().click();
+  const selector = f.getByRole('combobox', { name: /Settings category|设置类别/ });
+  if (await selector.isVisible()) {
+    const option = selector.getByRole('option', { name, exact: true });
+    if (await option.count()) {
+      await selector.selectOption(await option.getAttribute('value'));
+      return;
+    }
+  }
+  let button = f.getByRole('button', { name, exact: true }).first();
+  if (!(await button.isVisible()) && (await f.locator('.task-details').count())) {
+    const details = f.locator('.task-details');
+    if ((await details.getAttribute('open')) === null) {
+      await details.locator('summary').click();
+    }
+    button = f.getByRole('button', { name, exact: true }).first();
+  }
+  await button.click();
+}
+async function language(f, value) {
+  const selector = f.getByLabel(/^(Language|界面语言)$/);
+  if (await selector.isVisible()) {
+    await selector.selectOption(value);
+  } else {
+    // Changing the native setting also exercises locale updates with a drawer open.
+    const file = join(profile, 'User/settings.json');
+    const settings = JSON.parse(await readFile(file, 'utf8'));
+    await writeFile(file, JSON.stringify({ ...settings, 'dualMind.language': value }));
+    await f.waitForFunction((locale) => document.documentElement.lang === locale, value);
+  }
 }
 async function saved(f, text = 'Saved locally') {
   await f.getByRole('status').filter({ hasText: text }).waitFor();
@@ -475,6 +523,7 @@ async function screenshot(page, f, name) {
       .evaluate((element) => getComputedStyle(element).gridTemplateColumns);
     assert.equal(columns.trim().split(/\s+/).length, 1, 'Plan must stack in a narrow Webview');
   }
+  console.log(`Captured ${name} (${metrics.width}px)`);
   captures.push(`${name}.png`);
 }
 async function assertMenuBounds(f) {
@@ -531,16 +580,13 @@ try {
     .locator('.activitybar')
     .getByRole('tab', { name: /DualMind/ })
     .click();
-  await page.getByRole('button', { name: 'Open workbench', exact: true }).click();
   let f = await frame(page);
   await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
-  await taskSidebar(page, false);
+  await sidebarWidth(page, 1200);
   await screenshot(page, f, 'en-empty');
-  await taskSidebar(page, true);
-  await page.getByRole('button', { name: 'New task', exact: true }).click();
+  await page.locator('.part.sidebar .action-label.codicon-add:visible').first().click();
   await f.getByRole('dialog', { name: 'New task', exact: true }).waitFor();
   await click(f, 'Cancel');
-  await taskSidebar(page, false);
   await click(f, 'Settings');
   await f.getByRole('button', { name: /^Back to (?:task|home)$/ }).click();
   assert.equal(
@@ -671,14 +717,14 @@ try {
   await f
     .getByLabel('Review instructions', { exact: false })
     .fill('English review instructions retained across UI language changes.');
-  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await language(f, 'zh-CN');
   await f.getByRole('dialog', { name: 'Unsaved role instructions', exact: true }).waitFor();
   await click(f, 'Cancel');
   assert.equal(
     await f.getByLabel('Review instructions', { exact: false }).inputValue(),
     'English review instructions retained across UI language changes.',
   );
-  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await language(f, 'zh-CN');
   await f.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   await f.getByRole('button', { name: '保存角色', exact: true }).waitFor();
   assert.match(await f.getByLabel('审查指令', { exact: false }).inputValue(), /你是/);
@@ -690,7 +736,7 @@ try {
   await click(f, '保存角色');
   await saved(f, '已保存到本地');
   await f.getByRole('button', { name: '删除角色', exact: true }).waitFor();
-  await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+  await language(f, 'en');
   await f.getByRole('button', { name: 'Save role', exact: true }).waitFor();
   assert.equal(await f.getByLabel('Role name', { exact: false }).inputValue(), '自定义原文角色');
   assert.equal(
@@ -736,7 +782,7 @@ try {
   assert.equal(await f.locator('.instruction-snapshot').count(), 0);
   assert.equal(await f.locator('.model-bar').count(), 2);
   await click(f, 'Settings');
-  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await language(f, 'zh-CN');
   await f.getByRole('button', { name: /^返回(?:任务|主页)$/ }).click();
   await screenshot(page, f, 'zh-pending-task');
   // Reload exercises real global/workspace storage, configuration, serializer and Webview assets.
@@ -762,10 +808,10 @@ try {
   await f.getByLabel('最大轮次', { exact: true }).fill('7');
   await click(f, '保存任务');
   await f.getByRole('dialog').waitFor({ state: 'hidden' });
-  assert.ok((await f.locator('.task-summary .task-metadata').innerText()).includes('7'));
+  assert.ok((await f.locator('.task-details .task-metadata').innerText()).includes('7'));
   await command(page, 'DualMind: Open Workbench');
   f = await frame(page);
-  assert.equal(await page.locator('.tab').filter({ hasText: 'DualMind' }).count(), 1);
+  assert.equal(await page.locator('.tab').filter({ hasText: 'DualMind' }).count(), 0);
   // Task snapshots remain English while the surrounding UI is Chinese.
   assert.equal(await f.locator('.instruction-snapshot').count(), 0);
   assert.equal(await f.locator('.model-bar').count(), 2);
@@ -803,22 +849,19 @@ try {
   await assertMenuBounds(f);
   await screenshot(page, f, 'zh-task-defaults-models-narrow');
   await defaultWorker.press('Escape');
-  await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+  await language(f, 'en');
   await f.getByRole('heading', { name: 'Defaults for new tasks', exact: true }).waitFor();
   await size(360, 1040);
-  await screenshot(page, f, 'en-settings-tabs-wrapped');
-  const tabRows = await f
-    .locator('.settings-tabs button')
-    .evaluateAll(
-      (buttons) =>
-        new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top))).size,
-    );
-  assert.ok(tabRows > 1, 'Settings tabs must wrap on small windows');
-  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await screenshot(page, f, 'en-settings-category-240');
+  assert.equal(
+    await f.getByRole('combobox', { name: 'Settings category' }).getByRole('option').count(),
+    4,
+  );
+  await language(f, 'zh-CN');
   await size(820, 1040);
   await click(f, 'Reviewer 角色');
   await screenshot(page, f, 'zh-roles-narrow');
-  await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+  await language(f, 'en');
   await f.getByRole('button', { name: /^Back to (?:task|home)$/ }).click();
   await click(f, 'View examples');
   await screenshot(page, f, 'en-workbench-narrow');
@@ -995,7 +1038,7 @@ try {
       2,
   );
 
-  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await language(f, 'zh-CN');
   await f
     .locator('[data-error-code="commandFailed"]')
     .filter({ hasText: /命令.+执行失败/ })
@@ -1019,7 +1062,7 @@ try {
     .getByRole('button', { name: '恢复证据面板', exact: true })
     .click();
 
-  await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+  await language(f, 'en');
   await screenshot(page, f, 'en-execution-complete');
   await size(820, 1040);
   await f.getByRole('dialog', { name: 'Tools, checks and review evidence' }).waitFor();
@@ -1059,7 +1102,7 @@ try {
   await click(f, 'Preview changes');
   await page.locator('.tab').filter({ hasText: 'Task Changes.diff' }).waitFor();
   await page.locator('.view-lines').filter({ hasText: 'result.txt' }).first().waitFor();
-  await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+  await command(page, 'DualMind: Open Workbench');
   f = await frame(page);
   const workersBeforeAnswer = workerTurns;
   await f.getByLabel('Follow up or request changes', { exact: true }).fill('Explain the result');
@@ -1130,6 +1173,18 @@ try {
   await f.locator('.chat-activity').filter({ hasText: 'Waiting for model response' }).waitFor();
   await screenshot(page, f, 'en-chat-silent-wait');
   const requestsBeforeReload = inferenceRequests.length;
+  await command(page, 'View: Close Primary Side Bar');
+  await page.locator('.part.sidebar').waitFor({ state: 'hidden' });
+  assert.equal(inferenceRequests.length, requestsBeforeReload);
+  await command(page, 'DualMind: Open Workbench');
+  await page.locator('.part.sidebar').waitFor({ state: 'visible' });
+  await f.getByRole('status').filter({ hasText: 'Worker executing' }).waitFor();
+  assert.equal(
+    inferenceRequests.length,
+    requestsBeforeReload,
+    'Hiding and revealing keeps the active request',
+  );
+  await screenshot(page, f, 'en-running-sidebar-revealed');
   const executingFrame = f;
   const executionDetached = page.waitForEvent('framedetached', {
     predicate: (candidate) => candidate === executingFrame,
@@ -1137,7 +1192,7 @@ try {
   });
   await command(page, 'Developer: Reload Window');
   await executionDetached;
-  await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+  await command(page, 'DualMind: Open Workbench');
   f = await frame(page);
   await f.getByRole('status').filter({ hasText: 'Interrupted' }).waitFor();
   assert.equal(
@@ -1212,7 +1267,7 @@ try {
       });
       await command(page, 'Developer: Reload Window');
       await detached;
-      await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+      await command(page, 'DualMind: Open Workbench');
       f = await frame(page);
       await f.getByRole('heading', { name, exact: true }).waitFor();
     }
@@ -1308,13 +1363,13 @@ try {
     .waitFor();
   await f.getByText('Acceptance passed', { exact: true }).first().waitFor();
   await screenshot(page, f, 'en-reading-acceptance');
-  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await language(f, 'zh-CN');
   await f.getByRole('status').filter({ hasText: '已完成：验收通过' }).waitFor();
   await screenshot(page, f, 'zh-reading-acceptance');
   await size(820, 1040);
   await screenshot(page, f, 'zh-reading-acceptance-narrow');
   await size(1600, 1100);
-  await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+  await language(f, 'en');
   holdWorker = true;
   const heldReadingRequest = new Promise((resolve) => {
     workerRequestObserved = resolve;
@@ -1329,7 +1384,7 @@ try {
   });
   await command(page, 'Developer: Reload Window');
   await readingDetached;
-  await page.locator('.tab').filter({ hasText: 'DualMind' }).click();
+  await command(page, 'DualMind: Open Workbench');
   f = await frame(page);
   await f.getByRole('status').filter({ hasText: 'Interrupted' }).waitFor();
   assert.equal(inferenceRequests.length, readingRequestCount, 'Reload never replays Worker calls');
@@ -1378,12 +1433,12 @@ try {
     }
     await screenshot(page, f, `en-recovery-${agent}-failed`);
     if (agent === 'worker') {
-      await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+      await language(f, 'zh-CN');
       await screenshot(page, f, 'zh-recovery-worker-failed');
       await size(820, 1040);
       await screenshot(page, f, 'zh-recovery-worker-narrow');
       assert.ok(await f.getByRole('button', { name: '继续执行', exact: true }).isEnabled());
-      await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+      await language(f, 'en');
       await screenshot(page, f, 'en-recovery-worker-narrow');
       await size(1600, 1100);
     }
@@ -1397,12 +1452,12 @@ try {
         .filter({ hasText: 'Waiting to retry' })
         .waitFor({ timeout: 15000 });
       await screenshot(page, f, 'en-recovery-retry-wait');
-      await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+      await language(f, 'zh-CN');
       await size(820, 1040);
       await f.locator('.chat-activity').filter({ hasText: '等待重试' }).waitFor();
       await screenshot(page, f, 'zh-recovery-retry-narrow');
       await size(1600, 1100);
-      await f.getByLabel('界面语言', { exact: true }).selectOption('en');
+      await language(f, 'en');
     }
     await f
       .getByRole('status')
@@ -1421,7 +1476,7 @@ try {
   await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
   readingOnly = false;
   await click(f, 'Settings');
-  await f.getByLabel('Language', { exact: true }).selectOption('zh-CN');
+  await language(f, 'zh-CN');
   await f.getByRole('button', { name: /^返回(?:任务|主页)$/ }).click();
   await click(f, '新建任务');
   await f.getByRole('combobox', { name: '开发分支', exact: true }).selectOption('branch');
@@ -1466,9 +1521,16 @@ try {
     `Real Webview UI verification passed on VS Code ${version}; ${captures.length} screenshots in ${artifacts}`,
   );
 } catch (error) {
+  console.error(error);
   if (app) {
-    const page = await app.firstWindow();
-    await page.screenshot({ path: join(artifacts, 'failure.png') }).catch(() => undefined);
+    const page = await app.firstWindow().catch(() => undefined);
+    if (page) {
+      await page.screenshot({ path: join(artifacts, 'failure.png') }).catch(() => undefined);
+      await writeFile(
+        join(artifacts, 'failure-dom.txt'),
+        await page.locator('body').innerText(),
+      ).catch(() => undefined);
+    }
   }
   throw error;
 } finally {
@@ -1481,3 +1543,6 @@ try {
     await new Promise((resolve) => server.close(resolve));
   }
 }
+
+// Verify native placement and serialized-tab upgrades after the execution regression.
+await import('./verify-sidebar.mjs');

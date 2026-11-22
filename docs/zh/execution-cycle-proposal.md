@@ -8,9 +8,9 @@
 
 ## 任务详情
 
-[可编辑 SVG](../design/dual-mind-execution-cycle-proposal.svg)
+[可编辑 SVG](../design/v0.0.3/dual-mind-execution-cycle-proposal.svg)
 
-![方案与验收循环](../design/dual-mind-execution-cycle-proposal.png)
+![方案与验收循环](../design/v0.0.3/dual-mind-execution-cycle-proposal.png)
 
 Reviewer 根据需求与相关文件下发方案；Worker 完成实施及验证后提交成果；Reviewer 验收，未通过则下发下一轮方案。当前方案置于双栏对话之前，展示版本、目标、修订原因、步骤及验收项。命令验证与阅读审查分别标记。历史保留方案、成果提交、验收意见及实际命令证据。示例展示第二轮执行，第一轮未通过。
 
@@ -18,9 +18,9 @@ Reviewer 根据需求与相关文件下发方案；Worker 完成实施及验证�
 
 ## 任务执行设置
 
-[可编辑 SVG](../design/dual-mind-execution-settings-proposal.svg)
+[可编辑 SVG](../design/v0.0.3/dual-mind-execution-settings-proposal.svg)
 
-![高级附加命令设置](../design/dual-mind-execution-settings-proposal.png)
+![高级附加命令设置](../design/v0.0.3/dual-mind-execution-settings-proposal.png)
 
 默认只说明双 AI 职责；折叠的高级设置包含附加自定义命令开关。关闭时保留数据，隐藏命令编辑区；新配置默认关闭，旧非空配置默认启用。启用后的准备命令在方案形成后执行；附加检查在每轮提交后必跑。保存失败保留输入，正在执行的任务使用原配置。右侧状态说明为设计注释，不是产品侧栏。
 

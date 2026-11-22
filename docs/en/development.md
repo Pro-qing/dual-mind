@@ -2,7 +2,7 @@
 
 [简体中文](../zh/development.md) · [Documentation](./README.md)
 
-**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
+**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Environment
 
@@ -156,3 +156,7 @@ See the [development log](./development-log.md) and [task chat validation](./tas
 Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
 
 Recovery tests use scripted endpoints, forced exits of isolated child processes and recreated execution services, modifying only temporary repositories. Before recovery UI approval, real UI regression covers existing controls only, not the proposed button. See [recovery behavior](./execution-recovery.md).
+
+## Sidebar regression
+
+`npm run test:ui` runs both-protocol execution/chat regression followed by native sidebar and legacy-tab migration scenarios. Use `node scripts/verify-sidebar.mjs` to run the latter separately. Select an installed editor with `VSCODE_TEST_EXECUTABLE`, or use `VSCODE_TEST_VERSION=1.100.0` for the minimum version. Tests use temporary profiles and workspaces. See [actual sidebar validation](./sidebar-workbench-validation.md).

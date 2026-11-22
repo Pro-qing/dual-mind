@@ -2,7 +2,7 @@
 
 [简体中文](../zh/releasing.md) · [Documentation](./README.md)
 
-**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
+**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Historical 0.0.1 publication
 
@@ -68,7 +68,7 @@ From the clean checkout of the new tag, load nvm and install locked dependencies
 
 `npm run package` rebuilds the extension host and Webview. `DUAL_MIND_RELEASE_REF` fixes packaged README/changelog links to the new tag. The output is `release/dual-mind-<version>.vsix`; running packaging again for that version overwrites the local file. Keep release candidates and downloaded verification copies in separate locations. Generated bundles, screenshots, VSIX files and checksum files remain ignored by Git.
 
-Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all 17 approved SVG/PNG pairs. The source JPEG, development sources, tests, credentials and source maps must be absent.
+Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all 27 approved SVG/PNG pairs in version directories. The source JPEG, development sources, tests, credentials and source maps must be absent.
 
 Install the package in an isolated user profile/extensions directory. Verify the icon, identity/version, workbench, both languages, task creation/saving and reload recovery. Keep only the intended extension identity enabled in that profile.
 
@@ -86,4 +86,4 @@ Marketplace displays the README from the uploaded extension package. Committing 
 
 Official references: [Publishing extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension), [Extension manifest](https://code.visualstudio.com/api/references/extension-manifest), and [GitHub releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository). API credentials must not be stored in source files or exposed in command arguments.
 
-Neither the historical local source tag `v0.0.3` nor the current local 0.0.4 VSIX represents a public release. This version-record commit does not create or push a tag or upload to Marketplace/GitHub Releases; the version notes describe the scope of local-package and installed-version checks. Public distribution still requires validation of the exact candidate commit and target editor/OS matrix followed by the workflow above; see the [0.0.4 version notes](./release-notes-0.0.4.md) for actual checks.
+`v0.0.5` is the requested local annotated source tag, containing sidebar implementation, design reorganization and version metadata. This operation does not push tags, install the extension or publish a release. Historical `v0.0.2`/`v0.0.3` tags and older VSIX files are retained. Public distribution still requires the exact-commit and target-platform CI checks above. See the [0.0.5 version notes](./release-notes-0.0.5.md) for this local operation and its actual validation.

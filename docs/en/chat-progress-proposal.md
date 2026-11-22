@@ -8,9 +8,9 @@ On November 22, 2026, the user approved the designs with one refinement: expansi
 
 ## 18. Wide: activity and public process
 
-[Editable SVG](../design/dual-mind-chat-progress-proposal.svg) · [PNG preview](../design/dual-mind-chat-progress-proposal.png)
+[Editable SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg) · [PNG preview](../design/v0.0.4/dual-mind-chat-progress-proposal.png)
 
-![Public process and compact messages](../design/dual-mind-chat-progress-proposal.png)
+![Public process and compact messages](../design/v0.0.4/dual-mind-chat-progress-proposal.png)
 
 A chat activity bar shows role, phase, current operation and elapsed time, including waiting with no model text. The first valid stream event changes the state to receiving a response; tools and commands have separate states. Elapsed time is calculated in the frontend without per-second log entries or invented percentage completion. Pause, stop, failure and restart display actual execution status, without a stale spinner.
 
@@ -20,9 +20,9 @@ Every message, including requirements, user follow-ups, process, plans, submissi
 
 ## 19. Wide: minimized evidence panel and individual outputs
 
-[Editable SVG](../design/dual-mind-chat-minimized-proposal.svg) · [PNG preview](../design/dual-mind-chat-minimized-proposal.png)
+[Editable SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg) · [PNG preview](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)
 
-![Panel and system message minimization](../design/dual-mind-chat-minimized-proposal.png)
+![Panel and system message minimization](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)
 
 The approximately 360-pixel panel gains a minimize action, leaving an approximately 44-pixel rail and more width for chat. The rail retains restoration, new-record counts and error badges. Close remains a distinct action. New output updates indicators without automatically restoring the panel.
 
@@ -30,9 +30,9 @@ System messages, commands and output records can separately minimize to a title,
 
 ## 20. Narrow: compact and expanded reading
 
-[Editable SVG](../design/dual-mind-chat-compact-narrow-proposal.svg) · [PNG preview](../design/dual-mind-chat-compact-narrow-proposal.png)
+[Editable SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg) · [PNG preview](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)
 
-![Narrow message expansion and restore entry](../design/dual-mind-chat-compact-narrow-proposal.png)
+![Narrow message expansion and restore entry](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)
 
 The left example shows compact long messages and the right shows the same plan expanded. Narrow message bodies are limited to 180 CSS pixels. Evidence continues using the existing drawer; minimization leaves a toolbar restore entry and counts, with no permanent side rail. The composer stays reachable.
 

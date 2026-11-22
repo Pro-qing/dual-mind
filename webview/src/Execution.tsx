@@ -265,42 +265,57 @@ export function ExecutionControls({
       {mode === 'controls' && (
         <>
           <div className="button-row">
-            <button
-              className={resumable || recovering ? 'primary' : undefined}
-              disabled={busy || !resumable || (run?.status !== 'paused' && !configured)}
-              aria-describedby={
-                awaitingRecovery || recovering ? recoveryNoticeId(taskId) : undefined
-              }
-              onClick={() => call({ kind: 'resume', runId: run!.id })}
-            >
-              <Icon name="play" />
-              {tr('resumeRun')}
-            </button>
-            <button
-              className={resumable || recovering ? undefined : 'primary'}
-              disabled={busy || Boolean(active) || !configured}
-              onClick={() => call({ kind: run ? 'restart' : 'start', taskId })}
-            >
-              {tr(run ? 'restartRun' : 'start')}
-            </button>
-            <button
-              disabled={
-                busy ||
-                !running ||
-                !['answering', 'planning', 'preparing', 'worker', 'checking', 'reviewer'].includes(
-                  run!.status,
-                )
-              }
-              onClick={() => call({ kind: 'pause', runId: run!.id })}
-            >
-              {tr('pause')}
-            </button>
-            <button
-              disabled={(busy && !recovering) || !running || run?.status === 'stopping'}
-              onClick={() => call({ kind: 'stop', runId: run!.id })}
-            >
-              {tr('stop')}
-            </button>
+            {(run?.status === 'paused' || awaitingRecovery || recovering) && (
+              <button
+                className={resumable || recovering ? 'primary' : undefined}
+                disabled={busy || !resumable || (run?.status !== 'paused' && !configured)}
+                aria-describedby={
+                  awaitingRecovery || recovering ? recoveryNoticeId(taskId) : undefined
+                }
+                onClick={() => call({ kind: 'resume', runId: run!.id })}
+              >
+                <Icon name="play" />
+                {tr('resumeRun')}
+              </button>
+            )}
+            {!running && (
+              <button
+                className={resumable || recovering ? undefined : 'primary'}
+                disabled={busy || Boolean(active) || !configured}
+                onClick={() => call({ kind: run ? 'restart' : 'start', taskId })}
+              >
+                {tr(run ? 'restartRun' : 'start')}
+              </button>
+            )}
+            {running && run.status !== 'paused' && (
+              <button
+                disabled={
+                  busy ||
+                  !running ||
+                  ![
+                    'answering',
+                    'planning',
+                    'preparing',
+                    'worker',
+                    'checking',
+                    'reviewer',
+                  ].includes(run!.status)
+                }
+                onClick={() => call({ kind: 'pause', runId: run!.id })}
+              >
+                <Icon name="pause" />
+                {tr('pause')}
+              </button>
+            )}
+            {running && (
+              <button
+                disabled={(busy && !recovering) || !running || run?.status === 'stopping'}
+                onClick={() => call({ kind: 'stop', runId: run!.id })}
+              >
+                <Icon name="stop" />
+                {tr('stop')}
+              </button>
+            )}
             {run && (
               <span role="status">
                 {tr(statusKey(run.status))} · {run.round}/{run.maxRounds}

@@ -2,7 +2,7 @@
 
 [English](../en/environment.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.4 · 本地版本记录 · 尚未发布。** 本次记录日期为 2026-11-21；不表示已上传 Marketplace 或创建 GitHub Release。0.0.1 Preview 1／2 的历史发布记录保持原样。详见[0.0.4 版本说明](./release-notes-0.0.4.md)。
+**当前源码版本：0.0.5 · 本地源码标签 `v0.0.5` · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
 ## 支持基线
 

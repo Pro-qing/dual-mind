@@ -12,16 +12,16 @@ Subsequent revision: [task chat and follow-up, scenes 14–17](./task-chat-propo
 
 Each canvas is 1440 × 900. These proposals use Simplified Chinese for the main interface, with an English error example in scene 11; the implementation displays one language according to its setting. Graphics and text remain editable, with no external images, font downloads, or scripts. Review notes along the bottom are not product content.
 
-| Scene                         | SVG                                                    | PNG                                                     |
-| ----------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| 8. Separate task home         | [Source](../design/dual-mind-task-home-proposal.svg)   | [Preview](../design/dual-mind-task-home-proposal.png)   |
-| 9. Separate task detail       | [Source](../design/dual-mind-task-detail-proposal.svg) | [Preview](../design/dual-mind-task-detail-proposal.png) |
-| 10. Create task               | [Source](../design/dual-mind-task-create-proposal.svg) | [Preview](../design/dual-mind-task-create-proposal.png) |
-| 11. Errors and narrow windows | [Source](../design/dual-mind-task-states-proposal.svg) | [Preview](../design/dual-mind-task-states-proposal.png) |
+| Scene                         | SVG                                                           | PNG                                                            |
+| ----------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
+| 8. Separate task home         | [Source](../design/v0.0.3/dual-mind-task-home-proposal.svg)   | [Preview](../design/v0.0.3/dual-mind-task-home-proposal.png)   |
+| 9. Separate task detail       | [Source](../design/v0.0.3/dual-mind-task-detail-proposal.svg) | [Preview](../design/v0.0.3/dual-mind-task-detail-proposal.png) |
+| 10. Create task               | [Source](../design/v0.0.3/dual-mind-task-create-proposal.svg) | [Preview](../design/v0.0.3/dual-mind-task-create-proposal.png) |
+| 11. Errors and narrow windows | [Source](../design/v0.0.3/dual-mind-task-states-proposal.svg) | [Preview](../design/v0.0.3/dual-mind-task-states-proposal.png) |
 
 ### 8. Separate task home
 
-![Task home with a list, creation, statuses, and settings](../design/dual-mind-task-home-proposal.png)
+![Task home with a list, creation, statuses, and settings](../design/v0.0.3/dual-mind-task-home-proposal.png)
 
 Home shows each task's name, requirement summary, Reviewer role, Git strategy, rounds, and current status. Clicking the task name or **Open task** opens its detail page; deletion is a separate action. Counts at the top are informational, not filters. The list scrolls when necessary, and only one task runs per workspace. Retain settings, creation, and the existing read-only sample preview.
 
@@ -29,7 +29,7 @@ An empty workspace shows **No tasks yet** and the creation action; without an op
 
 ### 9. Separate task detail
 
-![A newly created pending task with requirements, bindings, roles, and manual start](../design/dual-mind-task-detail-proposal.png)
+![A newly created pending task with requirements, bindings, roles, and manual start](../design/v0.0.3/dual-mind-task-detail-proposal.png)
 
 The detail header provides **Back to home** and settings, followed by task name, requirements, Reviewer role, Git strategy, and round limit. Worker and Reviewer occupy separate columns. Missing configuration is identified with a settings entry. A new task shows **Pending** and empty conversations awaiting execution; creation makes no model request.
 
@@ -48,7 +48,7 @@ Start, pause, resume, stop, edit, and delete actions follow the current executio
 
 ### 10. Create task
 
-![Create dialog allowing a missing Reviewer key, followed by pending task detail](../design/dual-mind-task-create-proposal.png)
+![Create dialog allowing a missing Reviewer key, followed by pending task detail](../design/v0.0.3/dual-mind-task-create-proposal.png)
 
 Retain the name, requirements, Reviewer role, Git strategy, round limit, and independent model bindings. Use **Create task** as the primary action and **Save task** when editing, with no separate draft submission or confirmation. Git strategies retain managed worktree, current branch, and existing branch options; the last option reveals the existing branch selector. Custom roles remain selectable, and editing preserves the task's role snapshot.
 
@@ -56,7 +56,7 @@ Missing API configuration, credentials, or checks does not block creation; detai
 
 ### 11. Errors and narrow windows
 
-![Separate review examples for localized errors, original details, old records, and narrow layout](../design/dual-mind-task-states-proposal.png)
+![Separate review examples for localized errors, original details, old records, and narrow layout](../design/v0.0.3/dual-mind-task-states-proposal.png)
 
 These are independent review examples, not simultaneously displayed product panels. Application errors explain the cause and a useful next action in the selected language. Relevant original details expand beneath the message. Language changes immediately reformat structured errors. User input, command output, model responses, and external original errors remain verbatim.
 
@@ -74,7 +74,7 @@ The design stage passed documentation and formatting checks, with each PNG inspe
 
 ```bash
 for scene in task-home task-detail task-create task-states; do
-  python3 -m cairosvg "docs/design/dual-mind-${scene}-proposal.svg" -o "docs/design/dual-mind-${scene}-proposal.png"
+  python3 -m cairosvg "docs/design/v0.0.3/dual-mind-${scene}-proposal.svg" -o "docs/design/v0.0.3/dual-mind-${scene}-proposal.png"
 done
 npm run docs:check
 npm run format:check

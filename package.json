@@ -2,7 +2,7 @@
   "name": "dual-mind",
   "displayName": "DualMind",
   "description": "%description%",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.100.0",
     "node": ">=24.0.0 <25.0.0"
@@ -33,6 +33,11 @@
       {
         "command": "dualMind.selectTask",
         "title": "%selectTaskCommand%",
+        "category": "DualMind"
+      },
+      {
+        "command": "dualMind.alignPanelCenter",
+        "title": "%alignPanelCenter%",
         "category": "DualMind"
       }
     ],
@@ -70,27 +75,22 @@
       "dualMind": [
         {
           "id": "dualMind.tasks",
-          "name": "%tasksView%"
+          "name": "%tasksView%",
+          "type": "webview"
         }
       ]
     },
-    "viewsWelcome": [
-      {
-        "view": "dualMind.tasks",
-        "contents": "%tasksWelcome%"
-      }
-    ],
     "menus": {
       "view/title": [
-        {
-          "command": "dualMind.openWorkbench",
-          "when": "view == dualMind.tasks",
-          "group": "navigation"
-        },
         {
           "command": "dualMind.newTask",
           "when": "view == dualMind.tasks",
           "group": "navigation"
+        },
+        {
+          "command": "dualMind.alignPanelCenter",
+          "when": "view == dualMind.tasks",
+          "group": "layout"
         }
       ],
       "commandPalette": [
@@ -173,8 +173,7 @@
     "react-dom": "19.3.1"
   },
   "activationEvents": [
-    "onWebviewPanel:dualMind.workbench",
-    "onView:dualMind.tasks"
+    "onWebviewPanel:dualMind.workbench"
   ],
   "icon": "resources/icon.png",
   "preview": true

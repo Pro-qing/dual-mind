@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900"><title>24. 主侧栏：聊天与终端分区 — 待审核</title><desc>DualMind 原生侧栏工作台静态设计提案，2026-11-22。任务、代码、错误、时间、计数和终端输出均为示例，不是运行或验证结果。</desc><style>text {font-family:"Noto Sans CJK SC","DejaVu Sans",sans-serif}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="26" y="35" font-size="21" fill="#e7edf6" font-weight="600" text-anchor="start">24. 主侧栏：聊天与终端分区</text>
+<text x="26" y="62" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">左侧 360px · 完整工作台进入侧栏 · 中央编辑器下方保留终端</text>
+<text x="1414" y="32" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">设计提案 · 待审核 · 2026-11-22</text>
+<rect x="24" y="92" width="1392" height="714" rx="8" fill="#1e1e1e" stroke="#3b424e"/>
+<rect x="24" y="92" width="1392" height="32" rx="0" fill="#202329" stroke="none"/>
+<text x="39" y="114" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">File   Edit   Selection   View   Go   Run   Terminal   Help</text>
+<text x="720.0" y="114" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="middle">dual-mind — Visual Studio Code</text>
+<text x="1395" y="113" font-size="18" fill="#a8b3c3" font-weight="400" text-anchor="start">×</text>
+<rect x="24" y="124" width="48" height="660" rx="0" fill="#252930" stroke="none"/>
+<g transform="translate(39 143)">
+<path d="M4 2h7l4 4v10H4zM11 2v5h4M7 10h5M7 13h5" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(39 192)">
+<path d="M12 12l4 4M13 8a5 5 0 1 1-10 0a5 5 0 1 1 10 0" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(39 241)">
+<path d="M5 5v8M5 9h6q3 0 3-4M3 2h4v3H3zM12 2h4v3h-4zM3 13h4v3H3z" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(39 290)">
+<path d="M5 3l-4 6 4 6M13 3l4 6-4 6" fill="none" stroke="#96bfff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<rect x="24" y="275" width="3" height="34" rx="0" fill="#96bfff" stroke="none"/>
+<g transform="translate(39 750)">
+<path d="M9 2v3M9 13v3M2 9h3M13 9h3M4 4l2 2M12 12l2 2M14 4l-2 2M6 12l-2 2M12 9a3 3 0 1 1-6 0a3 3 0 1 1 6 0" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<rect x="432" y="124" width="984" height="32" rx="0" fill="#202329" stroke="none"/>
+<rect x="432" y="124" width="142" height="32" rx="0" fill="#1e1e1e" stroke="none"/>
+<text x="446" y="145" font-size="12" fill="#96bfff" font-weight="400" text-anchor="start">TS   login.ts    ×</text>
+<text x="448" y="178" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">src  /  auth  /  login.ts</text>
+<text x="460" y="211" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">1</text>
+<text x="480" y="211" font-size="13" fill="#96bfff" font-weight="400" text-anchor="start">export function validateLogin(value: string) {</text>
+<text x="460" y="238" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">2</text>
+<text x="480" y="238" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">  const normalized = value.trim();</text>
+<text x="460" y="265" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">3</text>
+<text x="480" y="265" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start"></text>
+<text x="460" y="292" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">4</text>
+<text x="480" y="292" font-size="13" fill="#96bfff" font-weight="400" text-anchor="start">  if (normalized.length === 0) {</text>
+<text x="460" y="319" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">5</text>
+<text x="480" y="319" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">    return { valid: false, reason: &#x27;required&#x27; };</text>
+<text x="460" y="346" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">6</text>
+<text x="480" y="346" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">  }</text>
+<text x="460" y="373" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">7</text>
+<text x="480" y="373" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start"></text>
+<text x="460" y="400" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">8</text>
+<text x="480" y="400" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">  return { valid: true, value: normalized };</text>
+<text x="460" y="427" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="end">9</text>
+<text x="480" y="427" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">}</text>
+<rect x="432" y="574" width="984" height="210" rx="0" fill="#1e1e1e" stroke="#3b424e"/>
+<text x="448" y="598" font-size="11" fill="#a8b3c3" font-weight="400" text-anchor="start">PROBLEMS   OUTPUT   DEBUG CONSOLE</text>
+<text x="732" y="598" font-size="11" fill="#e7edf6" font-weight="600" text-anchor="start">TERMINAL</text>
+<path d="M732 606 L791 606" fill="none" stroke="#96bfff" stroke-width="2"/>
+<g transform="translate(1346 585)">
+<path d="M9 3v12M3 9h12" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(1381 585)">
+<path d="M4 4l10 10M14 4L4 14" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="449" y="634" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">$ npm test</text>
+<text x="449" y="658" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">&gt; unit tests</text>
+<text x="449" y="682" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">✓ rejects empty input</text>
+<text x="449" y="706" font-size="13" fill="#85d9bd" font-weight="400" text-anchor="start">✓ rejects whitespace-only input</text>
+<text x="449" y="730" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">$</text>
+<rect x="72" y="124" width="360" height="30" rx="0" fill="#202329" stroke="none"/>
+<text x="84" y="144" font-size="11" fill="#a8b3c3" font-weight="600" text-anchor="start">DUALMIND</text>
+<g transform="translate(372 130)">
+<path d="M9 3v12M3 9h12" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g transform="translate(402 130)">
+<rect x="3" y="8" width="2" height="2" rx="1" fill="#a8b3c3" stroke="none"/>
+<rect x="9" y="8" width="2" height="2" rx="1" fill="#a8b3c3" stroke="none"/>
+<rect x="15" y="8" width="2" height="2" rx="1" fill="#a8b3c3" stroke="none"/>
+</g>
+<rect x="72" y="154" width="360" height="630" rx="0" fill="#202329" stroke="#3b424e"/>
+<g transform="translate(82 163)">
+<path d="M12 3L5 9l7 6M5 9h12" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="107" y="177" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">任务</text>
+<g transform="translate(399 164)">
+<path d="M9 2v3M9 13v3M2 9h3M13 9h3M4 4l2 2M12 12l2 2M14 4l-2 2M6 12l-2 2M12 9a3 3 0 1 1-6 0a3 3 0 1 1 6 0" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path d="M72 191 L432 191" fill="none" stroke="#3b424e" stroke-width="1"/>
+<text x="84" y="211" font-size="17" fill="#e7edf6" font-weight="600" text-anchor="start">修复登录校验</text>
+<text x="84" y="235" font-size="12" fill="#85d9bd" font-weight="400" text-anchor="start">Worker · 执行中 · 第 1 / 5 轮</text>
+<rect x="84" y="247" width="72" height="30" rx="5" fill="#252930" stroke="#3b424e"/>
+<g transform="translate(92 253)">
+<path d="M5 3v12M13 3v12" fill="none" stroke="#e7edf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="115" y="267" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">暂停</text>
+<rect x="166" y="247" width="72" height="30" rx="5" fill="#252930" stroke="#3b424e"/>
+<g transform="translate(174 253)">
+<path d="M4 4h10v10H4z" fill="none" stroke="#e7edf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="197" y="267" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">停止</text>
+<g transform="translate(84 281)">
+<path d="M6 3l6 6-6 6" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="108" y="294" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">任务详情与操作</text>
+<path d="M72 302 L432 302" fill="none" stroke="#3b424e" stroke-width="1"/>
+<text x="84" y="322" font-size="13" fill="#e7edf6" font-weight="600" text-anchor="start">对话</text>
+<text x="333.890625" y="322" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">输出 · 12 条</text>
+<g transform="translate(405 309)">
+<path d="M3 5h12v10H3zM6 2h11v10" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<rect x="82" y="339" width="340" height="31" rx="5" fill="#1b1f25" stroke="none"/>
+<text x="92" y="360" font-size="12" fill="#a8b3c3" font-weight="400" text-anchor="start">等待模型响应 · 00:18</text>
+<rect x="98" y="381" width="324" height="91" rx="6" fill="#284e75" stroke="#3b424e"/>
+<text x="110" y="404" font-size="13" fill="#e7edf6" font-weight="600" text-anchor="start">用户</text>
+<g transform="translate(393 391)">
+<path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="110" y="430" font-size="14" fill="#e7edf6" font-weight="400" text-anchor="start">请修复登录校验，并覆盖空输入和只有空格的情</text>
+<text x="110" y="452" font-size="14" fill="#e7edf6" font-weight="400" text-anchor="start">况。</text>
+<rect x="82" y="484" width="340" height="96" rx="6" fill="#252930" stroke="#3b424e"/>
+<text x="94" y="507" font-size="13" fill="#96bfff" font-weight="600" text-anchor="start">Worker · 公开过程</text>
+<g transform="translate(393 494)">
+<path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" fill="none" stroke="#a8b3c3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="94" y="533" font-size="14" fill="#e7edf6" font-weight="400" text-anchor="start">已检查表单校验逻辑。接下来运行相关测试，确认</text>
+<text x="94" y="555" font-size="14" fill="#e7edf6" font-weight="400" text-anchor="start">空输入和空格输入都被正确处理。</text>
+<rect x="427" y="342" width="3" height="331" rx="2" fill="#3b424e" stroke="none"/>
+<rect x="427" y="447.92" width="3" height="89.37" rx="2" fill="#7c8798" stroke="none"/>
+<rect x="72" y="686" width="360" height="98" rx="0" fill="#202329" stroke="none"/>
+<path d="M72 686 L432 686" fill="none" stroke="#3b424e" stroke-width="1"/>
+<rect x="82" y="695" width="340" height="43" rx="5" fill="#1b1f25" stroke="#3b424e"/>
+<text x="93" y="721" font-size="14" fill="#a8b3c3" font-weight="400" text-anchor="start">补充要求或提问…</text>
+<text x="84" y="763" font-size="11" fill="#a8b3c3" font-weight="400" text-anchor="start">Enter 发送 · Shift+Enter 换行</text>
+<rect x="353" y="744" width="68" height="30" rx="5" fill="#284e75" stroke="#96bfff"/>
+<text x="364" y="764" font-size="13" fill="#e7edf6" font-weight="400" text-anchor="start">发送</text>
+<path d="M432 124 L432 784" fill="none" stroke="#96bfff" stroke-width="1"/>
+<rect x="24" y="784" width="1392" height="22" rx="0" fill="#24547a" stroke="none"/>
+<text x="37" y="799" font-size="11" fill="#e7edf6" font-weight="400" text-anchor="start">master     0 errors    0 warnings</text>
+<text x="1402" y="799" font-size="11" fill="#e7edf6" font-weight="400" text-anchor="end">UTF-8    TypeScript    Ln 8, Col 3</text>
+<text x="27" y="838" font-size="14" fill="#96bfff" font-weight="600" text-anchor="start">侧栏保持完整可用高度</text>
+<text x="27" y="862" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">标题栏和状态栏之间，聊天填满剩余空间，输入框固定在底部。</text>
+<text x="754" y="838" font-size="14" fill="#96bfff" font-weight="600" text-anchor="start">终端只占编辑器区域</text>
+<text x="754" y="862" font-size="13" fill="#a8b3c3" font-weight="400" text-anchor="start">视图更多菜单 → “终端仅占编辑器区域”；仅手动点击时调整。</text>
+</svg>

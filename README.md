@@ -8,13 +8,13 @@ DualMind is an AI pair-programming extension project for VS Code. It brings task
 
 ## Project status
 
-**Source 0.0.4 · Local version record · Unpublished**
+**Source 0.0.5 · Local version record · Unpublished**
 
-The React workbench supports local tasks, connection settings, Reviewer presets, and English / Simplified Chinese. Source 0.0.4 provides independent role histories, Worker execution, independent Reviewer inspection and verification and an activity-bar entry. Tasks may use dedicated worktrees or directly edit a selected local branch; applying dedicated-worktree results back to the original workspace remains planned. The optional conversation preview is explicitly read-only example content.
+The React workbench supports local tasks, connection settings, Reviewer presets, and English / Simplified Chinese. Source 0.0.5 provides independent role histories, Worker execution, independent Reviewer inspection and verification and an activity-bar entry. Tasks may use dedicated worktrees or directly edit a selected local branch; applying dedicated-worktree results back to the original workspace remains planned. The optional conversation preview is explicitly read-only example content.
 
 Historical 0.0.1 publication: available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) as **Pro-qing.dual-mind**, version **0.0.1**, published 2026-11-18 with the Preview label. [GitHub Preview 2](https://github.com/Pro-qing/dual-mind/releases/tag/v0.0.1-preview.2) was also published on 2026-11-18. [Release notes](./docs/en/release-notes-preview-2.md).
 
-The [0.0.4 version notes](./docs/en/release-notes-0.0.4.md) record source capabilities and verification. The [changelog](./CHANGELOG.md) distinguishes local versions from historical public artifacts.
+The [0.0.5 version notes](./docs/en/release-notes-0.0.5.md) record source capabilities and verification. The [changelog](./CHANGELOG.md) distinguishes local versions from historical public artifacts.
 
 ## Two complementary roles
 
@@ -42,9 +42,11 @@ Independent parallel sessions, automatic editor context and explicit application
 
 ## Interface designs
 
-![Approved DualMind parallel-task design reference](./docs/design/dual-mind-workbench.png)
+![Approved DualMind parallel-task design reference](./docs/design/v0.0.1/dual-mind-workbench.png)
 
-The 23 approved SVG/PNG pairs remain design references: scenes 1–7 cover the original workbench and model selection, 8–11 task pages, 12–13 planning and acceptance, 14–17 [task chat and follow-up](./docs/en/task-chat-proposal.md), 18–20 activity and compact chat, and 21–23 failure recovery. Current source implements single-task execution and chat. The image above retains the original workbench design; illustrated parallel execution remains planned. The published 0.0.1 artifact retains its original behavior. [Original workbench SVG](./docs/design/dual-mind-workbench.svg) · [Full design gallery](./docs/en/design.md).
+The 27 approved SVG/PNG pairs remain design references: scenes 1–7 cover the original workbench and model selection, 8–11 task pages, 12–13 planning and acceptance, 14–17 [task chat and follow-up](./docs/en/task-chat-proposal.md), 18–20 activity and compact chat, 21–23 failure recovery, and 24–27 the native sidebar. Current source implements single-task execution and chat. The image above retains the original workbench design; illustrated parallel execution remains planned. The published 0.0.1 artifact retains its original behavior. [Original workbench SVG](./docs/design/v0.0.1/dual-mind-workbench.svg) · [Full design gallery](./docs/en/design.md).
+
+[Native sidebar workbench](./docs/en/sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
 
 ## Documentation and contribution
 

@@ -2,13 +2,13 @@
 
 [简体中文](../zh/usage.md) · [Documentation](./README.md)
 
-**Source version: 0.0.4 · Local version record · Unpublished.** Recorded on 2026-11-21; this does not indicate a Marketplace upload or a GitHub Release. The historical 0.0.1 Preview 1/2 records are unchanged. See the [0.0.4 version notes](./release-notes-0.0.4.md).
+**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Home, task detail, and errors
 
 The workbench opens on task home. Open a task to enter its separate detail page. **New task → Create task** immediately opens the newly saved task in the **Pending** state without issuing model requests. Incomplete configuration does not block creation; detail identifies missing connections, credentials, or models. Complete them and click **Start**. Editing and saving apply directly to the task, with no separate draft submission step.
 
-**Back to home** does not stop execution. Settings opened from detail return to that task, and native sidebar selections open the corresponding detail. Reload restores the page and task, falling back to home if the task is gone. Deleting the current task returns home; active executions must still stop successfully before deletion.
+**Back to home** does not stop execution. Settings opened from detail return to that task, and native task-selection commands open the corresponding detail. Reload restores the page and task, falling back to home if the task is gone. Deleting the current task returns home; active executions must still stop successfully before deletion.
 
 Application errors follow the interface language, including run failures, check commands, Git, inference, and bridge timeouts. Expand **Original details** for redacted source text when available. Command output and model responses remain verbatim. Old historical errors receive localized context with their original text. Changing language reformats structured errors immediately.
 
@@ -54,7 +54,15 @@ The new identity starts with its own tasks, connection metadata, API keys, model
 
 ## Open the workbench
 
-After installation, reload VS Code if requested, open the Command Palette, and run **DualMind: Open Workbench** (Chinese editor: **DualMind: 打开工作台**). The command opens a single editor tab and reuses it on subsequent invocations. **DualMind: Show Status** remains a readiness check. Open a folder or workspace before creating tasks; without one, settings and read-only examples remain available.
+Click the DualMind activity-bar icon or run **DualMind: Open Workbench** (Chinese editor: **DualMind: 打开工作台**) to open the complete native sidebar workbench. It defaults to the Primary Side Bar; subsequent opens focus the same view. The native title-bar **＋** creates a task, home opens saved tasks, and Back/Settings navigate within the page. **DualMind: Show Status** remains a readiness check. Open a folder or workspace before creating tasks; settings and examples remain available without one.
+
+Right-click the DualMind activity-bar icon and choose **Move To → Secondary Side Bar**, or drag the container, to relocate DualMind. VS Code remembers position and width; reopening does not force it back to the left. Full height means the workspace between the title and status bars.
+
+Manually run **DualMind: Keep Terminal in Editor Area** from the view overflow menu or Command Palette to center the bottom panel. Opening or resizing the terminal then preserves sidebar height. Justified panel alignment can still shorten the sidebars; this is controlled by VS Code. DualMind adjusts layout only when this command is selected.
+
+Hiding, collapsing or moving the sidebar and opening Settings do not stop execution. Revealing it refreshes the snapshot and persisted chat; message expansion and minimized output preferences remain per task. Upgrade migration imports navigation and chat preferences from old editor tabs only if sidebar state is absent. The old tab closes after the sidebar is ready and its display state is saved. Failed initialization retains a retry button in the old tab. Migration carries no credentials or execution context.
+
+Task details initially collapse branch, round, model and editing information; expand **Task details and actions** to access them. Status and primary run controls remain visible. Chat fills the remaining height with the composer at the bottom; code and long messages scroll internally. Settings uses a single column and category selector, with Language at the top. Very short windows allow necessary content scrolling so controls remain reachable.
 
 ## Local tasks
 
@@ -79,7 +87,7 @@ Settings → **API Connections** manages a name, HTTP(S) Base URL, and an option
 
 Opening settings or a selector makes no request. Lists remain separate per connection and are cached only while the workbench is mounted. Queries show loading, success with count/time, an empty list, or a localized error. Manual IDs remain usable when listing fails or is unsupported. Save an edited Base URL before querying; successful URL/key changes or deletion invalidate the old list. Cancelling key replacement leaves the old key and list intact.
 
-Settings → **Defaults for new tasks** is a separate tab between API Connections and Reviewer Roles. Configure the Worker and Reviewer bindings here and click **Save defaults**. Switching tabs discards unsaved edits; reloading restores the selected tab and saved values. The connection’s own default model remains on API Connections.
+Settings → **Defaults for new tasks** has its own entry in the settings category selector. Configure the Worker and Reviewer bindings here and click **Save defaults**. Changing categories discards unsaved edits; reloading restores the category and saved values. The connection’s own default model remains on API Connections.
 
 Worker and Reviewer defaults are independent. New tasks inherit them; existing tasks retain their saved IDs even if absent from a new list. Switching a connection in a form uses that connection's default model, which may be empty. Arrow keys navigate suggestions, Enter selects, and Escape closes suggestions before closing a task dialog. Mouse selection closes the menu and keeps input focus.
 
@@ -171,3 +179,7 @@ The activity strip shows the current role, operation and elapsed time, including
 The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
 
 The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.
+
+## Sidebar validation
+
+See [sidebar validation](./sidebar-workbench-validation.md) for actual versions, platforms and screenshots, and [the approved proposal](./sidebar-workbench-proposal.md) for scenes 24–27.

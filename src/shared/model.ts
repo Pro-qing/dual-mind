@@ -77,6 +77,7 @@ export interface WorkspaceData {
   selectedTaskId: string | null;
 }
 export interface AppSnapshot {
+  initialViewState?: import('./viewState').WorkbenchViewState;
   preparedTaskIds?: string[];
   execution?: ExecutionSnapshot;
   navigationRequest?: { id: string; taskId?: string; newTask?: boolean };
@@ -160,9 +161,12 @@ export type ModelQueryResult =
       error: ModelErrorCode;
     };
 export type ClientMessage =
+  | { type: 'view.state'; state: import('./viewState').WorkbenchViewState }
+  | { type: 'navigation.ack'; id: string }
   | { type: 'execution.request'; requestId: string; action: ExecutionAction }
   | { type: 'models.query'; requestId: string; connectionId: string }
-  | { type: 'ready' | 'rendered' }
+  | { type: 'ready' }
+  | { type: 'rendered'; state?: import('./viewState').WorkbenchViewState }
   | { type: 'request'; requestId: string; action: Action };
 export type HostMessage =
   | { type: 'execution.update'; update: ExecutionUpdate }

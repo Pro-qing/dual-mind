@@ -32,6 +32,7 @@ export function App({
   onNavigation,
   initialChatViews,
   onViewState,
+  onNavigationHandled,
 }: {
   snapshot: AppSnapshot;
   bridge: Bridge;
@@ -39,6 +40,7 @@ export function App({
   onNavigation?(value: Navigation): void;
   initialChatViews?: unknown;
   onViewState?(value: WorkbenchViewState): void;
+  onNavigationHandled?(id: string): void;
 }) {
   const [navigation, setNavigation] = useState<Navigation>(() =>
     restoreNavigation(initialNavigation, snapshot.tasks),
@@ -132,10 +134,14 @@ export function App({
     if (JSON.stringify(next) === JSON.stringify(navigation)) {
       return;
     }
-    historyRequest.current++;
-    historicalPage.current = false;
-    setExecutionEvents([]);
-    setExecutionError(undefined);
+    const taskRoute = (route: Navigation) =>
+      route.view === 'home' || route.view === 'task' ? route : route.returnTo;
+    if (JSON.stringify(taskRoute(next)) !== JSON.stringify(taskRoute(navigation))) {
+      historyRequest.current++;
+      historicalPage.current = false;
+      setExecutionEvents([]);
+      setExecutionError(undefined);
+    }
     setNavigation(next);
   };
   const setView = (view: 'api' | 'defaults' | 'execution' | 'roles') => {
@@ -146,11 +152,13 @@ export function App({
         navigation.view === 'home' || navigation.view === 'task' ? navigation : navigation.returnTo,
     });
   };
+  const consumedNavigation = useRef<string | undefined>(undefined);
   useEffect(() => {
     const request = snapshot.navigationRequest;
-    if (!request) {
+    if (!request || consumedNavigation.current === request.id) {
       return;
     }
+    consumedNavigation.current = request.id;
     setPreview(false);
     if (request.newTask) {
       setTaskForm('new');
@@ -158,6 +166,7 @@ export function App({
       setTaskForm(null);
       navigate(restoreNavigation({ view: 'task', taskId: request.taskId }, snapshot.tasks));
     }
+    onNavigationHandled?.(request.id);
   }, [snapshot.navigationRequest?.id]);
   useEffect(() => {
     const restored = restoreNavigation(navigation, snapshot.tasks);
@@ -244,57 +253,33 @@ export function App({
         },
       }}
     >
-      <div className="dm-app">
+      <div className={`dm-app sidebar-workbench${settingsView ? ' settings-view' : ''}`}>
         <header className="app-header">
-          <div className="brand">
-            {view === 'task' ? (
-              <button onClick={() => navigate({ view: 'home' })}>
-                <Icon name="arrow" />
-                {tr('backToHome')}
-              </button>
-            ) : (
-              <span className="brand-symbol" aria-hidden="true">
-                〈〉
-              </span>
-            )}
-            <div>
-              <h1>
-                {view === 'task' ? tr('taskDetail') : 'DualMind'}
-                {settingsView && <span className="breadcrumb"> / {tr('settings')}</span>}
-              </h1>
-              <p>
-                {settingsView
-                  ? tr('settingsHint')
-                  : snapshot.workspaceName || tr('noWorkspaceName')}
-              </p>
-            </div>
-          </div>
-          <div className="header-actions">
-            <label className="language-control">
-              {tr('language')}
-              <select
-                aria-label={tr('language')}
-                value={snapshot.language}
-                disabled={pending}
-                onChange={(event) => changeLanguage(event.target.value as LanguageSetting)}
-              >
-                <option value="auto">{tr('languageAuto')}</option>
-                <option value="zh-CN">简体中文</option>
-                <option value="en">English</option>
-              </select>
-            </label>
-            {navigation.view === 'home' || navigation.view === 'task' ? (
-              <button onClick={() => setView('api')}>
-                <Icon name="settings" />
-                {tr('settings')}
-              </button>
-            ) : (
-              <button onClick={() => navigate(navigation.returnTo)}>
-                <Icon name="arrow" />
-                {tr(navigation.returnTo.view === 'task' ? 'backToTask' : 'backToHome')}
-              </button>
-            )}
-          </div>
+          {settingsView ? (
+            <button onClick={() => navigate(navigation.returnTo)}>
+              <Icon name="arrow" />
+              {tr(navigation.returnTo.view === 'task' ? 'backToTask' : 'backToHome')}
+            </button>
+          ) : view === 'task' ? (
+            <button onClick={() => navigate({ view: 'home' })}>
+              <Icon name="arrow" />
+              {tr('backToHome')}
+            </button>
+          ) : (
+            <span className="sidebar-workspace" title={snapshot.workspaceName}>
+              {snapshot.workspaceName || tr('noWorkspaceName')}
+            </span>
+          )}
+          {!settingsView && (
+            <button
+              className="chat-icon-button"
+              title={tr('settings')}
+              aria-label={tr('settings')}
+              onClick={() => setView('api')}
+            >
+              <Icon name="settings" />
+            </button>
+          )}
         </header>
         {executionError && (
           <div className="toast toast-error">
@@ -323,9 +308,16 @@ export function App({
             </button>
           </div>
         )}
-        {!settingsView ? (
+        <div className="task-surface" hidden={settingsView} inert={settingsView ? true : undefined}>
           <Tasks
-            taskId={navigation.view === 'task' ? navigation.taskId : undefined}
+            visible={!settingsView}
+            taskId={
+              navigation.view === 'task'
+                ? navigation.taskId
+                : settingsView && navigation.returnTo.view === 'task'
+                  ? navigation.returnTo.taskId
+                  : undefined
+            }
             preview={preview}
             onPreviewChange={setPreview}
             onSettings={() => setView('api')}
@@ -338,47 +330,47 @@ export function App({
               }
             }}
           />
-        ) : (
+        </div>
+        {settingsView && (
           <>
-            <nav className="settings-tabs" aria-label={tr('settings')}>
-              <button
-                className={view === 'api' ? 'active' : ''}
-                aria-current={view === 'api' ? 'page' : undefined}
-                onClick={() => setView('api')}
+            <div className="settings-navigation">
+              <label className="language-control">
+                {tr('language')}
+                <select
+                  aria-label={tr('language')}
+                  value={snapshot.language}
+                  disabled={pending}
+                  onChange={(event) => changeLanguage(event.target.value as LanguageSetting)}
+                >
+                  <option value="auto">{tr('languageAuto')}</option>
+                  <option value="zh-CN">简体中文</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+              <select
+                aria-label={tr('settingsCategory')}
+                value={view}
+                onChange={(event) =>
+                  setView(event.target.value as 'api' | 'defaults' | 'execution' | 'roles')
+                }
               >
-                {tr('apiTab')}
-              </button>
-              <button
-                className={view === 'defaults' ? 'active' : ''}
-                aria-current={view === 'defaults' ? 'page' : undefined}
-                onClick={() => setView('defaults')}
-              >
-                {tr('defaults')}
-              </button>
-              <button
-                className={view === 'execution' ? 'active' : ''}
-                aria-current={view === 'execution' ? 'page' : undefined}
-                onClick={() => setView('execution')}
-              >
-                {tr('executionTab')}
-              </button>
-              <button
-                className={view === 'roles' ? 'active' : ''}
-                aria-current={view === 'roles' ? 'page' : undefined}
-                onClick={() => setView('roles')}
-              >
-                {tr('rolesTab')}
-              </button>
-            </nav>
-            {view === 'api' ? (
-              <Connections />
-            ) : view === 'defaults' ? (
-              <Defaults />
-            ) : view === 'execution' ? (
-              <ExecutionSettings />
-            ) : (
-              <Roles />
-            )}
+                <option value="api">{tr('apiTab')}</option>
+                <option value="defaults">{tr('defaults')}</option>
+                <option value="execution">{tr('executionTab')}</option>
+                <option value="roles">{tr('rolesTab')}</option>
+              </select>
+            </div>
+            <div className="settings-content">
+              {view === 'api' ? (
+                <Connections />
+              ) : view === 'defaults' ? (
+                <Defaults />
+              ) : view === 'execution' ? (
+                <ExecutionSettings />
+              ) : (
+                <Roles />
+              )}
+            </div>
           </>
         )}
         {taskForm && (

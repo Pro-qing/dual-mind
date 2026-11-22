@@ -2,6 +2,13 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.5 — Native sidebar and versioned designs (local, unpublished, 2026-11-23)
+
+- Host the full workbench in the native VS Code Primary/Secondary Side Bar, with compact layouts, manual terminal centering, view recreation and legacy-tab migration. Execution remains independent of the page.
+- Retain universal shell execution, independent Reviewer verification, public process, compact chat, task branch names and failure recovery.
+- Move 27 design pairs into development-version folders `docs/design/v0.0.1/` through `v0.0.5/`, add indexes and update all links and recursive validation without changing artwork.
+- Set the extension and lockfile root versions to 0.0.5, commit the current implementation and create local annotated tag `v0.0.5`. No push, installation or public release. See the [0.0.5 version notes](./docs/en/release-notes-0.0.5.md).
+
 ## 0.0.4 — Local package (unpublished, 2026-11-21)
 
 - Package the current source as 0.0.4, including the still-publicly-unreleased task chat, follow-up and documentation conventions recorded below. This packaging action adds no runtime features.

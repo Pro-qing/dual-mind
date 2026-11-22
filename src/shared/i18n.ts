@@ -1,6 +1,13 @@
 import type { Locale } from './model';
 
 const messages = {
+  sidebarMigration: [
+    'DualMind now opens in the sidebar. This old tab will close when the sidebar is ready. If opening fails, retry below.',
+    'DualMind 已迁入侧栏。侧栏就绪后，此旧页签会关闭；打开失败时可在下方重试。',
+  ],
+  sidebarMigrationOpen: ['Open sidebar / retry', '打开侧栏／重试'],
+  taskDetailsActions: ['Task details and actions', '任务详情与操作'],
+  settingsCategory: ['Settings category', '设置类别'],
   home: ['Home', '主页'],
   backToHome: ['Back to home', '返回主页'],
   backToTask: ['Back to task', '返回任务'],
