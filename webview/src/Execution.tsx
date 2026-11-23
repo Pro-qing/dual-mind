@@ -32,6 +32,36 @@ export function ExecutionEvidenceItem({ event }: { event: RunEvent }) {
       /* Tool names and chunked output are also valid event text. */
     }
   }
+  if (event.tool) {
+    const tool = event.tool;
+    return (
+      <section className="tool-outcome" data-outcome={tool.status}>
+        <strong>
+          {tool.tool} · {tr(`outcome_${tool.status}`)}
+        </strong>
+        <p>
+          {tr('callExecution')}: {tr(`execution_${tool.execution}`)}
+        </p>
+        {tool.causedBy && (
+          <small>
+            {tr('toolCausedBy')}: {tool.causedBy}
+          </small>
+        )}
+        {event.detail ? (
+          <ExecutionDetailView detail={event.detail} />
+        ) : (
+          tool.fault && <ErrorNotice error={tool.fault} locale={snapshot.locale} />
+        )}
+        <details>
+          <summary>{tr('chatRawOutput')}</summary>
+          <pre>{event.text}</pre>
+          <small>
+            {tr('toolOperation')}: {tool.operationId}
+          </small>
+        </details>
+      </section>
+    );
+  }
   if (event.detail) {
     return (
       <div className="execution-detail">
@@ -244,7 +274,8 @@ export function ExecutionControls({
   const latest = execution.runs.find((item) => item.taskId === taskId);
   const resumable = canResume(run, latest?.id, active?.id);
   const recovering = run?.status === 'recovering';
-  const awaitingRecovery = run && ['failed', 'interrupted'].includes(run.status);
+  const awaitingRecovery =
+    run && (Boolean(run.toolPause) || ['failed', 'interrupted'].includes(run.status));
   const pendingActions = useRef(new Set<string>());
   const call = (action: Parameters<typeof execute>[0]) => {
     if (pendingActions.current.has(action.kind)) {

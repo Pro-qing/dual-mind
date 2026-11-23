@@ -1,8 +1,16 @@
-import { quotaError, retryAfter, retryDelay, transientNetwork, waitForRetry } from './retry';
+import {
+  providerFailure,
+  contextOverflow,
+  retryAfter,
+  retryDelay,
+  transientNetwork,
+  waitForRetry,
+} from './retry';
 import { OperationError } from '../shared/errors';
 import type { Protocol } from '../shared/execution';
 import { modelsUrl } from './models';
 export interface Endpoint {
+  contextWindowTokens?: number;
   baseUrl: string;
   key: string;
   model: string;
@@ -20,6 +28,7 @@ export interface ToolCall {
 }
 export type History = Record<string, unknown>[];
 export interface ModelTurn {
+  usage?: { inputTokens: number; outputTokens: number };
   attempts?: number;
   text: string;
   calls: ToolCall[];
@@ -31,6 +40,7 @@ export class InferenceError extends OperationError {
   retryAfterMs?: number;
 }
 interface WireEvent {
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
   error?: unknown;
   type?: string;
   delta?: string;
@@ -48,7 +58,13 @@ interface WireEvent {
     };
     finish_reason?: string;
   }[];
-  response?: { status: string; output: History };
+  response?: {
+    status: string;
+    output: History;
+    error?: unknown;
+    incomplete_details?: unknown;
+    usage?: { input_tokens?: number; output_tokens?: number };
+  };
 }
 const invalid = () => new InferenceError('inferenceInvalid');
 export class Inference {
@@ -125,21 +141,7 @@ export class Inference {
       /\/models$/,
       chat ? '/chat/completions' : '/responses',
     );
-    const body = {
-      model: endpoint.model,
-      stream: true,
-      ...(chat
-        ? {
-            messages: history,
-            tools: tools.map((fn) => ({ type: 'function', function: { ...fn, strict: false } })),
-          }
-        : {
-            input: history,
-            store: false,
-            include: ['reasoning.encrypted_content'],
-            tools: tools.map((fn) => ({ type: 'function', ...fn, strict: false })),
-          }),
-    };
+    const body = inferenceBody(endpoint, history, tools);
     const encoded = JSON.stringify(body);
     if (Buffer.byteLength(encoded) > this.limits.contextBytes) {
       throw new InferenceError('inferenceContext');
@@ -169,16 +171,19 @@ export class Inference {
         signal: controller.signal,
       });
       if (!response.ok) {
-        const quota = await quotaError(response);
+        const { quota, context } = await providerFailure(response);
         const error = new InferenceError(
           response.status === 401 || response.status === 403
             ? 'inferenceAuth'
             : quota
               ? 'inferenceQuota'
-              : 'inferenceHttp',
+              : context
+                ? 'inferenceContext'
+                : 'inferenceHttp',
           { status: response.status },
         );
-        error.retryable = !quota && [408, 425, 429, 500, 502, 503, 504].includes(response.status);
+        error.retryable =
+          !quota && !context && [408, 425, 429, 500, 502, 503, 504].includes(response.status);
         error.retryAfterMs = retryAfter(response.headers.get('retry-after'));
         throw error;
       }
@@ -202,6 +207,7 @@ export class Inference {
       };
       const calls = new Map<number, ToolCall>();
       let output: History = [];
+      let usage: ModelTurn['usage'];
       const accept = (raw: string) => {
         if (!raw.trim()) {
           return;
@@ -226,7 +232,25 @@ export class Inference {
           event.error ||
           ['error', 'response.failed', 'response.incomplete'].includes(event.type || '')
         ) {
-          throw new InferenceError('inferenceIncomplete');
+          throw new InferenceError(
+            contextOverflow(
+              event.error ?? event.response?.error ?? event.response?.incomplete_details ?? event,
+            )
+              ? 'inferenceContext'
+              : 'inferenceIncomplete',
+          );
+        }
+        const inputTokens = chat ? event.usage?.prompt_tokens : event.response?.usage?.input_tokens;
+        const outputTokens = chat
+          ? event.usage?.completion_tokens
+          : event.response?.usage?.output_tokens;
+        if (
+          Number.isSafeInteger(inputTokens) &&
+          (inputTokens ?? 0) > 0 &&
+          Number.isSafeInteger(outputTokens) &&
+          (outputTokens ?? -1) >= 0
+        ) {
+          usage = { inputTokens: inputTokens!, outputTokens: outputTokens! };
         }
         if (chat) {
           if (!Array.isArray(event.choices)) {
@@ -364,12 +388,14 @@ export class Inference {
       const list = [...calls.values()];
       if (
         new Set(list.map((call) => call.id)).size !== list.length ||
-        list.some((call) => !call.id || !tools.some((tool) => tool.name === call.name))
+        list.some(
+          (call) => !call.id || !call.name || call.id.length > 200 || call.name.length > 200,
+        )
       ) {
         throw invalid();
       }
       // Completed argument strings are validated by the execution layer so the
-      // model can correct them. Framing, IDs and allowed tools remain strict here.
+      // model can correct them. Framing and IDs remain strict; the host rejects unavailable tools.
       if (chat) {
         output = [
           {
@@ -387,7 +413,7 @@ export class Inference {
           },
         ];
       }
-      return { text, calls: list, output };
+      return { text, calls: list, output, ...(usage ? { usage } : {}) };
     } catch (error) {
       if (signal.aborted) {
         throw new InferenceError('executionStopped');
@@ -418,4 +444,31 @@ export function toolResult(
   return protocol === 'responses'
     ? { type: 'function_call_output', call_id: call.id, output: text }
     : { role: 'tool', tool_call_id: call.id, content: text };
+}
+
+/** Use the exact same envelope for estimation and transport. */
+export function inferenceBody(endpoint: Endpoint, history: History, tools: ToolDefinition[]) {
+  const chat = endpoint.protocol === 'chatCompletions';
+  return {
+    model: endpoint.model,
+    stream: true,
+    ...(chat
+      ? {
+          messages: history,
+          tools: tools.map((fn) => ({ type: 'function', function: { ...fn, strict: false } })),
+        }
+      : {
+          input: history,
+          store: false,
+          include: ['reasoning.encrypted_content'],
+          tools: tools.map((fn) => ({ type: 'function', ...fn, strict: false })),
+        }),
+  };
+}
+export function inferenceBytes(
+  endpoint: Endpoint,
+  history: History,
+  tools: ToolDefinition[],
+): number {
+  return Buffer.byteLength(JSON.stringify(inferenceBody(endpoint, history, tools)));
 }

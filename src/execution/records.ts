@@ -1,3 +1,5 @@
+import { failedOutcome } from './toolOutcomes';
+import { acceptanceBlockers } from '../shared/acceptance';
 import { RecoveryStore } from './recovery';
 import { OperationError, errorText } from '../shared/errors';
 import { appendFile, mkdir, writeFile, readFile } from 'node:fs/promises';
@@ -318,25 +320,52 @@ export class RunRecords {
     }
     const grouped = new Map<string, RunEvent>();
     for (const event of events) {
-      const key = event.commandId
-        ? `${event.runId}:command:${event.commandId}`
-        : event.kind === 'text' && event.requestId
-          ? `${event.runId}:text:${event.requestId}`
-          : `${event.runId}:${event.sequence}`;
+      const operationId =
+        event.tool?.operationId ??
+        (event.detail?.type === 'command' ? event.detail.command.toolOperationId : undefined);
+      const key = operationId
+        ? `${event.runId}:operation:${operationId}`
+        : event.commandId
+          ? `${event.runId}:command:${event.commandId}`
+          : event.kind === 'text' && event.requestId
+            ? `${event.runId}:text:${event.requestId}`
+            : `${event.runId}:${event.sequence}`;
       const previous = grouped.get(key);
       if (previous) {
-        previous.text += event.text;
+        // Tool wrapper and command evidence describe one operation. Keep command output as the body.
+        if (!event.tool || !previous.commandId) {
+          previous.text += event.text;
+        }
+        if (event.tool) {
+          previous.tool = event.tool;
+        }
+        if (event.detail) {
+          previous.detail = event.detail;
+          previous.commandId = event.commandId;
+        }
+        previous.fault ??= event.fault;
       } else {
         grouped.set(key, structuredClone(event));
       }
     }
+    const currentRun = this.runs.find(
+      (run) => run.taskId === taskId && (runId ? run.id === runId : run.kind !== 'conversation'),
+    );
     const summary = {
       records: grouped.size,
-      errors: [...grouped.values()].filter(
-        (event) =>
-          event.kind === 'error' ||
-          Boolean(event.fault) ||
-          (event.detail?.type === 'command' && !event.detail.command.ok),
+      errors: [...grouped.values()].filter((event) =>
+        event.tool
+          ? failedOutcome(event.tool)
+          : !['repeatedToolFailure', 'toolBatchRejected'].includes(event.fault?.code ?? '') &&
+            (event.kind === 'error' ||
+              Boolean(event.fault) ||
+              (event.detail?.type === 'command' && !event.detail.command.ok)),
+      ).length,
+      blockers: acceptanceBlockers(
+        currentRun,
+        [...grouped.values()]
+          .filter((event) => event.runId === currentRun?.id)
+          .flatMap((event) => (event.detail?.type === 'command' ? [event.detail.command] : [])),
       ).length,
     };
     const ordered = [...grouped.values()]

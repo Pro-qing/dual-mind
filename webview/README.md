@@ -8,4 +8,12 @@ Settings uses a single column and category/language selectors. Task details coll
 
 设置使用单列及类别／语言选择器。任务详情折叠不隐藏主要运行控制。宿主镜像经过筛选的显示偏好，仅在缺少侧栏状态时迁移旧页签状态。隐藏或移动视图不停止执行；异步回复绑定来源页面。
 
-Task-home rows use only name and delete controls, preserve full titles/accessibility, and keep detail navigation for read-only examples. / 主页行仅含名称与删除，保留完整提示和可访问名称，只读示例可查看详情。
+The current uncommitted home revision shows only task names and delete icons in compact, nonwrapping rows; full names remain available on hover and to assistive technology. Counts stay above the list. See [approved scenes 28–29](../docs/en/task-home-compact-proposal.md).
+
+当前未提交的主页修订采用紧凑且不换行的任务行，仅显示名称和删除图标；悬停与辅助技术仍可读取完整名称，列表上方保留统计。参见[已审核场景 28–29](../docs/zh/task-home-compact-proposal.md)。
+
+Scenes 28–34 are approved and base/window/artifact/cleanup controls are connected; the existing activity indicator can display automatic context compaction.
+
+场景 28–34 已审核，基点／窗口／成果／清理控件已接入；已有活动条可以显示自动上下文整理状态。
+
+Tool outcomes now distinguish execution, failure, rejection, skipped calls and unknown effects; repeated failures pause without resetting total budgets. / 工具结果区分执行、失败、拒绝、跳过及未知副作用；重复失败暂停不重置总预算。

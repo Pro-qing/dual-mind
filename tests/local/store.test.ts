@@ -385,3 +385,42 @@ test('a task save returns its own ID even when another selection is queued', asy
   assert.equal(snapshot.selectedTaskId, originalId);
   assert.equal(snapshot.tasks.find((task) => task.id === savedTaskId)?.name, 'New task');
 });
+
+test('model context windows and managed bases are validated and preserved across older connection saves', async () => {
+  const f = fixture();
+  const input = {
+    name: 'Context fixture',
+    baseUrl: 'http://example.invalid',
+    defaultModel: 'model',
+    contextWindows: { model: 65536 },
+  };
+  await f.store.dispatch({ kind: 'connection.save', input });
+  const connection = (await f.store.snapshot()).connections[0];
+  assert.deepEqual(connection.contextWindows, { model: 65536 });
+  await f.store.dispatch({
+    kind: 'connection.save',
+    id: connection.id,
+    input: { name: input.name, baseUrl: input.baseUrl, defaultModel: input.defaultModel },
+  });
+  assert.deepEqual((await f.store.snapshot()).connections[0].contextWindows, { model: 65536 });
+  await assert.rejects(
+    f.store.dispatch({
+      kind: 'connection.save',
+      input: { ...input, contextWindows: { model: 1024 } },
+    }),
+  );
+  await f.store.dispatch({
+    kind: 'task.save',
+    input: taskInput({ git: { mode: 'managed', baseBranch: 'feature/base' } }),
+  });
+  assert.deepEqual((await f.store.snapshot()).tasks[0].git, {
+    mode: 'managed',
+    baseBranch: 'feature/base',
+  });
+  await assert.rejects(
+    f.store.dispatch({
+      kind: 'task.save',
+      input: taskInput({ git: { mode: 'managed', baseBranch: '--bad' } }),
+    }),
+  );
+});

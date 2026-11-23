@@ -75,7 +75,8 @@ export function ExecutionDetailView({
         </strong>
         <p>
           {tr('commandResult')}: {tr(c.ok ? 'commandPassed' : 'commandNotPassed')} ·{' '}
-          {tr('planVersion')} {c.planVersion} · {tr('exitCode')} {c.exitCode}
+          {tr('planVersion')} {c.planVersion} · {tr('exitCode')}{' '}
+          {c.actualExitCode === null ? tr('commandExitUnknown') : (c.actualExitCode ?? c.exitCode)}
         </p>
         <pre>
           {c.command ?? `${c.program} ${c.args.map((arg) => JSON.stringify(arg)).join(' ')}`}
@@ -84,6 +85,24 @@ export function ExecutionDetailView({
           {'\n'}
           {tr('evidenceId')}: {c.id}
         </pre>
+        {c.durationMs !== undefined && (
+          <p>
+            {tr('commandDuration')}: {(c.durationMs / 1000).toFixed(2)}s ·{' '}
+            {tr('commandTermination')}: {c.termination}
+          </p>
+        )}
+        {c.stdout !== undefined && (
+          <details>
+            <summary>{tr('commandStdout')}</summary>
+            <pre>{c.stdout}</pre>
+          </details>
+        )}
+        {c.stderr !== undefined && (
+          <details>
+            <summary>{tr('commandStderr')}</summary>
+            <pre>{c.stderr}</pre>
+          </details>
+        )}
         {c.fault && <ErrorNotice error={c.fault} locale={snapshot.locale} />}
       </div>
     );

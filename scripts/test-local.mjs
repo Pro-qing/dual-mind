@@ -27,7 +27,7 @@ const outputs = files.map(
 const child = spawn(
   process.execPath,
   [
-    '--max-old-space-size=512',
+    '--max-old-space-size=256',
     '--test',
     '--test-concurrency=1',
     `--test-timeout=${process.platform === 'win32' ? 90000 : 30000}`,

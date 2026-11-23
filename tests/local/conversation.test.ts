@@ -274,10 +274,88 @@ test('evidence totals count grouped records beyond pagination and do not count s
   }
   const page = await records.evidence(taskId);
   assert.equal(page.events.length, 80);
-  assert.deepEqual(page.summary, { records: 101, errors: 50 });
+  assert.deepEqual(page.summary, { records: 101, errors: 50, blockers: 0 });
   assert.deepEqual(
     (await records.evidence(taskId, undefined, undefined, page.before)).summary,
     page.summary,
   );
-  assert.deepEqual((await records.evidence(taskId, runId, 10)).summary, { records: 10, errors: 5 });
+  assert.deepEqual((await records.evidence(taskId, runId, 10)).summary, {
+    records: 10,
+    errors: 5,
+    blockers: 0,
+  });
+});
+
+test('current acceptance blockers do not inherit failures from an older run with the same plan version', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'dualmind-blockers-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const f = fixture(),
+    taskId = randomUUID(),
+    records = new RunRecords(f.workspace, () => root);
+  await records.initialize();
+  const base: import('../../src/shared/execution').RunSummary = {
+    id: randomUUID(),
+    taskId,
+    status: 'completed',
+    round: 1,
+    maxRounds: 1,
+    createdAt: '',
+    updatedAt: '',
+    sequence: 1,
+    plan: {
+      version: 1,
+      objective: 'Verify',
+      requirements: 'Verify',
+      steps: ['Test'],
+      revisionReason: '',
+      criteria: [
+        { id: 'test', description: 'Pass', verification: 'command', evidence: 'Test', reason: '' },
+      ],
+    },
+    submission: {
+      summary: 'Done',
+      completedSteps: ['Test'],
+      evidence: [{ criterionId: 'test', commandIds: [], evidence: 'Test' }],
+      unresolved: [],
+      planVersion: 1,
+      revision: 'current',
+    },
+  };
+  const old = { ...base, id: randomUUID() };
+  records.runs = [base, old];
+  for (const [run, ok] of [
+    [base, true],
+    [old, false],
+  ] as const) {
+    await records.event({
+      runId: run.id,
+      taskId,
+      sequence: 1,
+      time: '',
+      kind: 'check',
+      text: 'output',
+      detail: {
+        type: 'command',
+        command: {
+          id: randomUUID(),
+          name: 'Test',
+          program: 'test',
+          args: [],
+          cwd: '.',
+          timeoutSeconds: 10,
+          purpose: 'verify',
+          criterionIds: ['test'],
+          planVersion: 1,
+          round: 1,
+          before: 'current',
+          after: 'current',
+          ok,
+          exitCode: ok ? 0 : 1,
+        },
+      },
+    });
+  }
+  assert.equal((await records.evidence(taskId)).summary?.errors, 1);
+  assert.equal((await records.evidence(taskId)).summary?.blockers, 0);
+  assert.equal((await records.evidence(taskId, old.id)).summary?.blockers, 1);
 });

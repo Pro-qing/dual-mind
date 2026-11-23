@@ -1,3 +1,8 @@
+import { failureCount, toolFault, fatalToolFault } from './toolOutcomes';
+import type { ToolOutcome } from '../shared/toolOutcome';
+import type { ToolCall } from '../providers/inference';
+import { RoleContext } from '../providers/context';
+import { inferenceBytes } from '../providers/inference';
 import {
   type RecoveryState,
   type RecoveryOperation,
@@ -60,6 +65,8 @@ import { ProjectEnvironment } from './environment';
 import type { ExecutableCommand } from '../shared/execution';
 type Input = Awaited<ReturnType<LocalStore['executionInput']>>;
 interface Active {
+  toolOperationId?: string;
+  contexts?: Record<Agent, RoleContext>;
   recovery: RecoveryState;
   recoveryStore: RecoveryStore;
   operations: Map<string, RecoveryOperation>;
@@ -95,6 +102,8 @@ export class ExecutionService {
   readonly ready: Promise<void>;
   private active?: Active;
   private starting?: string;
+  private gitOperationTaskId?: string;
+  private gitDone?: Promise<void>;
   private messageAdmission: Promise<unknown> = Promise.resolve();
   private readonly listeners = new Set<(update: ExecutionUpdate) => void>();
   private disposed = false;
@@ -156,7 +165,7 @@ export class ExecutionService {
     await this.records.save();
   }
   private recoverySummary(state: RecoveryState, status = state.summary.status) {
-    const prohibited = ['toolTurnLimit', 'toolCorrectionLimit', 'historyLimit', 'inferenceContext'];
+    const prohibited = ['toolTurnLimit', 'toolCallLimit', 'toolCorrectionLimit', 'historyLimit'];
     return {
       generation: state.generation,
       attempts: state.summary.recovery?.attempts ?? 0,
@@ -234,6 +243,9 @@ export class ExecutionService {
           : `command:${detail.command.id}`;
   }
   private async restore(runId: string) {
+    if (this.gitOperationTaskId) {
+      throw new OperationError('artifactBusy');
+    }
     if (this.disposed || this.active || this.starting) {
       throw new OperationError('singleExecution');
     }
@@ -244,6 +256,9 @@ export class ExecutionService {
       this.records.runs.find((run) => run.taskId === summary.taskId) !== summary
     ) {
       throw new OperationError('recoveryUnavailable');
+    }
+    if (this.workspaces.artifacts.states().some((item) => item.pending)) {
+      throw new OperationError('artifactBusy');
     }
     this.starting = summary.taskId;
     try {
@@ -344,6 +359,7 @@ export class ExecutionService {
           c.round === summary.round &&
           c.planVersion === summary.plan?.version,
       );
+      this.clearToolPause(a);
       this.active = a;
       const initialization = this.persist(a)
         .then(() => this.records.save())
@@ -388,6 +404,8 @@ export class ExecutionService {
       !['paused', 'stopping'].includes(a.summary.status);
     return {
       ...this.records.snapshot(),
+      artifacts: this.workspaces.artifacts.states(),
+      gitOperationTaskId: this.gitOperationTaskId,
       preparedTaskIds: this.workspaces.preparedTaskIds(),
       ...(visible && a.activity ? { activity: structuredClone(a.activity) } : {}),
     };
@@ -397,7 +415,21 @@ export class ExecutionService {
     this.listeners.forEach((listener) => listener(update));
   }
   assertMutable(action: Action) {
+    if (
+      action.kind === 'task.save' &&
+      this.gitOperationTaskId &&
+      action.id === this.gitOperationTaskId
+    ) {
+      throw new OperationError('artifactBusy');
+    }
     if (action.kind === 'task.save' && action.id) {
+      if (
+        this.workspaces.artifacts
+          .states()
+          .some((entry) => entry.taskId === action.id && entry.cleaned)
+      ) {
+        throw new OperationError('workspaceArchived');
+      }
       try {
         this.workspaces.assertStrategy(action.id, action.input.git);
       } catch (error) {
@@ -490,6 +522,118 @@ export class ExecutionService {
         }
         await this.start(action.taskId, true);
         break;
+      case 'git.artifacts':
+        return {
+          state: this.snapshot(),
+          artifact: await this.workspaces.artifacts.inspect(action.taskId),
+        };
+      case 'git.saved':
+        return { state: this.snapshot(), savedArtifacts: await this.workspaces.artifacts.saved() };
+      case 'git.commit':
+      case 'git.merge':
+      case 'git.cleanup':
+      case 'git.merge.check':
+      case 'git.merge.complete':
+      case 'git.merge.abort': {
+        const artifact = await this.gitJob(
+          action.taskId,
+          async () => {
+            switch (action.kind) {
+              case 'git.commit':
+                return this.workspaces.artifacts.commit(
+                  action.taskId,
+                  action.operationId,
+                  action.token,
+                  action.message,
+                );
+              case 'git.merge':
+                return this.workspaces.artifacts.merge(
+                  action.taskId,
+                  action.operationId,
+                  action.token,
+                  action.targetBranch,
+                  action.expectedTargetHead,
+                );
+              case 'git.cleanup': {
+                const task = (await this.store.snapshot()).tasks.find(
+                  (t) => t.id === action.taskId,
+                );
+                return this.workspaces.artifacts.cleanup(
+                  action.taskId,
+                  action.operationId,
+                  action.token,
+                  task,
+                );
+              }
+              default:
+                return this.workspaces.artifacts.mergeAction(
+                  action.taskId,
+                  action.operationId,
+                  action.kind === 'git.merge.abort'
+                    ? 'abort'
+                    : action.kind === 'git.merge.complete'
+                      ? 'complete'
+                      : 'check',
+                );
+            }
+          },
+          action.kind === 'git.cleanup',
+        );
+        return { state: this.snapshot(), artifact };
+      }
+      case 'task.followup':
+      case 'git.restore': {
+        const id = action.operationId;
+        if (
+          !/^[0-9a-f-]{36}$/.test(id) ||
+          (action.input?.git && action.input.git.mode !== 'managed')
+        ) {
+          throw new OperationError('invalidExecution');
+        }
+        const sourceId = action.kind === 'task.followup' ? action.taskId : undefined;
+        const createdTaskId = await this.gitJob(sourceId ?? id, async () => {
+          if (action.kind === 'git.restore') {
+            const saved = await this.workspaces.artifacts.savedArtifact(action.snapshotId);
+            await this.store.createDerivedTask(
+              id,
+              { ...action.input, git: { mode: 'managed' } },
+              { taskId: saved.taskId, snapshotId: saved.id },
+              saved.task,
+            );
+            await this.workspaces.artifacts.restore(
+              id,
+              action.operationId,
+              saved.id,
+              action.input.name,
+            );
+          } else {
+            const original = (await this.store.snapshot()).tasks.find(
+              (t) => t.id === action.taskId,
+            );
+            if (!original) {
+              throw new OperationError('notFound');
+            }
+            const status = await this.workspaces.artifacts.inspect(action.taskId);
+            const baseBranch =
+              (action.input.git?.mode === 'managed' && action.input.git.baseBranch) ||
+              (status.merge?.state === 'integrated'
+                ? status.merge.targetBranch
+                : status.sourceBranch);
+            const branches = await this.workspaces.branches();
+            if (!branches.branches.includes(baseBranch)) {
+              throw new OperationError('artifactChanged');
+            }
+            await this.store.createDerivedTask(
+              id,
+              { ...action.input, git: { mode: 'managed', baseBranch } },
+              { taskId: action.taskId },
+              original,
+            );
+          }
+          return id;
+        });
+        return { state: this.snapshot(), createdTaskId };
+      }
       case 'git.branches':
         return { state: this.snapshot(), repository: await this.workspaces.branches() };
       case 'config.save':
@@ -523,6 +667,8 @@ export class ExecutionService {
         if (a.summary.status !== 'paused') {
           throw new OperationError('resumeRequiresPause');
         }
+        this.clearToolPause(a);
+        await this.persist(a);
         a.pause = false;
         a.wake?.();
         break;
@@ -556,6 +702,9 @@ export class ExecutionService {
   }
   private async sendMessage(taskId: string, id: string, text: string) {
     await this.requireTask(taskId);
+    if (this.workspaces.artifacts.states().some((item) => item.taskId === taskId && item.cleaned)) {
+      throw new OperationError('workspaceArchived');
+    }
     if (
       typeof id !== 'string' ||
       !/^[0-9a-f-]{36}$/.test(id) ||
@@ -790,6 +939,7 @@ export class ExecutionService {
     fault?: AppError,
     detail?: ExecutionDetail,
     round = a.summary.round,
+    tool?: ToolOutcome,
   ): Promise<void> {
     if (this.active !== a || a.generation !== a.recovery.generation) {
       throw new OperationError('inactiveExecution');
@@ -826,6 +976,7 @@ export class ExecutionService {
         requestId,
         time: new Date().toISOString(),
         ...(cleanFault ? { fault: cleanFault } : {}),
+        ...(tool ? { tool } : {}),
         ...(at === 0 && cleanDetail ? { detail: cleanDetail } : {}),
         ...(cleanDetail?.type === 'command' ? { commandId: cleanDetail.command.id } : {}),
       };
@@ -904,16 +1055,32 @@ export class ExecutionService {
     if (this.shutdownUnconfirmed) {
       throw new OperationError('shutdownUnconfirmed');
     }
+    if (this.gitOperationTaskId) {
+      throw new OperationError('artifactBusy');
+    }
     if (this.disposed || this.active || this.starting) {
       throw new OperationError('singleExecution');
+    }
+    if (this.workspaces.artifacts.states().some((item) => item.pending)) {
+      throw new OperationError('artifactBusy');
+    }
+    if (
+      this.workspaces.artifacts.states().some((entry) => entry.taskId === taskId && entry.cleaned)
+    ) {
+      throw new OperationError('workspaceArchived');
     }
     this.starting = taskId;
     try {
       const config = structuredClone(this.records.config);
       const input = await this.store.executionInput(taskId);
-      const previous = continuation
+      const prior = continuation
         ? this.records.runs.find((r) => r.taskId === taskId && r.git && r.kind !== 'conversation')
         : undefined;
+      const previous = prior ? structuredClone(prior) : undefined;
+      if (previous?.git && (previous.git.strategy?.mode ?? 'managed') === 'managed') {
+        previous.git.headCommit =
+          this.workspaces.artifacts.committedHead(taskId) ?? previous.git.headCommit;
+      }
       const messages = continuation ? await this.records.pending(taskId) : [];
       if (continuation) {
         if (!messages.length) {
@@ -1045,7 +1212,50 @@ export class ExecutionService {
       throw new OperationError('shutdownUnconfirmed');
     }
   }
-  async deleteTask(taskId: string) {
+  private async gitJob<T>(taskId: string, action: () => Promise<T>, stop = false): Promise<T> {
+    if (this.disposed || this.gitOperationTaskId || this.starting) {
+      throw new OperationError('artifactBusy');
+    }
+    if (this.unconfirmedRuns.size || this.shutdownUnconfirmed) {
+      throw new OperationError('shutdownUnconfirmed');
+    }
+    if (
+      this.active &&
+      !terminalStatuses.includes(this.active.summary.status) &&
+      (!stop || this.active.summary.taskId !== taskId)
+    ) {
+      throw new OperationError('singleExecution');
+    }
+    this.gitOperationTaskId = taskId;
+    let finish!: () => void;
+    this.gitDone = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    this.notify();
+    try {
+      if (this.active && terminalStatuses.includes(this.active.summary.status)) {
+        await this.active.done;
+      } else if (this.active) {
+        await this.stop(this.active.summary.id);
+      }
+      if (this.active || this.starting || this.disposed) {
+        throw new OperationError('artifactBusy');
+      }
+      return await action();
+    } finally {
+      this.gitOperationTaskId = undefined;
+      finish();
+      this.gitDone = undefined;
+      this.notify();
+    }
+  }
+  async deleteTask(taskId: string, cleanup?: { operationId: string; token: string }) {
+    if (
+      !cleanup &&
+      this.workspaces.artifacts.states().some((item) => item.taskId === taskId && item.pending)
+    ) {
+      throw new OperationError('artifactBusy');
+    }
     if (
       this.records.runs.some((run) => run.taskId === taskId && this.unconfirmedRuns.has(run.id))
     ) {
@@ -1057,8 +1267,20 @@ export class ExecutionService {
     if (this.starting === taskId) {
       throw new OperationError('preparationStarting');
     }
-    await this.store.dispatch({ kind: 'task.delete', id: taskId, confirmed: true });
-    await this.records.removeTask(taskId);
+    if (cleanup) {
+      await this.gitJob(taskId, async () => {
+        const task = (await this.store.snapshot()).tasks.find((t) => t.id === taskId);
+        await this.workspaces.artifacts.cleanup(taskId, cleanup.operationId, cleanup.token, task);
+        await this.store.dispatch({ kind: 'task.delete', id: taskId, confirmed: true });
+        await this.records.removeTask(taskId);
+      });
+    } else {
+      if (this.gitOperationTaskId) {
+        throw new OperationError('artifactBusy');
+      }
+      await this.store.dispatch({ kind: 'task.delete', id: taskId, confirmed: true });
+      await this.records.removeTask(taskId);
+    }
     this.notify();
   }
   private async check(
@@ -1110,6 +1332,7 @@ export class ExecutionService {
     }
     const id = randomUUID();
     const operation: RecoveryOperation = {
+      ...(a.toolOperationId ? { parentOperationId: a.toolOperationId } : {}),
       ...this.newOperation(a, 'command', command.name, {
         command,
         ...options,
@@ -1128,8 +1351,20 @@ export class ExecutionService {
       `▶ ${command.name}`,
       ['planning', 'answering', 'reviewer'].includes(phase) ? 'reviewer' : 'worker',
     );
-    let result: { ok: boolean; exitCode: number; output: string; reason?: string };
+    let result: Pick<
+      import('./commands').CheckResult,
+      | 'ok'
+      | 'exitCode'
+      | 'output'
+      | 'reason'
+      | 'stdout'
+      | 'stderr'
+      | 'durationMs'
+      | 'termination'
+      | 'actualExitCode'
+    >;
     let fault: AppError | undefined;
+    const commandStarted = Date.now();
     let fatal: unknown;
     const agent: Agent = ['planning', 'answering', 'reviewer'].includes(phase)
       ? 'reviewer'
@@ -1179,8 +1414,18 @@ export class ExecutionService {
       }
     } catch (error) {
       fault = this.cleanError(a, error);
-      result = { ok: false, exitCode: -1, output: '', reason: fault.code };
-      if (fault.code === 'commandPlatformUnsupported') {
+      result = {
+        ok: false,
+        exitCode: -1,
+        actualExitCode: null,
+        output: '',
+        stdout: '',
+        stderr: '',
+        durationMs: Date.now() - commandStarted,
+        termination: operation.process ? 'unknown' : 'notStarted',
+        reason: fault.code,
+      };
+      if (fatalToolFault(fault)) {
         fatal = error;
       }
       if (error instanceof CommandShutdownError) {
@@ -1207,6 +1452,9 @@ export class ExecutionService {
     } catch (error) {
       fatal = error;
     }
+    // A credential split between stdout/stderr must not reappear when channels are viewed separately.
+    // When merged output is sensitive, channel views are withheld; the redacted merged view remains.
+    const sensitiveOutput = this.clean(a, result.output) !== result.output;
     const evidence = this.redact(a, {
       id,
       name: command.name,
@@ -1230,6 +1478,21 @@ export class ExecutionService {
       after,
       ok: result.ok && !fatal,
       exitCode: result.exitCode,
+      ...(result.stdout === undefined
+        ? {}
+        : {
+            stdout: sensitiveOutput
+              ? '[redacted; see combined output]'
+              : this.clean(a, result.stdout),
+            stderr: sensitiveOutput
+              ? '[redacted; see combined output]'
+              : this.clean(a, result.stderr ?? ''),
+          }),
+      ...(result.durationMs === undefined ? {} : { durationMs: result.durationMs }),
+      ...(result.termination === undefined
+        ? {}
+        : { termination: result.termination, actualExitCode: result.actualExitCode }),
+      ...(a.toolOperationId ? { toolOperationId: a.toolOperationId } : {}),
       ...(options.presetId ? { presetId: options.presetId } : {}),
       ...(result.reason ? { reason: result.reason } : {}),
       ...(fault ? { fault } : {}),
@@ -1267,7 +1530,12 @@ export class ExecutionService {
     if (a.controller.signal.aborted) {
       throw new OperationError('executionStopped');
     }
-    return { ...evidence, output: output.slice(0, 12000) };
+    return {
+      ...evidence,
+      stdout: evidence.stdout?.slice(0, 6000),
+      stderr: evidence.stderr?.slice(0, 6000),
+      output: output.slice(0, 12000),
+    };
   }
   private async setPlan(a: Active, input: PlanInput, next: RecoveryCursor) {
     const plan = validatePlan(input, a.summary.plan);
@@ -1425,6 +1693,21 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
           content: `You are Reviewer. During initial planning decompose the user request into an executable plan for Worker using submit_plan. Read relevant project files; do not audit unrelated project areas. Specify objectives, implementation steps and stable acceptance IDs. Use command verification where needed, reading review only with a reason and concrete evidence requirements. Worker implements source changes. You may independently explore with run_command during planning and answering; during acceptance you may also prepare project dependencies, build and test. Do not modify source files or use commands to implement fixes; request Worker changes instead. Reference the host IDs of your own verify commands or Worker evidence. Verification requires current command criterionIds. A newer failed check cannot be overridden by an older success. After Worker submits, inspect actual artifacts and host evidence. Use submit_review to approve all requirements or issue changes_requested with a complete nextPlan. Retain existing acceptance IDs and verification methods, explain revisions, and include outstanding goals. Never accept missing, failed, stale or invented evidence, pending user feedback or unresolved work. When the user_messages handoff arrives, handle questions or ambiguity with submit_answer after relevant inspection; this is a reply, never acceptance. For requested changes inspect the current files and differences, then submit_plan for Worker. During an active execution retain existing acceptance IDs and explain revisions. Never ignore queued modification requests.\nTask-specific review focus:\n${a.input.task.role.instructions}\n${common}`,
         },
       ];
+      a.contexts = {
+        worker: new RoleContext('worker', a.summary.id, a.input.worker),
+        reviewer: new RoleContext('reviewer', a.summary.id, a.input.reviewer),
+      };
+      for (const role of ['worker', 'reviewer'] as const) {
+        const checkpoint = a.recovery.contexts?.[role];
+        if (checkpoint) {
+          const summary = await a.recoveryStore.context(checkpoint.id);
+          a.contexts[role].restore(checkpoint, summary);
+          const message = a.contexts[role].restoredMessage();
+          if (message) {
+            a.histories[role].push(message);
+          }
+        }
+      }
       if (a.continuation) {
         const priorEvents = await this.records.history(
           a.continuation.id,
@@ -1444,10 +1727,20 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
             previousPlan: a.continuation.plan,
             previousSubmission: a.continuation.submission,
             previousReview: a.continuation.review,
-            previousCommands: priorEvents.flatMap((event) =>
-              event.detail?.type === 'command' ? [event.detail.command] : [],
-            ),
-            messages: (await this.records.messages(a.summary.taskId)).map((m) => ({
+            previousCommands: priorEvents
+              .flatMap((event) =>
+                event.detail?.type === 'command'
+                  ? [
+                      {
+                        id: event.detail.command.id,
+                        ok: event.detail.command.ok,
+                        criterionIds: event.detail.command.criterionIds,
+                      },
+                    ]
+                  : [],
+              )
+              .slice(-30),
+            messages: (await this.records.messages(a.summary.taskId)).slice(-20).map((m) => ({
               role: m.role,
               text: m.text,
               status: m.status,
@@ -1516,12 +1809,21 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
           plan: a.summary.plan,
           submission: a.summary.submission,
           review: a.summary.review,
-          commands: [...a.evidence.values()],
+          commands: [...a.evidence.values()].slice(-30).map((e) => ({
+            id: e.id,
+            purpose: e.purpose,
+            ok: e.ok,
+            criterionIds: e.criterionIds,
+            planVersion: e.planVersion,
+            before: e.before,
+            after: e.after,
+          })),
           pendingOperations: unresolved,
           recentOperations: recent,
           revision,
           status: await a.reader.status(),
-          diff: await this.preview(a.summary.id),
+          diff: (await this.preview(a.summary.id)).slice(0, 12000),
+          diffMayBeTruncated: true,
           instruction:
             'Continue the same task and role at the saved phase. Completed operations already happened; do not repeat them blindly. Unknown means effects may already exist, NOT that an operation never ran. Inspect existing files, differences and recorded output before deciding whether to issue a new command. Pending operations never started and are not automatically replayed. Old tool messages have been converted into these public facts; do not invent missing results. Use current environment and model settings. Reviewer still must not modify source files.',
         });
@@ -1668,7 +1970,8 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
                 round: a.summary.round,
                 plan: a.summary.plan,
                 submission: a.summary.submission,
-                diff: await this.preview(a.summary.id),
+                diff: (await this.preview(a.summary.id)).slice(0, 12000),
+                diffMayBeTruncated: true,
                 status: await a.reader.status(),
                 files: await a.reader.listFiles(),
                 commands: [...a.evidence.values()].filter(
@@ -1742,17 +2045,19 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
           case 'completed': {
             await this.boundary(a, 'reviewer');
             if (
-              await this.finishMessages(a, 'completed', async () =>
+              await this.finishMessages(a, 'completed', async () => {
+                const revision = await this.fingerprint(a.reader!);
                 validateReview(
                   a.summary.review!,
                   a.summary.plan!,
                   a.summary.submission!,
                   a.evidence,
-                  await this.fingerprint(a.reader!),
+                  revision,
                   a.additional,
                   a.reviewFeedback || Boolean(a.feedback.length),
-                ),
-              )
+                );
+                await this.workspaces.artifacts.accept(a.summary.taskId, a.summary.id, revision);
+              })
             ) {
               return;
             }
@@ -1813,6 +2118,168 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
       this.notify();
     }
   }
+  private async compactContext(
+    a: Active,
+    agent: Agent,
+    phase: AgentPhase,
+    tools: import('../providers/inference').ToolDefinition[],
+    forced = false,
+  ) {
+    const activity = this.beginActivity(a, { agent, phase, stage: 'compacting', label: 'context' });
+    const operation = this.newOperation(a, 'model', 'compact_context');
+    await this.operation(a, operation);
+    try {
+      const messages = (await this.records.messages(a.summary.taskId)).filter((m) =>
+        ['pending', 'processing'].includes(m.status ?? ''),
+      );
+      const changed = await a.contexts![agent].compact({
+        history: a.histories[agent],
+        tools,
+        forced,
+        signal: a.controller.signal,
+        inference: this.inference,
+        throughOperation:
+          [...a.operations.values()].filter((op) => op.id !== operation.id).at(-1)?.id ?? null,
+        facts: {
+          task: a.input.task.name,
+          role: agent,
+          cursor: a.recovery.cursor,
+          round: a.summary.round,
+          plan: a.summary.plan,
+          submission: a.summary.submission,
+          review: a.summary.review,
+          pendingMessages: messages.map((m) => ({ id: m.id, text: m.text })),
+          feedback: a.feedback,
+          operations: [...a.operations.values()]
+            .filter((op) => op.kind !== 'environment')
+            .slice(-60)
+            .map((op) => ({ id: op.id, name: op.name, status: op.status })),
+          instruction:
+            'Completed operations already happened. Unknown operations may have effects. Read recorded operations and current files; do not replay them blindly. This state, not the summary, controls acceptance.',
+        },
+        clean: (text) => this.clean(a, text),
+        persist: async (summary, checkpoint) => {
+          await a.recoveryStore.saveContext(checkpoint.id, summary);
+          (a.recovery.contexts ??= {})[agent] = checkpoint;
+          await this.persist(a);
+        },
+      });
+      await this.operation(a, {
+        ...operation,
+        status: 'succeeded',
+        result: { changed, checkpoint: a.recovery.contexts?.[agent]?.id },
+      });
+      await this.persist(a);
+    } catch (error) {
+      if (!a.persistenceFailed) {
+        await this.operation(a, {
+          ...operation,
+          status: 'failed',
+          result: { fault: this.cleanError(a, error) },
+        });
+      }
+      throw error;
+    } finally {
+      this.endActivity(a, activity);
+    }
+  }
+  private clearToolPause(a: Active) {
+    const pause = a.summary.toolPause;
+    if (!pause) {
+      return;
+    }
+    const budget = a.recovery.budgets[pause.budgetKey];
+    if (budget) {
+      budget.corrections = 0;
+      budget.failures = {};
+    }
+    a.recovery.corrections = 0;
+    delete a.summary.toolPause;
+    if (['repeatedToolFailure', 'toolBatchRejected'].includes(a.summary.fault?.code ?? '')) {
+      delete a.summary.fault;
+      delete a.summary.error;
+    }
+  }
+  private async pauseForTools(
+    a: Active,
+    phase: AgentPhase,
+    budgetKey: string,
+    operation: RecoveryOperation,
+    reason: 'repeatedToolFailure' | 'toolBatchRejected',
+  ) {
+    a.summary.toolPause = {
+      reason,
+      budgetKey,
+      tool: operation.name,
+      operationId: operation.id,
+      count: 3,
+    };
+    a.summary.fault = { code: reason };
+    a.summary.error = errorText('en', a.summary.fault);
+    a.pause = true;
+    await this.persist(a);
+    await this.emit(a, 'error', a.summary.error, a.recovery.agent, undefined, a.summary.fault);
+    await this.boundary(a, phase);
+  }
+  private async toolResult(
+    a: Active,
+    endpoint: Endpoint,
+    history: History,
+    operation: RecoveryOperation,
+    call: ToolCall,
+    outcome: ToolOutcome,
+    raw: unknown,
+  ) {
+    const clean = this.redact(a, raw) as Record<string, unknown>;
+    const cleanOutcome = this.redact(a, outcome) as ToolOutcome;
+    await this.operation(a, {
+      ...operation,
+      status: outcome.status,
+      outcome: cleanOutcome,
+      result: clean,
+    });
+    const encoded = JSON.stringify(clean);
+    const result =
+      Buffer.byteLength(encoded) > 12000
+        ? {
+            ...Object.fromEntries(
+              Object.entries(clean ?? {}).filter(([key]) =>
+                [
+                  'ok',
+                  'exitCode',
+                  'actualExitCode',
+                  'reason',
+                  'termination',
+                  'fault',
+                  'code',
+                  'accepted',
+                  'executed',
+                  'diagnostic',
+                  'id',
+                ].includes(key),
+              ),
+            ),
+            truncated: true,
+            operationId: operation.id,
+            preview: encoded.slice(0, 6000),
+            totalCharacters: encoded.length,
+            instruction:
+              'Read the complete saved result with read_operation using operationId and offset.',
+          }
+        : clean;
+    history.push(toolResult(endpoint.protocol, call, { ...result, outcome: cleanOutcome }));
+    await this.emit(
+      a,
+      'tool',
+      JSON.stringify({ tool: call.name, callId: call.id, result: clean }),
+      a.recovery.agent,
+      operation.requestId,
+      outcome.fault,
+      undefined,
+      a.summary.round,
+      cleanOutcome,
+    );
+  }
   private async agent(a: Active, phase: AgentPhase): Promise<Record<string, unknown>> {
     const agent: Agent = phase === 'planning' || phase === 'answering' ? 'reviewer' : phase;
     const endpoint: Endpoint = a.input[agent];
@@ -1822,11 +2289,26 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
       return a.recovery.accepted.value;
     }
     const budgetKey = `${a.summary.round}:${a.summary.plan?.version ?? 0}:${phase}:${phase === 'answering' ? a.handling.join(',') : ''}`;
-    const budget = (a.recovery.budgets[budgetKey] ??= { turn: 0, corrections: 0 });
+    const budget: import('../shared/toolOutcome').ToolBudget = (a.recovery.budgets[budgetKey] ??= {
+      turn: 0,
+      corrections: 0,
+    });
     a.recovery.phase = phase;
     a.recovery.agent = agent;
     await this.persist(a);
+    let workerFeedback = '';
     while (budget.turn < 20) {
+      if (
+        agent === 'worker' &&
+        a.feedback.length &&
+        workerFeedback !== JSON.stringify(a.feedback)
+      ) {
+        workerFeedback = JSON.stringify(a.feedback);
+        history.push({
+          role: 'user',
+          content: `Human feedback; do not bypass acceptance:\n${a.feedback.join('\n')}`,
+        });
+      }
       await this.boundary(a, phase);
       if (agent === 'reviewer' && a.feedback.length) {
         a.reviewFeedback = phase !== 'planning';
@@ -1835,6 +2317,11 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
           content: `Human feedback:\n${a.feedback.splice(0).join('\n')}`,
         });
       }
+      const context = a.contexts![agent];
+      if (context.needsCompaction(history, definitions)) {
+        await this.compactContext(a, agent, phase, definitions);
+      }
+      (a.summary.context ??= {})[agent] = context.usage(history, definitions);
       const requestId = randomUUID();
       a.summary.recovery = { ...this.recoverySummary(a.recovery), operation: 'model' };
       a.recovery.requestId = requestId;
@@ -1878,62 +2365,80 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
       let turn;
       const activity = this.beginActivity(a, { agent, phase, requestId, stage: 'waiting' });
       try {
-        turn = await this.inference.turn(
-          endpoint,
-          history,
-          definitions,
-          a.controller.signal,
-          (text) => {
-            if (a.controller.signal.aborted || this.active !== a) {
-              return;
-            }
-            pendingText += text;
-            if (pendingText.length > 16000) {
-              flush();
-            }
-          },
-          () => {
+        for (let compactions = 0; ; compactions++) {
+          try {
+            const requestBytes = inferenceBytes(endpoint, history, definitions);
+            turn = await this.inference.turn(
+              endpoint,
+              history,
+              definitions,
+              a.controller.signal,
+              (text) => {
+                if (a.controller.signal.aborted || this.active !== a) {
+                  return;
+                }
+                pendingText += text;
+                if (pendingText.length > 16000) {
+                  flush();
+                }
+              },
+              () => {
+                if (
+                  activity &&
+                  a.activity === activity &&
+                  this.active === a &&
+                  !a.controller.signal.aborted
+                ) {
+                  activity.stage = 'receiving';
+                  activity.retry = undefined;
+                  this.notify();
+                }
+              },
+              async (attempt, delayMs) => {
+                requestOperation.nextAttempt = attempt;
+                await this.operation(a, requestOperation);
+                if (
+                  activity &&
+                  a.activity === activity &&
+                  this.active === a &&
+                  !a.controller.signal.aborted
+                ) {
+                  activity.retry = {
+                    attempt,
+                    delayMs,
+                    retryAt: new Date(Date.now() + delayMs).toISOString(),
+                  };
+                  activity.stage = 'waiting';
+                  this.notify();
+                }
+              },
+              (attempt) => {
+                if (
+                  activity &&
+                  a.activity === activity &&
+                  this.active === a &&
+                  !a.controller.signal.aborted
+                ) {
+                  activity.retry = { attempt, delayMs: 0, requesting: true };
+                  this.notify();
+                }
+              },
+            );
+            context.observe(turn, requestBytes);
+            (a.summary.context ??= {})[agent] = context.usage(history, definitions);
+            break;
+          } catch (error) {
             if (
-              activity &&
-              a.activity === activity &&
-              this.active === a &&
-              !a.controller.signal.aborted
+              !(error instanceof InferenceError) ||
+              error.code !== 'inferenceContext' ||
+              compactions >= 2 ||
+              a.controller.signal.aborted
             ) {
-              activity.stage = 'receiving';
-              activity.retry = undefined;
-              this.notify();
+              throw error;
             }
-          },
-          async (attempt, delayMs) => {
-            requestOperation.nextAttempt = attempt;
-            await this.operation(a, requestOperation);
-            if (
-              activity &&
-              a.activity === activity &&
-              this.active === a &&
-              !a.controller.signal.aborted
-            ) {
-              activity.retry = {
-                attempt,
-                delayMs,
-                retryAt: new Date(Date.now() + delayMs).toISOString(),
-              };
-              activity.stage = 'waiting';
-              this.notify();
-            }
-          },
-          (attempt) => {
-            if (
-              activity &&
-              a.activity === activity &&
-              this.active === a &&
-              !a.controller.signal.aborted
-            ) {
-              activity.retry = { attempt, delayMs: 0, requesting: true };
-              this.notify();
-            }
-          },
-        );
+            await this.compactContext(a, agent, phase, definitions, true);
+          }
+        }
       } catch (error) {
         if (!a.persistenceFailed) {
           await this.operation(a, {
@@ -1987,20 +2492,26 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
             : agent === 'worker'
               ? 'finish_work'
               : 'submit_review';
-      if (
-        turn.calls.filter((c) =>
-          ['submit_plan', 'submit_answer', 'finish_work', 'submit_review'].includes(c.name),
-        ).length > 1
-      ) {
-        throw new OperationError('completionOrder');
+      const budgetExceeded = (budget.calls ?? 0) + turn.calls.length > 200;
+      if (!budgetExceeded) {
+        budget.calls = (budget.calls ?? 0) + turn.calls.length;
       }
+      const finals = turn.calls.filter((call) =>
+        ['submit_plan', 'submit_answer', 'finish_work', 'submit_review'].includes(call.name),
+      );
       const finalIndex = turn.calls.findIndex((call) => call.name === finalName);
-      if (finalIndex >= 0 && finalIndex !== turn.calls.length - 1) {
-        throw new OperationError('completionOrder');
-      }
+      const invalidOrder =
+        finals.length > 1 || (finalIndex >= 0 && finalIndex !== turn.calls.length - 1);
       const batch = turn.calls.map((call) => {
+        let args: Record<string, unknown> | undefined, fault: AppError | undefined;
         try {
-          const args = validateTool(call, definitions);
+          if (budgetExceeded) {
+            throw new OperationError('toolCallLimit');
+          }
+          args = validateTool(call, definitions);
+          if (invalidOrder && finals.includes(call)) {
+            throw new OperationError('completionOrder');
+          }
           if (call.name === 'run_command') {
             const ids = args.criterionIds as string[];
             if (args.purpose === 'verify' && !ids.length) {
@@ -2027,105 +2538,107 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
               );
             }
           }
-          return { call, args, fault: undefined };
         } catch (error) {
-          if (!(error instanceof OperationError) || error.code !== 'toolArgumentsInvalid') {
-            throw error;
-          }
-          return { call, args: undefined, fault: this.cleanError(a, error) };
+          fault = this.cleanError(a, error);
         }
+        const operation: RecoveryOperation = {
+          ...this.newOperation(a, 'tool', call.name, args),
+          requestId,
+          callId: call.id,
+          status: 'pending',
+        };
+        return { call, args, fault, operation };
       });
-      if (batch.some((item) => item.fault)) {
-        budget.corrections++;
-        for (const { call, fault } of batch) {
-          const result = fault
-            ? {
-                accepted: false,
-                executed: false,
-                code: fault.code,
-                error: errorText('en', fault),
-                diagnostic: fault.params,
-                attempt: budget.corrections,
-              }
-            : {
-                accepted: false,
-                executed: false,
-                error:
-                  'This entire batch was skipped because another call has invalid arguments. Resend required calls after correcting it.',
-                attempt: budget.corrections,
-              };
-          history.push(toolResult(endpoint.protocol, call, result));
-          await this.emit(
+      await this.persist(a);
+      for (const item of batch) {
+        await this.operation(a, item.operation);
+      }
+      const rejected = batch.find((item) => item.fault);
+      if (rejected) {
+        budget.corrections = Math.min(3, budget.corrections + 1);
+        for (const { call, fault, operation } of batch) {
+          await this.toolResult(
             a,
-            'tool',
-            JSON.stringify({ tool: call.name, callId: call.id, result }),
-            agent,
-            requestId,
-            fault,
+            endpoint,
+            history,
+            operation,
+            call,
+            {
+              operationId: operation.id,
+              callId: call.id,
+              requestId,
+              tool: call.name,
+              execution: 'notStarted',
+              status: fault ? 'rejected' : 'skipped',
+              fault: fault ?? { code: 'toolSkipped' },
+              causedBy: rejected.operation.id,
+            },
+            {
+              accepted: false,
+              executed: false,
+              code: fault?.code ?? 'toolSkipped',
+              error: errorText('en', fault ?? { code: 'toolSkipped' }),
+              diagnostic: fault?.params,
+              allowedTools: definitions.map((definition) => definition.name),
+              attempt: budget.corrections,
+            },
           );
         }
         a.recovery.corrections = budget.corrections;
         await this.persist(a);
+        if (budgetExceeded) {
+          throw new OperationError('toolCallLimit');
+        }
         if (budget.corrections >= 3) {
-          throw new OperationError('toolCorrectionLimit');
+          await this.pauseForTools(a, phase, budgetKey, rejected.operation, 'toolBatchRejected');
         }
         continue;
       }
       budget.corrections = 0;
       a.recovery.corrections = 0;
       await this.persist(a);
-      const validated = batch.map((item) => ({
-        call: item.call,
-        args: item.args!,
-        operation: {
-          ...this.newOperation(a, 'tool', item.call.name, item.args),
-          requestId,
-          status: 'pending' as const,
-        },
-      }));
-      for (const item of validated) {
-        await this.operation(a, item.operation);
-      }
-      let toolFailed = false;
-      for (const { call, args, operation } of validated) {
-        await this.boundary(a, phase);
-        await this.operation(a, { ...operation, status: 'started' });
-        a.summary.recovery = { ...this.recoverySummary(a.recovery), operation: call.name };
-        await this.persist(a);
-        const toolActivity = this.beginActivity(a, {
-          agent,
-          phase,
-          requestId,
-          stage: 'tool',
-          tool: call.name,
-        });
-        try {
-          await this.emit(
-            a,
-            'tool',
-            `${call.name}${typeof args.path === 'string' ? `: ${args.path}` : ''}`,
+      let failedOperation: string | undefined;
+      let pauseOperation: RecoveryOperation | undefined;
+      try {
+        for (const { call, args, operation } of batch) {
+          if (failedOperation) {
+            await this.toolResult(
+              a,
+              endpoint,
+              history,
+              operation,
+              call,
+              {
+                operationId: operation.id,
+                callId: call.id,
+                requestId,
+                tool: call.name,
+                execution: 'notStarted',
+                status: 'skipped',
+                fault: { code: 'toolSkipped' },
+                causedBy: failedOperation,
+              },
+              { accepted: false, executed: false, error: errorText('en', { code: 'toolSkipped' }) },
+            );
+            continue;
+          }
+          await this.boundary(a, phase);
+          await this.operation(a, { ...operation, status: 'started' });
+          a.summary.recovery = { ...this.recoverySummary(a.recovery), operation: call.name };
+          await this.persist(a);
+          const toolActivity = this.beginActivity(a, {
             agent,
+            phase,
             requestId,
-          );
-          if (call.name === finalName) {
-            if (toolFailed) {
-              await this.operation(a, {
-                ...operation,
-                status: 'failed',
-                result: {
-                  accepted: false,
-                  error: 'Resolve the preceding tool error before submitting.',
-                },
-              });
-              history.push(
-                toolResult(endpoint.protocol, call, {
-                  accepted: false,
-                  error: 'Resolve the preceding tool error before submitting.',
-                }),
-              );
-              continue;
-            }
-            try {
+            stage: 'tool',
+            tool: call.name,
+          });
+          let result: unknown,
+            fault: AppError | undefined,
+            accepted: Record<string, unknown> | undefined;
+          a.toolOperationId = operation.id;
+          try {
+            if (call.name === finalName) {
               if (a.feedback.length && agent === 'reviewer') {
                 throw new OperationError('feedbackPending');
               }
@@ -2133,15 +2646,15 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
               if (a.controller.signal.aborted) {
                 throw new OperationError('executionStopped');
               }
-              let result: unknown;
+              let value: unknown;
               if (phase === 'answering') {
                 if (call.name === 'submit_plan') {
                   validatePlan(args as unknown as PlanInput, a.summary.plan);
                 }
-                result = args;
+                value = args;
               } else if (phase === 'planning') {
                 validatePlan(args as unknown as PlanInput);
-                result = args;
+                value = args;
               } else if (agent === 'worker') {
                 const submission = {
                   ...args,
@@ -2149,7 +2662,7 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
                   revision,
                 } as unknown as WorkSubmission;
                 validateSubmission(submission, a.summary.plan!, a.evidence);
-                result = submission;
+                value = submission;
               } else {
                 const review = {
                   ...args,
@@ -2164,81 +2677,112 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
                   a.additional,
                   a.reviewFeedback,
                 );
-                result = review;
+                value = review;
               }
-              const accepted = this.redact(a, result) as Record<string, unknown>;
+              accepted = this.redact(a, value) as Record<string, unknown>;
               a.recovery.accepted = { phase, value: accepted, id: operation.id };
               await this.persist(a);
-              await this.operation(a, {
-                ...operation,
-                status: 'succeeded',
-                result: { accepted: true, value: accepted },
-              });
-              history.push(toolResult(endpoint.protocol, call, { accepted: true }));
-              return accepted;
-            } catch (error) {
-              if (a.persistenceFailed || a.controller.signal.aborted) {
-                throw error;
+              result = { accepted: true, value: accepted };
+            } else {
+              result = await this.tool(a, agent, call.name, args!, phase);
+              if (
+                (call.name === 'run_command' || call.name === 'run_check') &&
+                !(result as CommandEvidence).ok
+              ) {
+                fault = (result as CommandEvidence).fault ?? { code: 'commandFailed' };
               }
-              const fault = this.cleanError(a, error);
-              await this.operation(a, {
-                ...operation,
-                status: 'failed',
-                result: { accepted: false, fault },
-              });
-              history.push(
-                toolResult(endpoint.protocol, call, {
-                  accepted: false,
-                  error: errorText('en', fault),
-                }),
-              );
-              await this.emit(a, 'tool', errorText('en', fault), agent, requestId, fault);
-              continue;
             }
-          }
-
-          let result: unknown;
-          let fault: AppError | undefined;
-          try {
-            result = await this.tool(a, agent, call.name, args, phase);
           } catch (error) {
+            const clean = this.cleanError(a, toolFault(error));
             if (
               a.controller.signal.aborted ||
               a.persistenceFailed ||
               error instanceof CommandShutdownError ||
-              (error instanceof OperationError &&
-                ['commandPlatformUnsupported', 'workspaceChanged'].includes(error.code))
+              fatalToolFault(clean)
             ) {
               throw error;
             }
-            toolFailed = true;
-            fault = this.cleanError(a, error);
-            result = { error: errorText('en', fault) };
+            fault = clean;
+            result = {
+              accepted: false,
+              error: errorText('en', fault),
+              code: fault.code,
+              diagnostic: fault.params,
+            };
+          } finally {
+            a.toolOperationId = undefined;
+            this.endActivity(a, toolActivity);
           }
-          const cleanResult = this.redact(a, result);
-          await this.operation(a, {
-            ...operation,
-            status: fault ? 'failed' : 'succeeded',
-            result: cleanResult,
-          });
-          if (a.controller.signal.aborted) {
-            throw new OperationError('executionStopped');
-          }
-          history.push(toolResult(endpoint.protocol, call, cleanResult));
-          await this.emit(
-            a,
-            'tool',
-            JSON.stringify({ tool: call.name, result: cleanResult }),
-            agent,
+          const command =
+            (call.name === 'run_command' || call.name === 'run_check') &&
+            result &&
+            typeof result === 'object' &&
+            'id' in result
+              ? (result as CommandEvidence)
+              : undefined;
+          const outcome: ToolOutcome = {
+            operationId: operation.id,
+            callId: call.id,
             requestId,
-            fault,
+            tool: call.name,
+            execution: command?.termination === 'notStarted' ? 'notStarted' : 'executed',
+            status: fault ? 'failed' : 'succeeded',
+            ...(command ? { commandId: command.id } : {}),
+            ...(fault ? { fault } : {}),
+          };
+          await this.toolResult(a, endpoint, history, operation, call, outcome, result);
+          const revision = await a.reader!.fingerprint();
+          const failures = failureCount(
+            budget,
+            call.name,
+            args!,
+            outcome,
+            revision,
+            command?.reason,
           );
-        } finally {
-          if (!a.persistenceFailed && a.operations.get(operation.id)?.status === 'started') {
-            await this.operation(a, { ...operation, status: 'unknown' });
+          if (fault) {
+            failedOperation = operation.id;
+            if (failures >= 3) {
+              pauseOperation = operation;
+            }
           }
-          this.endActivity(a, toolActivity);
+          await this.persist(a);
+          if (accepted) {
+            return accepted;
+          }
         }
+      } catch (error) {
+        if (!a.persistenceFailed) {
+          for (const { call, operation } of batch) {
+            const status = a.operations.get(operation.id)?.status;
+            if (status !== 'pending' && status !== 'started') {
+              continue;
+            }
+            const linkedCommand = [...a.operations.values()].find(
+              (op) => op.kind === 'command' && op.parentOperationId === operation.id,
+            );
+            const outcome: ToolOutcome = {
+              ...(linkedCommand ? { commandId: linkedCommand.id } : {}),
+              operationId: operation.id,
+              callId: call.id,
+              requestId,
+              tool: call.name,
+              execution: status === 'pending' ? 'notStarted' : 'unknown',
+              status: status === 'pending' ? 'cancelled' : 'unknown',
+              fault: this.cleanError(a, error),
+            };
+            await this.toolResult(a, endpoint, history, operation, call, outcome, {
+              executed: status === 'pending' ? false : 'unknown',
+              error: errorText('en', outcome.fault!),
+              instruction:
+                'No automatic replay. Inspect saved results and current files before deciding what to do.',
+            });
+          }
+        }
+        throw error;
+      }
+      if (pauseOperation) {
+        await this.pauseForTools(a, phase, budgetKey, pauseOperation, 'repeatedToolFailure');
       }
     }
     throw new OperationError('toolTurnLimit');
@@ -2384,6 +2928,7 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
   }
   async shutdown() {
     this.disposed = true;
+    await this.gitDone;
     const a = this.active;
     if (a) {
       a.controller.abort();

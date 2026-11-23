@@ -2,6 +2,8 @@ import type { ExecutionEnvironmentSummary } from './environment';
 import type { AppError } from './errors';
 import type { GitStrategy, RepositoryInfo } from './model';
 export interface TaskGitWorkspace {
+  lifecycle?: 'cleaned';
+  snapshotId?: string;
   branchNaming?: { version: 2; slug: string; suffixLength: 8 | 12 | 32 };
   strategy?: GitStrategy;
   headCommit?: string;
@@ -101,6 +103,12 @@ export interface ReviewResult {
   planVersion: number;
 }
 export interface CommandEvidence {
+  stdout?: string;
+  stderr?: string;
+  durationMs?: number;
+  termination?: string;
+  actualExitCode?: number | null;
+  toolOperationId?: string;
   command?: string;
   agent?: Agent;
   phase?: Agent | 'planning' | 'answering' | 'preparing' | 'checking';
@@ -140,6 +148,8 @@ export interface RunRecovery {
   blocked?: import('./errors').AppError;
 }
 export interface RunSummary {
+  toolPause?: import('./toolOutcome').ToolPause;
+  context?: Partial<Record<Agent, import('./context').ContextUsage>>;
   recovery?: RunRecovery;
   kind?: 'conversation' | 'execution';
   previousRunId?: string;
@@ -164,6 +174,7 @@ export interface RunSummary {
   review?: ReviewResult;
 }
 export interface RunEvent {
+  tool?: import('./toolOutcome').ToolOutcome;
   round?: number;
   runId: string;
   taskId: string;
@@ -198,7 +209,7 @@ export interface ConversationPage {
   before?: string;
 }
 export interface EvidencePage {
-  summary?: { records: number; errors: number };
+  summary?: { records: number; errors: number; blockers?: number };
   events: RunEvent[];
   before?: string;
 }
@@ -208,7 +219,7 @@ export interface ExecutionActivity {
   runId: string;
   agent: Agent;
   phase: Agent | 'planning' | 'answering' | 'preparing' | 'checking';
-  stage: 'waiting' | 'receiving' | 'tool' | 'command';
+  stage: 'waiting' | 'receiving' | 'tool' | 'command' | 'compacting';
   retry?: { attempt: number; delayMs: number; retryAt?: string; requesting?: boolean };
   startedAt: string;
   requestId?: string;
@@ -217,6 +228,14 @@ export interface ExecutionActivity {
   label?: string;
 }
 export interface ExecutionSnapshot {
+  artifacts?: {
+    taskId: string;
+    cleaned: boolean;
+    pending: boolean;
+    snapshotId?: string;
+    merge?: import('./artifacts').ArtifactMerge;
+  }[];
+  gitOperationTaskId?: string;
   /** Ephemeral operation metadata; absent after pause, stop or host restart. */
   activity?: ExecutionActivity;
   conversationVersion?: number;
@@ -225,6 +244,7 @@ export interface ExecutionSnapshot {
   runs: RunSummary[];
 }
 export type ExecutionAction =
+  | import('./artifacts').ArtifactAction
   | { kind: 'message.send'; taskId: string; messageId: string; text: string }
   | { kind: 'messages.resume'; taskId: string }
   | { kind: 'conversation'; taskId: string; before?: string; includeProcess?: boolean }
@@ -237,6 +257,9 @@ export type ExecutionAction =
   | { kind: 'history'; runId: string; before?: number }
   | { kind: 'openDirectory' | 'preview'; runId: string };
 export interface ExecutionReply {
+  artifact?: import('./artifacts').TaskArtifactStatus;
+  savedArtifacts?: import('./artifacts').SavedArtifact[];
+  createdTaskId?: string;
   conversation?: ConversationPage;
   evidence?: EvidencePage;
   repository?: RepositoryInfo;

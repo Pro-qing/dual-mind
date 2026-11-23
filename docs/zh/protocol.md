@@ -2,6 +2,10 @@
 
 [English](../en/protocol.md) · [文档索引](./README.md)
 
+[工具错误处理与前端统一接入](./tool-errors.md)已按本轮确认实现：结果分层、批次失败跳过、三次重复暂停及完整生命周期页面。
+
+**当前未提交功能修订：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及工具错误处理的宿主与前端已接入；[场景 30–34](./task-lifecycle-proposal.md)本轮已审核，新结果界面见[场景 35–37](./tool-errors-proposal.md)。保留版本 0.0.5 与既有标签。
+
 **当前源码版本：0.0.5 · 本地源码标签 `v0.0.5` · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
 ## 页面状态与错误兼容
@@ -70,7 +74,7 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 ## 剩余协议工作
 
-将专用 worktree 成果应用到原工作区，以及多任务并行执行，仍属于后续工作。[保留的设计参考](./design.md)说明目标界面。已实现的异步执行消息关联任务及执行实例；活动任务删除等待停止确认，失败时保留记录。只读示例使用界面内数据，不发出任务修改请求。
+专用 worktree 成果处理已有宿主接口，页面入口已接入；多任务并行执行仍属于后续工作。[保留的设计参考](./design.md)说明目标界面。已实现的异步执行消息关联任务及执行实例；活动任务删除等待停止确认，失败时保留记录。只读示例使用界面内数据，不发出任务修改请求。
 
 ## 角色交接边界
 
@@ -90,7 +94,7 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 准备返回登记的基准、分支、目录和阶段。错误区分 Git 缺失／版本不足、工作区信任或形态、任务／仓库／提交缺失、分离 HEAD、子模块、源目录有修改、冲突、归属变化、存储失败、非法路径、输出上限和超时。失败时保留意图记录及部分资源，错误指出关联位置，不直接返回 Git 原始 stderr。删除任务或变更工作区／绑定后撤销文件访问。
 
-删除任务保留 Git 记录、worktree 和分支，没有自动清理接口。仅专用 worktree 可按此流程人工清理（不可删除直接模式的当前项目）：先检查并保存任务成果（包括未跟踪及忽略文件），再运行不带强制参数的 `git -C <源仓库> worktree remove <任务目录>`；只有 Git 确认已安全合并时，才使用 `git -C <源仓库> branch -d <任务分支>` 删除分支。如果命令拒绝，则保留资源并先处理剩余成果。历史登记记录保留作为恢复信息；服务不会接管未知分支／目录，也不会自动重建缺失的就绪目录。
+旧客户端删除任务保留 Git 记录、worktree 和分支。新宿主支持显式保存清理及删除请求中的可选 cleanup；页面入口已接入，详见[生命周期说明](./task-lifecycle.md)。仅专用 worktree 可按此流程人工清理（不可删除直接模式的当前项目）：先检查并保存任务成果（包括未跟踪及忽略文件），再运行不带强制参数的 `git -C <源仓库> worktree remove <任务目录>`；只有 Git 确认已安全合并时，才使用 `git -C <源仓库> branch -d <任务分支>` 删除分支。如果命令拒绝，则保留资源并先处理剩余成果。历史登记记录保留作为恢复信息；服务不会接管未知分支／目录，也不会自动重建缺失的就绪目录。
 
 ## 执行消息与持久化
 
@@ -100,13 +104,13 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 状态包括 preparing、planning、worker、checking、reviewer、answering、pausing、paused、stopping，以及终态 answered／stopped／completed／roundLimit／failed／interrupted。answered 仅表示答疑完成，不是验收通过。暂停仍占用工作区名额；停止须在取消请求和命令结束后确认。宿主重载将未完成执行标记中断，手动重新执行创建新执行 ID，不重放旧调用。宿主拒绝编辑活动任务及修改关联连接的地址／协议／密钥。删除活动任务先停止执行，再移除可见执行历史，保留 Git 成果。
 
-初始规划通过 `submit_plan` 下发方案，`finish_work` 提交成果，`submit_review` 给出验收结论；普通文本不能替代这些工具。每次 Worker 提交后，宿主执行已启用的附加检查，接受验收前核验成果指纹和各项真实证据。双方历史从不合并；手动应用／提交／合并不属于此协议。
+初始规划通过 `submit_plan` 下发方案，`finish_work` 提交成果，`submit_review` 给出验收结论；普通文本不能替代这些工具。每次 Worker 提交后，宿主执行已启用的附加检查，接受验收前核验成果指纹和各项真实证据。双方历史从不合并；显式提交／合并使用独立的宿主成果操作，不属于模型工具权限。
 
 ## 任务分支选择
 
 `TaskInput.git`／`TaskDraft.git` 为可选字段：`{mode: "managed"}`、`{mode: "current"}` 或 `{mode: "branch", branch: "已有本地分支名"}`。旧任务缺省按专用模式解释；编辑时省略字段保留已有选择。宿主拒绝准备后的策略变更，不接受任意路径、版本表达式或 Git 命令参数。
 
-执行操作 `git.branches` 只读返回 `repository: {currentBranch, branches}` 及执行状态，不要求先保存任务，仅列出本地分支。执行状态通过 `preparedTaskIds` 让准备中断后的表单也保持锁定。`RunSummary.git` 保存实际执行绑定，含 `baseCommit`、`headCommit`。旧执行记录缺省使用专用目录登记。`binding(taskId, expected?)` 只验证、不准备；预览／打开目录不能切换分支或重置基准。直接模式每次开始／重新执行检查目录干净并记录新基准，旧记录在分支或 HEAD 不符时拒绝访问。聊天续接通过 `binding` 复用目录及未提交成果，不调用 `prepare`，新成果须取得新验证证据。
+执行操作 `git.branches` 只读返回 `repository: {currentBranch, branches, dirty, branchHeads}` 及执行状态，不要求先保存任务，仅列出本地分支。执行状态通过 `preparedTaskIds` 让准备中断后的表单也保持锁定。`RunSummary.git` 保存实际执行绑定，含 `baseCommit`、`headCommit`。旧执行记录缺省使用专用目录登记。`binding(taskId, expected?)` 只验证、不准备；预览／打开目录不能切换分支或重置基准。直接模式每次开始／重新执行检查目录干净并记录新基准，旧记录在分支或 HEAD 不符时拒绝访问。聊天续接通过 `binding` 复用目录及未提交成果，不调用 `prepare`，新成果须取得新验证证据。
 
 删除任务保留登记及成果。上文 worktree 人工清理步骤只适用于专用模式，不可对用户当前项目执行；直接模式不会自动还原文件或切回原分支。
 
@@ -166,3 +170,31 @@ RunSummary 可选 plan、submission、review 保存当前展示所需内容。Ru
 `dualMind.tasks` 是原生 WebviewView。`AppSnapshot.initialViewState` 是可选的白名单显示状态，包含版本、导航、每任务展开及最小化偏好，不包含凭据、原始环境或恢复上下文。已有页面 state 优先，其次工作区镜像，再次旧页签状态；旧客户端忽略新增字段。
 
 UI → 宿主 `view.state` 镜像显示状态，`navigation.ack` 使用导航请求 ID 标记已消费。`rendered` 可附带显示状态，宿主保存成功后才完成初始化握手及旧页签关闭。状态写入串行化，页面替换后旧回调不能回复新页面。`ready` 重试仍请求最新快照。隐藏期间执行留在宿主，显示时补齐快照和分页聊天。执行请求、运行记录及恢复格式未改变。
+
+## 当前未提交的生命周期接口
+
+新增消息仍使用 `execution.request/result`，宿主解析所有目录与引用，不接受前端传入任意路径。操作 UUID 用于幂等重试，`token` 是上次查询的状态令牌。
+
+| 操作                             | 输入与结果                                                             |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `git.artifacts`                  | `taskId` → `artifact`，含文件、排除项、分支、令牌、验收及待完成操作    |
+| `git.commit`                     | `taskId, operationId, token, message` → 更新的成果状态                 |
+| `git.merge`                      | `taskId, operationId, token, targetBranch` → 合入或冲突状态            |
+| `git.merge.check/complete/abort` | `taskId, operationId`，只操作登记的本次合并                            |
+| `git.openMerge`                  | 宿主核对登记后打开合并工作目录                                         |
+| `git.cleanup`                    | `taskId, operationId, token`，保存成果后清理专用工作树                 |
+| `git.saved`                      | 返回独立保存的 `savedArtifacts` 清单，包括失败后仍需检查的保存状态     |
+| `git.restore`                    | `snapshotId, operationId, input` → `createdTaskId`；从快照创建新任务   |
+| `task.followup`                  | `taskId, operationId, input` → `createdTaskId`；从所选基点创建后续任务 |
+
+`task.delete` 可选 `cleanup: {operationId, token}`；缺省保留原目录。连接新增 `contextWindows: Record<modelId, tokenWindow>`，managed 策略新增可选 `baseBranch`。旧字段省略时保持兼容；存储版本保持 1。派生任务 ID 使用创建操作 UUID，并校验输入哈希，重试不重复创建。
+
+`RunSummary.context` 分角色提供窗口、是否估算、输入预算、请求字节数与摘要次数；`ExecutionActivity.stage` 增加 `compacting`。`RecoveryState.contexts` 保存摘要检查点引用，摘要在独立文件中刷盘保存。`ExecutionSnapshot.artifacts` 和 `gitOperationTaskId` 提供已清理任务及成果操作状态；成果记录使用独立 `dualMind.git.artifacts.v1`。
+
+## 工具结果与前端接入修订
+
+`RunEvent.tool` 与 `RecoveryOperation.outcome` 可选携带 `ToolOutcome`：调用／请求／操作 ID、工具名称、`execution`、`status`、结构化 `fault`、关联 `commandId` 及跳过原因 `causedBy`。`CommandEvidence.toolOperationId` 关联工具父操作，聚合时只计一次；旧记录仍按原字段显示。
+
+命令新增可选 `stdout`、`stderr`、`durationMs`、`termination` 和 `actualExitCode`（未知为 null），旧 `exitCode` 与 `ok` 继续兼容。`ToolBudget` 增加 `calls` 与失败身份计数，`RunSummary.toolPause` 保存暂停原因、预算键、操作及次数。仅明确继续清理纠错观察计数，总调用预算保留。`EvidencePage.summary.blockers` 独立提供验收阻塞数，不从历史错误总数推断。
+
+`RepositoryInfo` 增加只读 `dirty` 和 `branchHeads`；`git.merge` 可选 `expectedTargetHead` 校验预览后的目标变化。成果状态增加结构化 `changedFiles`、待提交说明及恢复操作标识。`context`／`artifacts` 设置路由保留返回位置；新任务由宿主先发布包含任务的快照与导航请求，再通知创建结果。

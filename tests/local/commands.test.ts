@@ -105,11 +105,19 @@ test('direct runner preserves argv, cwd and inherited environment without inject
     key: 'must-not-reach-command',
   });
   assert.match(result.output, /stderr/);
+  assert.match(result.stdout!, /argv/);
+  assert.equal(result.stderr, 'stderr\n');
+  assert.equal(result.actualExitCode, 0);
+  assert.equal(result.termination, 'exited');
+  assert.ok(result.durationMs! >= 0);
   await assert.rejects(readFile(join(h.root, 'forbidden')), { code: 'ENOENT' });
   const failed = await h.run('console.error("actual error");process.exit(7)');
   assert.equal(failed.ok, false);
   assert.equal(failed.exitCode, 7);
   assert.match(failed.output, /actual error/);
+  assert.equal(failed.actualExitCode, 7);
+  assert.equal(failed.stdout, '');
+  assert.match(failed.stderr!, /actual error/);
 });
 
 test('launch errors are typed, bilingual and retain original details', async (t) => {

@@ -1,3 +1,5 @@
+import { TaskArtifacts } from './taskArtifacts';
+import type { SavedArtifact } from '../shared/artifacts';
 import {
   taskBranchSlug,
   taskBranchName,
@@ -42,7 +44,7 @@ export interface TaskWriter extends TaskReader {
   deleteFile(relativePath: string): Promise<void>;
 }
 const queues = new Map<string, Promise<unknown>>();
-async function serialized<T>(key: string, action: () => Promise<T>): Promise<T> {
+export async function serialized<T>(key: string, action: () => Promise<T>): Promise<T> {
   const result = (queues.get(key) || Promise.resolve()).catch(() => undefined).then(action);
   queues.set(key, result);
   try {
@@ -94,10 +96,50 @@ function within(parent: string, child: string): boolean {
 
 /** Lazy host foundation. Nothing runs until prepare()/files() is explicitly called by the host. */
 export class TaskWorkspaces {
+  readonly artifacts: TaskArtifacts;
   constructor(
     private readonly ports: Ports,
     private readonly git = new GitProcess(),
-  ) {}
+  ) {
+    this.artifacts = new TaskArtifacts(
+      {
+        state: ports.state,
+        source: () => this.source(),
+        registered: (id) => this.registered(id),
+        fingerprint: async (id) => (await this.files(id, 'reviewer')).fingerprint(),
+        markCleaned: async (id, snapshotId) => {
+          const record = await this.registered(id);
+          await this.save({ ...record, lifecycle: 'cleaned', snapshotId });
+        },
+        prepareSnapshot: (id, name, saved) => this.prepare(id, { mode: 'managed' }, name, saved),
+      },
+      git,
+    );
+  }
+  /** Ownership check for lifecycle operations; execution binding remains stricter about HEAD. */
+  async registered(taskId: string): Promise<TaskGitWorkspace> {
+    const source = await this.source(taskId);
+    const record = this.registry().entries.find((entry) => entry.taskId === taskId);
+    const directory =
+      record && (record.strategy?.mode ?? 'managed') === 'managed'
+        ? path.join(
+            source.storage,
+            'task-worktrees',
+            createHash('sha256').update(source.commonDir).digest('hex').slice(0, 16),
+            taskId,
+          )
+        : source.repository;
+    if (
+      !record ||
+      record.phase !== 'ready' ||
+      record.repository !== source.repository ||
+      record.commonDir !== source.commonDir ||
+      record.directory !== directory
+    ) {
+      throw new OperationError('workspaceChanged');
+    }
+    return structuredClone(record);
+  }
   private async source(
     taskId?: string,
   ): Promise<{ repository: string; commonDir: string; storage: string }> {
@@ -173,6 +215,8 @@ export class TaskWorkspaces {
           : entry.branchNaming !== undefined ||
             !entry.branch ||
             entry.directory !== entry.repository) ||
+        (entry.lifecycle !== undefined && entry.lifecycle !== 'cleaned') ||
+        (entry.snapshotId !== undefined && !uuid.test(entry.snapshotId)) ||
         !['preparing', 'ready'].includes(entry.phase)
       ) {
         fail('storageFailed', 'Invalid task Git registry; existing records were preserved.');
@@ -279,6 +323,24 @@ export class TaskWorkspaces {
       fail('detachedHead', 'Check out a named branch first.');
     }
     return {
+      branchHeads: Object.fromEntries(
+        (
+          await this.git.checked(
+            ['for-each-ref', '--format=%(refname:strip=2) %(objectname)', 'refs/heads/'],
+            repository,
+          )
+        )
+          .trim()
+          .split('\n')
+          .filter(Boolean)
+          .map((line) => line.split(' ')),
+      ),
+      dirty: Boolean(
+        await this.git.checked(
+          ['status', '--porcelain=v1', '-z', '--untracked-files=all'],
+          repository,
+        ),
+      ),
       currentBranch: current.stdout.trim(),
       branches: (
         await this.git.checked(
@@ -295,6 +357,9 @@ export class TaskWorkspaces {
     const source = await this.source(taskId);
     const registered = this.registry().entries.find((entry) => entry.taskId === taskId);
     const record = expected ?? registered;
+    if (registered?.lifecycle === 'cleaned') {
+      throw new OperationError('workspaceArchived');
+    }
     if (
       !record ||
       !registered ||
@@ -445,6 +510,7 @@ export class TaskWorkspaces {
     taskId: string,
     strategy?: GitStrategy,
     taskName = 'task',
+    snapshot?: SavedArtifact,
   ): Promise<TaskGitWorkspace> {
     const source = await this.source(taskId);
     return serialized(`repository:${source.commonDir}`, () =>
@@ -454,6 +520,11 @@ export class TaskWorkspaces {
           fail('accessDenied', 'Task or workspace access changed while preparing.');
         }
         this.assertStrategy(taskId, strategy);
+        if (
+          this.registry().entries.find((entry) => entry.taskId === taskId)?.lifecycle === 'cleaned'
+        ) {
+          throw new OperationError('workspaceArchived');
+        }
         const selected = strategy ??
           this.registry().entries.find((entry) => entry.taskId === taskId)?.strategy ?? {
             mode: 'managed' as const,
@@ -478,6 +549,9 @@ export class TaskWorkspaces {
             'workspaceConflict',
             `The task is already bound to ${record.directory}; it cannot be rebound automatically.`,
           );
+        }
+        if (snapshot && record && record.snapshotId !== snapshot.id) {
+          throw new OperationError('artifactChanged');
         }
         if (record && (await exists(directory))) {
           await this.verify(record);
@@ -523,15 +597,42 @@ export class TaskWorkspaces {
         if (branch.code) {
           fail('detachedHead', 'Check out a named source branch before preparing a task.');
         }
-        const status = await this.git.checked(
-          ['status', '--porcelain=v1', '-z', '--untracked-files=all'],
+        const baseBranch = snapshot?.sourceBranch ?? selected.baseBranch ?? branch.stdout.trim();
+        if (
+          baseBranch.startsWith('-') ||
+          (await this.git.run(['check-ref-format', `refs/heads/${baseBranch}`], source.repository))
+            .code
+        ) {
+          fail('workspaceConflict', 'Choose a valid existing local base branch.');
+        }
+        if (
+          snapshot &&
+          (snapshot.repository !== source.repository ||
+            snapshot.commonDir !== source.commonDir ||
+            snapshot.headRef !== `refs/dualmind/snapshots/${snapshot.id}/head`)
+        ) {
+          throw new OperationError('artifactChanged');
+        }
+        const base = await this.git.run(
+          [
+            'rev-parse',
+            '--verify',
+            snapshot ? `${snapshot.headRef}^{commit}` : `refs/heads/${baseBranch}^{commit}`,
+          ],
           source.repository,
         );
-        if (status) {
-          fail(
-            'dirtyRepository',
-            'Commit the changes needed by the task first. Staged, unstaged and untracked files were preserved.',
-          );
+        if (snapshot && base.stdout.trim() !== snapshot.head) {
+          throw new OperationError('artifactChanged');
+        }
+        if (base.code) {
+          fail('workspaceConflict', 'The selected local base branch no longer exists.');
+        }
+        if (
+          (await this.git.checked(['ls-tree', '-r', '-z', base.stdout.trim()], source.repository))
+            .split('\0')
+            .some((entry) => entry.startsWith('160000 '))
+        ) {
+          fail('submodulesUnsupported', 'The base branch contains unsupported submodules.');
         }
         if (!record) {
           if (await exists(directory)) {
@@ -567,8 +668,10 @@ export class TaskWorkspaces {
             directory,
             branch: selectedBranch.branch,
             branchNaming: { version: 2, slug, suffixLength: selectedBranch.suffixLength },
-            sourceBranch: branch.stdout.trim(),
-            baseCommit: head.stdout.trim(),
+            strategy: selected,
+            ...(snapshot ? { snapshotId: snapshot.id } : {}),
+            sourceBranch: baseBranch,
+            baseCommit: base.stdout.trim(),
             phase: 'preparing',
           };
           if (
@@ -611,7 +714,16 @@ export class TaskWorkspaces {
         }
         try {
           await this.git.checked(
-            ['worktree', 'add', '-b', record.branch, '--', directory, record.baseCommit],
+            [
+              'worktree',
+              'add',
+              '--no-track',
+              '-b',
+              record.branch,
+              '--',
+              directory,
+              record.baseCommit,
+            ],
             source.repository,
           );
         } catch (error) {

@@ -82,6 +82,13 @@ async function launch(extension = root) {
     args: [
       '--no-sandbox',
       '--disable-gpu',
+      ...(process.env.DUAL_MIND_RESOURCE_UI === '1'
+        ? [
+            '--disable-extensions',
+            '--renderer-process-limit=2',
+            '--js-flags=--max-old-space-size=128',
+          ]
+        : []),
       '--password-store=basic',
       '--skip-welcome',
       '--skip-release-notes',
@@ -142,6 +149,9 @@ async function frame(page, selector = '.dm-app') {
   throw new Error(`Missing frame ${selector}`);
 }
 async function capture(page, f, name) {
+  await page
+    .locator('.notifications-toasts .codicon-notifications-clear')
+    .evaluateAll((buttons) => buttons.forEach((button) => button.click()));
   await f
     .locator('.toast .icon-button')
     .evaluateAll((buttons) => buttons.forEach((button) => button.click()));

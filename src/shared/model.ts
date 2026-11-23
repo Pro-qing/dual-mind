@@ -34,6 +34,8 @@ export interface AgentBindings {
   reviewer: ModelBinding;
 }
 export interface ConnectionRecord {
+  /** Optional known context windows, indexed by model ID; absent means an estimated 32K window. */
+  contextWindows?: Record<string, number>;
   protocol?: Protocol;
   id: string;
   name: string;
@@ -43,8 +45,13 @@ export interface ConnectionRecord {
 export interface ConnectionSummary extends ConnectionRecord {
   hasKey: boolean;
 }
-export type GitStrategy = { mode: 'managed' | 'current' } | { mode: 'branch'; branch: string };
+export type GitStrategy =
+  | { mode: 'managed'; baseBranch?: string }
+  | { mode: 'current' }
+  | { mode: 'branch'; branch: string };
 export interface RepositoryInfo {
+  dirty?: boolean;
+  branchHeads?: Record<string, string>;
   currentBranch: string;
   branches: string[];
 }
@@ -56,6 +63,7 @@ export interface TaskInput extends AgentBindings {
   maxRounds: number;
 }
 export interface TaskDraft extends Omit<TaskInput, 'roleId'> {
+  origin?: { taskId?: string; snapshotId?: string; requestHash: string };
   id: string;
   role: RoleSnapshot;
   status: 'draft';
@@ -97,7 +105,12 @@ export interface ActionReply extends AppSnapshot {
 export type Action =
   | { kind: 'task.save'; id?: string; input: TaskInput }
   | { kind: 'task.select'; id: string }
-  | { kind: 'task.delete'; id: string; confirmed: true }
+  | {
+      kind: 'task.delete';
+      id: string;
+      confirmed: true;
+      cleanup?: { operationId: string; token: string };
+    }
   | { kind: 'connection.save'; id?: string; input: Omit<ConnectionRecord, 'id'> }
   | { kind: 'connection.delete'; id: string; confirmed: true }
   | { kind: 'connection.key'; id: string }

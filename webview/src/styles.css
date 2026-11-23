@@ -2397,3 +2397,109 @@ body {
     flex: none;
   }
 }
+
+/* Task lifecycle and error outcomes approved for integration on 2026-11-23. */
+.form-fields {
+  display: contents;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.artifact-panel,
+.context-usage {
+  flex-shrink: 0;
+  border: 1px solid var(--dm-line);
+  border-radius: 5px;
+  padding: 8px;
+  min-width: 0;
+}
+.artifact-panel[open],
+.context-usage[open] {
+  max-height: 45vh;
+  overflow: auto;
+}
+.artifact-panel > * + *,
+.context-usage > * + * {
+  margin-top: 10px;
+}
+.artifact-facts {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.artifact-facts dt {
+  color: var(--dm-muted);
+}
+.artifact-facts dd {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.artifact-panel li,
+.saved-artifact li {
+  overflow-wrap: anywhere;
+}
+.context-role {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.context-role progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--dm-accent);
+}
+.saved-artifact {
+  padding: 12px;
+  border: 1px solid var(--dm-line);
+  border-radius: 6px;
+  min-width: 0;
+}
+.saved-artifact > * + * {
+  margin-top: 10px;
+}
+.checkbox-label {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: start;
+  margin: 12px 0;
+}
+.checkbox-label input {
+  width: auto;
+  flex-shrink: 0;
+}
+.tool-outcome {
+  border-left: 3px solid var(--dm-line);
+  padding: 8px;
+  min-width: 0;
+}
+.tool-outcome[data-outcome='failed'],
+.tool-outcome[data-outcome='unknown'],
+.tool-outcome[data-outcome='rejected'] {
+  border-left-color: var(--dm-error);
+}
+.tool-outcome > strong,
+.tool-outcome small {
+  overflow-wrap: anywhere;
+}
+.tool-outcome pre {
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.archived-task {
+  flex-shrink: 0;
+}
+.acceptance-status {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 4px 8px;
+  color: var(--dm-muted);
+}
+.acceptance-status.warning-text {
+  color: var(--dm-warning);
+}

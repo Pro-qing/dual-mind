@@ -13,6 +13,9 @@ export interface LanguageGuard {
   discard(): void;
 }
 export interface UIContextValue {
+  openDerived(value: import('./derivedTask').DerivedTask): void;
+  openTask(id: string): void;
+  openContextSettings(): void;
   snapshot: AppSnapshot;
   execution: ExecutionSnapshot;
   executionEvents: RunEvent[];

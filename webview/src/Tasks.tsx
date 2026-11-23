@@ -1,10 +1,12 @@
+import { ArtifactPanel, DeleteTaskDialog, ContextUsagePanel } from './Lifecycle';
+import type { DerivedTask } from './derivedTask';
 import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
 import type { ReactNode } from 'react';
 import { TaskChat } from './TaskChat';
 import { ExecutionControls, statusKey } from './Execution';
 import { terminalStatuses } from '../../src/shared/execution';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   GitStrategy,
   RepositoryInfo,
@@ -13,7 +15,7 @@ import type {
   TaskInput,
 } from '../../src/shared/model';
 import { builtInRole } from '../../src/shared/roles';
-import { Confirm, Dialog, Icon, ModelFields } from './components';
+import { Dialog, Icon, ModelFields } from './components';
 import { useUI } from './context';
 
 type TaskView = Omit<TaskDraft, 'status'> & {
@@ -22,22 +24,30 @@ type TaskView = Omit<TaskDraft, 'status'> & {
 };
 export function TaskForm({
   task,
+  derived,
   onClose,
   onSaved,
 }: {
   task?: TaskDraft;
+  derived?: DerivedTask;
   onClose(): void;
   onSaved(id: string): void;
 }) {
   const { snapshot, tr, run, pending, execute, execution } = useUI();
+  const source = task ?? derived?.source;
+  const operationId = useRef(derived?.operationId ?? crypto.randomUUID());
+  const [saving, setSaving] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
   const [input, setInput] = useState<TaskInput>(() => ({
-    git: task?.git ?? { mode: 'managed' },
-    name: task?.name || '',
-    requirements: task?.requirements || '',
-    roleId: task?.role.id || '',
-    maxRounds: task?.maxRounds || 5,
-    worker: { ...(task?.worker || snapshot.defaults.worker) },
-    reviewer: { ...(task?.reviewer || snapshot.defaults.reviewer) },
+    git: derived
+      ? { mode: 'managed', ...(derived.baseBranch ? { baseBranch: derived.baseBranch } : {}) }
+      : (task?.git ?? { mode: 'managed' }),
+    name: source?.name || '',
+    requirements: source?.requirements || '',
+    roleId: source?.role.id || '',
+    maxRounds: source?.maxRounds || 5,
+    worker: { ...(source?.worker || snapshot.defaults.worker) },
+    reviewer: { ...(source?.reviewer || snapshot.defaults.reviewer) },
   }));
   const [repository, setRepository] = useState<RepositoryInfo>();
   const [branchError, setBranchError] = useState<AppError>();
@@ -61,7 +71,7 @@ export function TaskForm({
     }
   };
   useEffect(() => {
-    if (input.git?.mode === 'branch') {
+    if (input.git?.mode === 'branch' || (input.git?.mode ?? 'managed') === 'managed') {
       void refreshBranches();
     }
   }, [input.git?.mode]);
@@ -73,8 +83,34 @@ export function TaskForm({
       !snapshot.connections.some((c) => c.id === binding.connectionId && c.hasKey),
   );
   const save = async () => {
+    if (saving) {
+      return;
+    }
+    setSaving(true);
     setSaveError(undefined);
     try {
+      if (derived) {
+        const result = await execute(
+          derived.kind === 'restore'
+            ? {
+                kind: 'git.restore',
+                snapshotId: derived.snapshotId!,
+                operationId: operationId.current,
+                input,
+              }
+            : {
+                kind: 'task.followup',
+                taskId: derived.taskId!,
+                operationId: operationId.current,
+                input,
+              },
+        );
+        if (!result.createdTaskId) {
+          throw new OperationError('notFound');
+        }
+        onSaved(result.createdTaskId);
+        return;
+      }
       const next = await run({ kind: 'task.save', id: task?.id, input });
       const id = next.savedTaskId || task?.id || next.selectedTaskId;
       if (!id) {
@@ -83,25 +119,39 @@ export function TaskForm({
       onSaved(id);
     } catch (error) {
       setSaveError(toAppError(error));
+      if (derived) {
+        setUncertain(true);
+      }
+    } finally {
+      setSaving(false);
     }
   };
   return (
     <Dialog
-      title={tr(task ? 'editTask' : 'newTask')}
+      title={tr(
+        derived
+          ? derived.kind === 'restore'
+            ? 'artifactRestore'
+            : 'artifactFollowup'
+          : task
+            ? 'editTask'
+            : 'newTask',
+      )}
+      busy={saving}
       onClose={onClose}
       footer={
         <>
           <span className="footer-hint">{tr('taskSaveHint')}</span>
-          <button disabled={pending} onClick={onClose}>
+          <button disabled={pending || saving} onClick={onClose}>
             {tr('cancel')}
           </button>
           <button
             className="primary"
             type="submit"
             form="task-form"
-            disabled={pending || (input.git?.mode === 'branch' && !input.git.branch)}
+            disabled={pending || saving || (input.git?.mode === 'branch' && !input.git.branch)}
           >
-            {tr(task ? 'saveTask' : 'createTask')}
+            {tr(uncertain ? 'artifactRetry' : task ? 'saveTask' : 'createTask')}
           </button>
         </>
       }
@@ -115,156 +165,210 @@ export function TaskForm({
           void save().catch(() => undefined);
         }}
       >
-        {saveError && <ErrorNotice error={saveError} locale={snapshot.locale} />}
-        <label>
-          {tr('taskName')} <span className="required">*</span>
-          <input
-            required
-            maxLength={200}
-            value={input.name}
-            onChange={(event) => setInput({ ...input, name: event.target.value })}
-          />
-        </label>
-        <label>
-          {tr('requirements')} <span className="required">*</span>
-          <textarea
-            required
-            rows={3}
-            maxLength={50000}
-            value={input.requirements}
-            onChange={(event) => setInput({ ...input, requirements: event.target.value })}
-          />
-        </label>
-        <fieldset className="git-choice" disabled={strategyLocked || pending}>
+        {derived && (
+          <p className="notice">
+            {tr(derived.kind === 'restore' ? 'artifactRestoreHint' : 'artifactFollowupHint')}
+          </p>
+        )}
+        {uncertain && <p className="notice warning">{tr('operationUncertain')}</p>}
+        <fieldset disabled={saving || uncertain} className="form-fields">
+          {saveError && <ErrorNotice error={saveError} locale={snapshot.locale} />}
           <label>
-            {tr('gitStrategy')}
-            <select
-              value={input.git?.mode ?? 'managed'}
-              onChange={(event) => {
-                const mode = event.target.value as GitStrategy['mode'];
-                setInput({ ...input, git: mode === 'branch' ? { mode, branch: '' } : { mode } });
-              }}
-            >
-              <option value="managed">{tr('gitManaged')}</option>
-              <option value="current">{tr('gitCurrent')}</option>
-              <option value="branch">{tr('gitBranch')}</option>
-            </select>
+            {tr('taskName')} <span className="required">*</span>
+            <input
+              required
+              maxLength={200}
+              value={input.name}
+              onChange={(event) => setInput({ ...input, name: event.target.value })}
+            />
           </label>
-          {input.git?.mode === 'branch' && (
-            <>
-              <label>
-                {tr('localBranch')}
-                <select
-                  value={input.git.branch}
-                  onChange={(event) =>
-                    setInput({ ...input, git: { mode: 'branch', branch: event.target.value } })
-                  }
-                >
-                  <option value="">{tr('selectBranch')}</option>
-                  {input.git.branch && !repository?.branches.includes(input.git.branch) && (
-                    <option value={input.git.branch}>{input.git.branch}</option>
-                  )}
-                  {repository?.branches.map((branch) => (
-                    <option key={branch} value={branch}>
-                      {branch}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                disabled={loadingBranches}
-                onClick={() => void refreshBranches()}
+          <label>
+            {tr('requirements')} <span className="required">*</span>
+            <textarea
+              required
+              rows={3}
+              maxLength={50000}
+              value={input.requirements}
+              onChange={(event) => setInput({ ...input, requirements: event.target.value })}
+            />
+          </label>
+          <fieldset
+            className="git-choice"
+            disabled={strategyLocked || pending || derived?.kind === 'restore'}
+          >
+            <label>
+              {tr('gitStrategy')}
+              <select
+                value={input.git?.mode ?? 'managed'}
+                onChange={(event) => {
+                  const mode = event.target.value as GitStrategy['mode'];
+                  setInput({ ...input, git: mode === 'branch' ? { mode, branch: '' } : { mode } });
+                }}
               >
-                {tr('refreshBranches')}
-              </button>
-              {repository && (
-                <p className="hint">
-                  {tr('gitCurrentBranch')}: {repository.currentBranch}
-                </p>
-              )}
-              {branchError && <ErrorNotice error={branchError} locale={snapshot.locale} />}
-            </>
-          )}
-        </fieldset>
-        {strategyLocked && <p className="hint">{tr('gitLocked')}</p>}
-        {input.git?.mode !== 'managed' && <p className="notice warning">{tr('gitDirectHint')}</p>}
-        <fieldset className="role-choice">
-          <legend>
-            {tr('reviewerRole')} <span className="required">*</span>
-          </legend>
-          {task ? (
-            <>
-              <div className="readonly-field">{task.role.name}</div>
-              <p className="hint">{tr('taskRoleFixed')}</p>
-            </>
-          ) : (
-            <>
-              <div className="role-choice-grid">
-                {builtIn.map((role) => (
-                  <label
-                    key={role.id}
-                    className={`role-choice-card ${input.roleId === role.id ? 'selected' : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name="reviewer-role"
-                      value={role.id}
-                      checked={input.roleId === role.id}
-                      onChange={() => setInput({ ...input, roleId: role.id })}
-                    />
-                    <strong>{role.name}</strong>
-                    <span>{role.purpose}</span>
-                  </label>
-                ))}
-              </div>
-              {custom.length > 0 && (
-                <label className="custom-role-select">
-                  {tr('custom')}
+                <option value="managed">{tr('gitManaged')}</option>
+                <option value="current">{tr('gitCurrent')}</option>
+                <option value="branch">{tr('gitBranch')}</option>
+              </select>
+            </label>
+            {(input.git?.mode ?? 'managed') === 'managed' && (
+              <>
+                <label>
+                  {tr('baseBranch')}
                   <select
-                    aria-label={tr('custom')}
-                    value={custom.some((role) => role.id === input.roleId) ? input.roleId : ''}
-                    onChange={(event) => setInput({ ...input, roleId: event.target.value })}
+                    value={input.git?.mode === 'managed' ? (input.git.baseBranch ?? '') : ''}
+                    onChange={(event) =>
+                      setInput({
+                        ...input,
+                        git: {
+                          mode: 'managed',
+                          ...(event.target.value ? { baseBranch: event.target.value } : {}),
+                        },
+                      })
+                    }
                   >
-                    <option value="">{tr('chooseRole')}</option>
-                    {custom.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
+                    <option value="">
+                      {tr('baseCurrent')}
+                      {repository?.currentBranch ? ` · ${repository.currentBranch}` : ''}
+                    </option>
+                    {input.git?.mode === 'managed' &&
+                      input.git.baseBranch &&
+                      !repository?.branches.includes(input.git.baseBranch) && (
+                        <option value={input.git.baseBranch}>{input.git.baseBranch}</option>
+                      )}
+                    {repository?.branches.map((branch) => (
+                      <option key={branch} value={branch}>
+                        {branch}
                       </option>
                     ))}
                   </select>
                 </label>
-              )}
-            </>
-          )}
+                <button
+                  type="button"
+                  disabled={loadingBranches}
+                  onClick={() => void refreshBranches()}
+                >
+                  {tr('refreshBranches')}
+                </button>
+                {repository?.dirty && <p className="notice warning">{tr('baseDirty')}</p>}
+                {branchError && <ErrorNotice error={branchError} locale={snapshot.locale} />}
+              </>
+            )}
+            {input.git?.mode === 'branch' && (
+              <>
+                <label>
+                  {tr('localBranch')}
+                  <select
+                    value={input.git.branch}
+                    onChange={(event) =>
+                      setInput({ ...input, git: { mode: 'branch', branch: event.target.value } })
+                    }
+                  >
+                    <option value="">{tr('selectBranch')}</option>
+                    {input.git.branch && !repository?.branches.includes(input.git.branch) && (
+                      <option value={input.git.branch}>{input.git.branch}</option>
+                    )}
+                    {repository?.branches.map((branch) => (
+                      <option key={branch} value={branch}>
+                        {branch}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={loadingBranches}
+                  onClick={() => void refreshBranches()}
+                >
+                  {tr('refreshBranches')}
+                </button>
+                {repository && (
+                  <p className="hint">
+                    {tr('gitCurrentBranch')}: {repository.currentBranch}
+                  </p>
+                )}
+                {branchError && <ErrorNotice error={branchError} locale={snapshot.locale} />}
+              </>
+            )}
+          </fieldset>
+          {strategyLocked && <p className="hint">{tr('gitLocked')}</p>}
+          {input.git?.mode !== 'managed' && <p className="notice warning">{tr('gitDirectHint')}</p>}
+          <fieldset className="role-choice">
+            <legend>
+              {tr('reviewerRole')} <span className="required">*</span>
+            </legend>
+            {source ? (
+              <>
+                <div className="readonly-field">{source.role.name}</div>
+                <p className="hint">{tr('taskRoleFixed')}</p>
+              </>
+            ) : (
+              <>
+                <div className="role-choice-grid">
+                  {builtIn.map((role) => (
+                    <label
+                      key={role.id}
+                      className={`role-choice-card ${input.roleId === role.id ? 'selected' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="reviewer-role"
+                        value={role.id}
+                        checked={input.roleId === role.id}
+                        onChange={() => setInput({ ...input, roleId: role.id })}
+                      />
+                      <strong>{role.name}</strong>
+                      <span>{role.purpose}</span>
+                    </label>
+                  ))}
+                </div>
+                {custom.length > 0 && (
+                  <label className="custom-role-select">
+                    {tr('custom')}
+                    <select
+                      aria-label={tr('custom')}
+                      value={custom.some((role) => role.id === input.roleId) ? input.roleId : ''}
+                      onChange={(event) => setInput({ ...input, roleId: event.target.value })}
+                    >
+                      <option value="">{tr('chooseRole')}</option>
+                      {custom.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </>
+            )}
+          </fieldset>
+          <p className="hint worker-text">{tr('workerRole')}</p>
+          <div className="two-fields">
+            <ModelFields
+              agent="worker"
+              connections={snapshot.connections}
+              value={input.worker}
+              onChange={(worker) => setInput({ ...input, worker })}
+            />
+            <ModelFields
+              agent="reviewer"
+              connections={snapshot.connections}
+              value={input.reviewer}
+              onChange={(reviewer) => setInput({ ...input, reviewer })}
+            />
+          </div>
+          <label className="round-field">
+            {tr('maximumRounds')}
+            <input
+              type="number"
+              min={1}
+              step={1}
+              required
+              value={Number.isNaN(input.maxRounds) ? '' : input.maxRounds}
+              onChange={(event) => setInput({ ...input, maxRounds: event.target.valueAsNumber })}
+            />
+          </label>
+          {incomplete && <p className="notice warning">{tr('apiIncomplete')}</p>}
         </fieldset>
-        <p className="hint worker-text">{tr('workerRole')}</p>
-        <div className="two-fields">
-          <ModelFields
-            agent="worker"
-            connections={snapshot.connections}
-            value={input.worker}
-            onChange={(worker) => setInput({ ...input, worker })}
-          />
-          <ModelFields
-            agent="reviewer"
-            connections={snapshot.connections}
-            value={input.reviewer}
-            onChange={(reviewer) => setInput({ ...input, reviewer })}
-          />
-        </div>
-        <label className="round-field">
-          {tr('maximumRounds')}
-          <input
-            type="number"
-            min={1}
-            step={1}
-            required
-            value={Number.isNaN(input.maxRounds) ? '' : input.maxRounds}
-            onChange={(event) => setInput({ ...input, maxRounds: event.target.valueAsNumber })}
-          />
-        </label>
-        {incomplete && <p className="notice warning">{tr('apiIncomplete')}</p>}
       </form>
     </Dialog>
   );
@@ -436,6 +540,7 @@ function TaskDetail({
   onSettings(): void;
 }) {
   const { execution, tr, pending, chatViews, updateChatView } = useUI();
+  const cleaned = execution.artifacts?.some((entry) => entry.taskId === task.id && entry.cleaned);
   const currentRun = !preview
     ? execution.runs.find(
         (item) =>
@@ -467,6 +572,8 @@ function TaskDetail({
               </button>
             ))}
           </div>
+        ) : cleaned ? (
+          <p className="notice">{tr('artifactCleaned')}</p>
         ) : (
           <ExecutionControls taskId={task.id} run={currentRun} onSettings={onSettings} />
         )}
@@ -492,14 +599,17 @@ function TaskDetail({
           </div>
           <div className="button-row task-edit-actions">
             <button
-              disabled={preview || pending || Boolean(locked)}
+              disabled={preview || pending || Boolean(locked) || cleaned}
               onClick={() => onEdit(task as TaskDraft)}
             >
               <Icon name="edit" />
               {tr('editTask')}
             </button>
             {!preview && currentRun && (
-              <ResultActions runId={currentRun.id} available={Boolean(currentRun.directory)} />
+              <ResultActions
+                runId={currentRun.id}
+                available={Boolean(currentRun.directory) && !cleaned}
+              />
             )}
             <button
               className="danger"
@@ -517,6 +627,8 @@ function TaskDetail({
           </div>{' '}
         </div>
       </details>
+      {!preview && <ContextUsagePanel taskId={task.id} />}
+      {!preview && <ArtifactPanel task={task as TaskDraft} />}
       <TaskChat key={task.id} task={task} preview={preview} visible={visible} />
     </main>
   );
@@ -542,7 +654,7 @@ export function Tasks({
   onEditTask(task: TaskDraft): void;
   onDeleted(id: string): void;
 }) {
-  const { snapshot, tr, run, pending, execution } = useUI();
+  const { snapshot, tr, run, pending } = useUI();
   const [deleting, setDeleting] = useState<TaskDraft | null>(null);
   const [sampleId, setSampleId] = useState<string>();
   const samples: TaskView[] = (['bug', 'feature', 'review', 'refactor'] as const).map(
@@ -631,23 +743,10 @@ export function Tasks({
         />
       )}
       {deleting && (
-        <Confirm
-          title={tr('deleteTask')}
-          name={deleting.name}
-          hint={tr('taskDeleteHint')}
-          actionLabel={tr(
-            execution.runs.some(
-              (item) => item.taskId === deleting.id && !terminalStatuses.includes(item.status),
-            )
-              ? 'stopAndDelete'
-              : 'delete',
-          )}
-          danger
+        <DeleteTaskDialog
+          task={deleting}
           onClose={() => setDeleting(null)}
-          onConfirm={async () => {
-            await run({ kind: 'task.delete', id: deleting.id, confirmed: true }, 'deleted');
-            onDeleted(deleting.id);
-          }}
+          onDeleted={() => onDeleted(deleting.id)}
         />
       )}
     </>

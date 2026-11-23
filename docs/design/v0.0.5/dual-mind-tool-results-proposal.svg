@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img"><title>35. 工具调用与命令结果 — 已确认实施</title><desc>DualMind 工具错误处理与前端统一接入，2026-11-23。按本轮确认方案实施，不另设视觉审批停点。任务、结果与输出均为静态示例，不表示真实测试结果。</desc><style>text {font-family:"Noto Sans CJK SC","DejaVu Sans",sans-serif}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="28" y="38" font-size="23" fill="#e4e8f0" font-weight="700">35. 工具调用与命令结果</text>
+<text x="28" y="67" font-size="13" fill="#b1bdce" font-weight="400">执行状态明确区分 · 当前角色处理普通失败 · 同一批次后续调用不再执行</text>
+<text x="1110" y="32" font-size="12" fill="#b1bdce" font-weight="400">已确认实施 · 2026-11-23</text>
+<rect x="48" y="118" width="424" height="660" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="48" y="118" width="424" height="36" rx="0" fill="#20242c" stroke="none"/>
+<text x="60" y="142" font-size="14" fill="#e4e8f0" font-weight="700">Worker · 文件工具</text>
+<rect x="64" y="178" width="392" height="153" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="64" y="178" width="3" height="153" rx="0" fill="#efaaaa" stroke="none"/>
+<text x="78" y="204" font-size="14" fill="#efaaaa" font-weight="700">read_file · 失败</text>
+<text x="78" y="232" font-size="12" fill="#b1bdce" font-weight="400">工具执行：已执行</text>
+<text x="78" y="253" font-size="12" fill="#b1bdce" font-weight="400">请求的文件不存在，请检查可用路径并修正调用。</text>
+<text x="78" y="274" font-size="12" fill="#b1bdce" font-weight="400">操作：4e21…</text>
+<rect x="64" y="349" width="392" height="143" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="64" y="349" width="3" height="143" rx="0" fill="#b1bdce" stroke="none"/>
+<text x="78" y="375" font-size="14" fill="#b1bdce" font-weight="700">write_file · 未执行</text>
+<text x="78" y="403" font-size="12" fill="#b1bdce" font-weight="400">工具执行：未开始</text>
+<text x="78" y="424" font-size="12" fill="#b1bdce" font-weight="400">因操作 4e21… 失败而跳过。</text>
+<text x="78" y="445" font-size="12" fill="#b1bdce" font-weight="400">已有文件修改保持。</text>
+<text x="64" y="537" font-size="13" fill="#b1bdce" font-weight="400">同批次的 finish_work 也被跳过。当前模型收到各调用的对应结果，</text>
+<text x="64" y="558" font-size="13" fill="#b1bdce" font-weight="400">再安排下一步。</text>
+<rect x="508" y="118" width="424" height="660" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="508" y="118" width="424" height="36" rx="0" fill="#20242c" stroke="none"/>
+<text x="520" y="142" font-size="14" fill="#e4e8f0" font-weight="700">Worker · 命令证据</text>
+<rect x="524" y="178" width="392" height="163" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="524" y="178" width="3" height="163" rx="0" fill="#efaaaa" stroke="none"/>
+<text x="538" y="204" font-size="14" fill="#efaaaa" font-weight="700">回归测试 · 失败</text>
+<text x="538" y="232" font-size="12" fill="#b1bdce" font-weight="400">命令结果：未通过 · 退出码 1</text>
+<text x="538" y="253" font-size="12" fill="#b1bdce" font-weight="400">耗时：1.24s · 终止：exited</text>
+<text x="538" y="274" font-size="12" fill="#b1bdce" font-weight="400">用途：命令验证 · 方案 v2</text>
+<text x="538" y="382" font-size="13" fill="#91bbff" font-weight="700">标准输出</text>
+<text x="538" y="410" font-size="13" fill="#b1bdce" font-weight="400">Running cancellation tests…</text>
+<text x="538" y="459" font-size="13" fill="#91bbff" font-weight="700">标准错误</text>
+<text x="538" y="487" font-size="13" fill="#b1bdce" font-weight="400">Expected cancellation; received a retry.</text>
+<text x="524" y="560" font-size="13" fill="#b1bdce" font-weight="400">工具卡与命令证据关联，此次失败只统计一次。命令结束不代表检查</text>
+<text x="524" y="581" font-size="13" fill="#b1bdce" font-weight="400">通过。</text>
+<rect x="968" y="118" width="424" height="660" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="968" y="118" width="424" height="36" rx="0" fill="#20242c" stroke="none"/>
+<text x="980" y="142" font-size="14" fill="#e4e8f0" font-weight="700">Independent English states</text>
+<rect x="984" y="178" width="392" height="145" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="984" y="178" width="3" height="145" rx="0" fill="#efaaaa" stroke="none"/>
+<text x="998" y="204" font-size="14" fill="#efaaaa" font-weight="700">unknown_tool · Rejected</text>
+<text x="998" y="232" font-size="12" fill="#b1bdce" font-weight="400">Tool execution: Not started</text>
+<text x="998" y="253" font-size="12" fill="#b1bdce" font-weight="400">No calls in this batch ran.</text>
+<text x="998" y="274" font-size="12" fill="#b1bdce" font-weight="400">Use the tools available to this role.</text>
+<rect x="984" y="343" width="392" height="145" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="984" y="343" width="3" height="145" rx="0" fill="#efaaaa" stroke="none"/>
+<text x="998" y="369" font-size="14" fill="#efaaaa" font-weight="700">run_command · Outcome unknown</text>
+<text x="998" y="397" font-size="12" fill="#b1bdce" font-weight="400">Tool execution: May have effects</text>
+<text x="998" y="418" font-size="12" fill="#b1bdce" font-weight="400">Process shutdown could not be confirmed.</text>
+<text x="998" y="439" font-size="12" fill="#b1bdce" font-weight="400">Inspect saved work before continuing.</text>
+<rect x="984" y="508" width="392" height="127" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="984" y="508" width="3" height="127" rx="0" fill="#93dfcd" stroke="none"/>
+<text x="998" y="534" font-size="14" fill="#93dfcd" font-weight="700">read_file · Succeeded</text>
+<text x="998" y="562" font-size="12" fill="#b1bdce" font-weight="400">Tool execution: Executed</text>
+<text x="998" y="583" font-size="12" fill="#b1bdce" font-weight="400">The requested file was read.</text>
+<text x="48" y="818" font-size="12" fill="#b1bdce" font-weight="400">stdout／stderr、退出信息和已有输出可查看；命令不会被宿主自动重跑，验收继续核对真实证据。</text>
+<rect x="28" y="858" width="1384" height="1" rx="0" fill="#394352" stroke="none"/>
+<text x="28" y="882" font-size="11" fill="#b1bdce" font-weight="400">静态示例 · 工具结果、命令成功与正式验收分别表达 · 37 组设计已确认</text>
+<text x="1155" y="882" font-size="11" fill="#b1bdce" font-weight="400">1440 × 900 · 可编辑 SVG</text>
+</svg>

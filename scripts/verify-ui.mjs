@@ -94,6 +94,7 @@ let holdWorker = false;
 let recoveryFault;
 const recoveryChecks = [];
 let readingOnly = false;
+let repeatToolFailure = false;
 let longCommand = false;
 let workerRequestObserved;
 let workerTurns = 0,
@@ -161,16 +162,17 @@ const server = createServer((request, response) => {
           }
         })
         .slice(-1);
+      const artifactPath = readingOnly ? 'reading-result.txt' : 'result.txt';
       const plan = {
-        objective: 'Write fixed to result.txt',
+        objective: `Write fixed to ${artifactPath}`,
         requirements: 'Provide the requested artifact',
-        steps: ['Inspect related files', 'Write and verify result.txt'],
+        steps: ['Inspect related files', `Write and verify ${artifactPath}`],
         criteria: [
           {
             id: 'result',
-            description: 'result.txt contains fixed',
+            description: `${artifactPath} contains fixed`,
             verification: readingOnly ? 'reading' : 'command',
-            evidence: 'Inspect result.txt and actual execution evidence',
+            evidence: `Inspect ${artifactPath} and actual execution evidence`,
             reason: readingOnly ? 'A plain text document can be directly inspected' : '',
           },
         ],
@@ -192,7 +194,7 @@ const server = createServer((request, response) => {
       if (answering && userHandoff?.currentPlan) {
         plan.revisionReason = 'Apply the queued modification';
       }
-      const call =
+      let call =
         answering && !JSON.stringify(userHandoff?.messages).includes('modification')
           ? {
               name: 'submit_answer',
@@ -208,7 +210,7 @@ const server = createServer((request, response) => {
                 ? {
                     name: 'write_file',
                     arguments: JSON.stringify({
-                      path: 'result.txt',
+                      path: artifactPath,
                       content: longCommand || turn > 1 ? 'fixed' : 'bad',
                     }),
                   }
@@ -225,7 +227,7 @@ const server = createServer((request, response) => {
                   : {
                       name: 'finish_work',
                       arguments: JSON.stringify({
-                        summary: 'Updated result.txt for acceptance.',
+                        summary: `Updated ${artifactPath} for acceptance.`,
                         completedSteps: ['Updated artifact'],
                         evidence: [
                           {
@@ -247,12 +249,18 @@ const server = createServer((request, response) => {
                         criterionId: 'result',
                         passed: approve,
                         commandIds: handoff?.submission?.evidence?.[0]?.commandIds ?? [],
-                        evidence: 'Inspected the actual result.txt and supplied host evidence',
+                        evidence: `Inspected the actual ${artifactPath} and supplied host evidence`,
                       },
                     ],
                     ...(approve ? {} : { nextPlan: plan }),
                   }),
                 };
+      if (repeatToolFailure && worker) {
+        call = {
+          name: 'read_file',
+          arguments: JSON.stringify({ path: 'missing-no-progress.txt' }),
+        };
+      }
       const id = `${worker ? 'worker' : 'reviewer'}-${turn}`;
       response.setHeader('Content-Type', 'text/event-stream');
       const events = request.url.endsWith('/responses')
@@ -330,6 +338,13 @@ async function launch(folder = workspace) {
     args: [
       '--no-sandbox',
       '--disable-gpu',
+      ...(process.env.DUAL_MIND_RESOURCE_UI === '1'
+        ? [
+            '--disable-extensions',
+            '--renderer-process-limit=2',
+            '--js-flags=--max-old-space-size=128',
+          ]
+        : []),
       '--password-store=basic',
       ...(process.platform === 'linux' ? ['--ozone-platform=x11'] : []),
       '--force-device-scale-factor=1',
@@ -447,6 +462,12 @@ async function sidebarWidth(page, width, secondary = false) {
   );
 }
 async function click(f, name) {
+  await f
+    .page()
+    .locator(
+      '.notifications-toasts .codicon-notifications-clear, .notifications-toasts .codicon-close',
+    )
+    .evaluateAll((buttons) => buttons.forEach((button) => button.click()));
   const selector = f.getByRole('combobox', { name: /Settings category|设置类别/ });
   if (await selector.isVisible()) {
     const option = selector.getByRole('option', { name, exact: true });
@@ -855,7 +876,7 @@ try {
   await screenshot(page, f, 'en-settings-category-240');
   assert.equal(
     await f.getByRole('combobox', { name: 'Settings category' }).getByRole('option').count(),
-    4,
+    6,
   );
   await language(f, 'zh-CN');
   await size(820, 1040);
@@ -1343,7 +1364,7 @@ try {
   await f.getByLabel('Task name', { exact: false }).fill('Reading acceptance task');
   await f
     .getByLabel('Task requirements', { exact: false })
-    .fill('Write fixed to result.txt and verify by reading this text document.');
+    .fill('Write fixed to reading-result.txt and verify by reading this text document.');
   await f.getByRole('radio', { name: /^Feature/ }).check();
   await f
     .getByLabel('Reviewer Connection', { exact: true })
@@ -1471,6 +1492,81 @@ try {
     recoveryChecks.push(`${agent} failure continues its saved role with panel preferences`);
   }
   recoveryFault = undefined;
+  // Exercise the approved lifecycle controls against real disposable Git worktrees.
+  await f.locator('.context-usage > summary').click();
+  await screenshot(page, f, 'en-context-usage');
+  await f.locator('.artifact-panel > summary').click();
+  await f.locator('.artifact-panel .artifact-facts').waitFor();
+  const lifecycleDirectory = await f
+    .locator('.artifact-panel .artifact-facts dd')
+    .first()
+    .innerText();
+  await screenshot(page, f, 'en-artifacts-ready');
+  await click(f, 'Commit task changes');
+  await f
+    .getByRole('dialog')
+    .getByLabel('Commit message', { exact: true })
+    .fill('test: preserve task artifact / 保存任务成果');
+  await screenshot(page, f, 'en-artifact-commit');
+  await f.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click();
+  await f.getByRole('dialog').waitFor({ state: 'hidden' });
+  await click(f, 'Merge into target branch');
+  await screenshot(page, f, 'en-artifact-merge');
+  await f.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click();
+  await f.getByRole('dialog').waitFor({ state: 'hidden' });
+  await f.getByText('Integrated; verify target', { exact: true }).waitFor();
+  await writeFile(
+    join(lifecycleDirectory, 'saved-ui-note.txt'),
+    'Retain this untracked user file.',
+  );
+  await click(f, 'Refresh preview');
+  await click(f, 'Clean up worktree');
+  await screenshot(page, f, 'en-artifact-cleanup');
+  await f.getByRole('dialog').getByRole('button', { name: 'Confirm', exact: true }).click();
+  await f.getByRole('dialog').waitFor({ state: 'hidden' });
+  assert.equal(await f.locator('.chat-composer textarea').count(), 0);
+  await screenshot(page, f, 'en-artifact-cleaned-history');
+  await click(f, 'Settings');
+  await click(f, 'Model context');
+  await f.getByRole('combobox', { name: 'Model ID', exact: true }).fill('example-model-alpha');
+  await f
+    .getByRole('spinbutton', { name: 'Known context window (tokens)', exact: true })
+    .fill('65536');
+  await click(f, 'Save');
+  await saved(f, 'Context settings saved');
+  await screenshot(page, f, 'en-context-settings');
+  await click(f, 'Saved artifacts');
+  await f.getByRole('heading', { name: 'Reading acceptance task', exact: true }).waitFor();
+  await screenshot(page, f, 'en-saved-artifacts');
+  await click(f, 'Restore as new task');
+  await f
+    .getByRole('dialog')
+    .getByLabel('Task name', { exact: false })
+    .fill('Restored UI artifact');
+  await click(f, 'Create task');
+  await f.getByRole('dialog').waitFor({ state: 'hidden' });
+  await f.getByRole('heading', { name: 'Restored UI artifact', exact: true }).waitFor();
+  await f.locator('.artifact-panel > summary').click();
+  await f.locator('.artifact-panel .artifact-facts').waitFor();
+  const restoredDirectory = await f
+    .locator('.artifact-panel .artifact-facts dd')
+    .first()
+    .innerText();
+  assert.equal(
+    await readFile(join(restoredDirectory, 'saved-ui-note.txt'), 'utf8'),
+    'Retain this untracked user file.',
+  );
+  for (const width of [240, 320, 480]) {
+    await sidebarWidth(page, width);
+    await screenshot(page, f, `en-artifact-restored-${width}`);
+  }
+  await language(f, 'zh-CN');
+  await screenshot(page, f, 'zh-artifact-restored-narrow');
+  await language(f, 'en');
+  await sidebarWidth(page, 1200);
+  await click(f, 'Delete task: Restored UI artifact');
+  await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await f.getByRole('button', { name: 'Reading acceptance task', exact: true }).click();
   await click(f, 'Delete task: Reading acceptance task');
   await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
   await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
@@ -1489,6 +1585,60 @@ try {
   await f.getByRole('combobox', { name: '开发分支', exact: true }).selectOption('current');
   await screenshot(page, f, 'zh-git-current-narrow');
   await click(f, '取消');
+  // Repeated ordinary failures must remain visible when evidence is minimized.
+  await language(f, 'en');
+  readingOnly = true;
+  repeatToolFailure = true;
+  workerTurns = 0;
+  reviewTurns = 0;
+  await size(1600, 1100);
+  await click(f, 'New task');
+  await f.getByLabel('Task name', { exact: false }).fill('Repeated tool error UI');
+  await f
+    .getByLabel('Task requirements', { exact: false })
+    .fill('Read related files and verify the plain text artifact.');
+  await f.getByRole('radio', { name: /^Feature/ }).check();
+  await f
+    .getByLabel('Reviewer Connection', { exact: true })
+    .selectOption({ label: 'UI reviewer endpoint' });
+  await click(f, 'Create task');
+  await f.getByRole('dialog').waitFor({ state: 'hidden' });
+  await click(f, 'Start');
+  await f
+    .locator('.recovery-notice')
+    .getByText('Paused after repeated errors', { exact: false })
+    .waitFor();
+  assert.equal(workerTurns, 3);
+  await click(f, 'Tools, checks and review evidence');
+  await click(f, 'Minimize evidence panel');
+  for (const locale of ['en', 'zh-CN']) {
+    await language(f, locale);
+    for (const width of [240, 320, 480]) {
+      await sidebarWidth(page, width);
+      await f.locator('.recovery-notice').scrollIntoViewIfNeeded();
+      assert.ok(await f.locator('.recovery-notice').isVisible());
+      await screenshot(page, f, `${locale}-tool-pause-${width}`);
+    }
+  }
+  await language(f, 'en');
+  await sidebarWidth(page, 1200);
+  await f
+    .getByRole('textbox', { name: 'Feedback for this task', exact: true })
+    .fill('Inspect existing paths and continue with the requested artifact.');
+  await click(f, 'Send feedback');
+  await f.waitForFunction(() => document.querySelector('.recovery-notice textarea')?.value === '');
+  repeatToolFailure = false;
+  workerTurns = 0;
+  await click(f, 'Continue execution');
+  await f
+    .getByRole('status')
+    .filter({ hasText: 'Completed — acceptance passed' })
+    .waitFor({ timeout: 30000 });
+  assert.equal(await f.locator('.recovery-notice').count(), 0);
+  await screenshot(page, f, 'en-tool-pause-repaired');
+  await click(f, 'Delete task: Repeated tool error UI');
+  await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
   await writeFile(
     join(artifacts, 'results.json'),
     JSON.stringify(
@@ -1504,7 +1654,11 @@ try {
         profile,
         workspace,
         modelQueries: requests.length,
-        taskBranchesCreated: 2,
+        taskBranchesCreated: 4,
+        repeatedToolPausePassed: true,
+        lifecycleArtifactsPassed: true,
+        contextWindowSettingsPassed: true,
+        savedArtifactRestorePassed: true,
         readingAcceptancePassed: true,
         readingRevisionCyclePassed: true,
         inferenceRequests: inferenceRequests.length,
@@ -1544,5 +1698,7 @@ try {
   }
 }
 
-// Verify native placement and serialized-tab upgrades after the execution regression.
-await import('./verify-sidebar.mjs');
+// Resource-conscious callers may run the native suite separately.
+if (process.env.DUAL_MIND_SKIP_NATIVE_UI !== '1') {
+  await import('./verify-sidebar.mjs');
+}

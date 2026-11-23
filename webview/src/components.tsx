@@ -65,14 +65,17 @@ export function Dialog({
   footer,
   onClose,
   danger = false,
+  busy = false,
 }: {
   title: string;
   children: ReactNode;
   footer: ReactNode;
   onClose(): void;
   danger?: boolean;
+  busy?: boolean;
 }) {
-  const { tr, pending } = useUI();
+  const { tr, pending: globalPending } = useUI();
+  const pending = globalPending || busy;
   const titleId = useId();
   const ref = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose);

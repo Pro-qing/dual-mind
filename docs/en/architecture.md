@@ -2,6 +2,10 @@
 
 [简体中文](../zh/architecture.md) · [Documentation](./README.md)
 
+[Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
+
+**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+
 **Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Page navigation and structured errors
@@ -32,7 +36,7 @@ resources/        Packaged PNG icon and archived branding source
 scripts/          Build, checks, local tests and actual Webview verification
 tests/local/     Store and React interaction tests
 tests/            VS Code extension-host tests
-docs/design/v*/  27 approved SVG/PNG pairs grouped by development version
+docs/design/v*/  37 SVG/PNG pairs by development version (37 approved)
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          Compatibility CI and collaboration templates
@@ -84,7 +88,7 @@ The host execution service owns one active run per workspace, independently of t
 
 Run summaries/configuration use independent workspace storage; public event history is journaled outside the repository and paged in groups of 80. Streaming UI updates are batched at 100 ms. Host restarts mark unfinished runs interrupted and never replay tool calls. API credentials remain in SecretStorage and active host memory. Histories, handoffs and command output must not expose them. The activity bar has one `dualMind.tasks` view backed by `WebviewViewProvider`. The host owns execution; disposing a view releases only page messaging and listeners.
 
-Inference requests have a 120-second deadline, 8 MiB response limit and 512 KiB request-context limit. A role has at most 20 model turns per round; public run history is bounded at 64 MiB. Exceeding a limit fails explicitly. Automatic original-workspace application, automatic Git commits/merges and concurrent task execution remain outside this milestone.
+Inference requests have a 120-second deadline, 8 MiB response limit and 512 KiB serialized-request guard. Independent role budgets and automatic summaries are described in [task lifecycle](./task-lifecycle.md). Each role/phase allows 20 business model turns; compaction does not reset that budget. Public run history remains bounded at 64 MiB. Automatic original-workspace application, automatic Git commits/merges and concurrent task execution remain outside this milestone.
 
 ## Role isolation: data and execution boundaries
 
@@ -100,7 +104,7 @@ Worker hands over current artifacts and test evidence; Reviewer returns review c
 
 In dedicated mode, `src/git/` implements a lazy host service for the first execution: one `dualmind/<normalized task name>-<short task ID>` branch and a separate worktree per task, outside the source repository under the extension's workspace storage directory. `ExecutionService` calls `TaskWorkspaces.prepare()` before its first model request; `Workbench.prepareTaskWorkspace()` remains a host integration wrapper. Opening settings, querying models or saving tasks does not prepare a workspace.
 
-First preparation in dedicated mode requires Git 2.25+, a trusted single-folder workspace opened at the repository root, a named branch, a commit and a clean source directory (including staged, unstaged and non-ignored untracked files). Bare repositories, submodules, detached HEAD and multiple workspace folders are rejected. An existing linked worktree can be the source. The baseline commit is frozen at first preparation; ignored/generated files are not copied. Existing prepared task files are reused even after the source moves or becomes dirty. The Git preparation service performs no source checkout, automatic commit, stash, fetch, merge, push or dependency installation; Worker may subsequently prepare project dependencies under the plan.
+First preparation in dedicated mode requires Git 2.25+, a trusted single-folder workspace opened at the repository root, a named branch, a commit and an optional existing local base branch; source changes remain untouched and are not copied. Bare repositories, submodules, detached HEAD and multiple workspace folders are rejected. An existing linked worktree can be the source. The baseline commit is frozen at first preparation; ignored/generated files are not copied. Existing prepared task files are reused even after the source moves or becomes dirty. The Git preparation service performs no source checkout, automatic commit, stash, fetch, merge, push or dependency installation; Worker may subsequently prepare project dependencies under the plan.
 
 A separate `dualMind.git.workspaces.v1` host record holds the task/repository identity, source branch, baseline commit, task branch, directory and `preparing`/`ready` phase. Intent is saved before Git creation; recovery verifies directory ownership, branch, common repository and baseline ancestry. Matching completed creation can recover a failed final state write. Conflicts, missing ready directories and partial checkouts with modifications are preserved for manual inspection. Preparation is serialized per repository and registry in the host; Git branch/path conflicts also prevent another process from overwriting existing work. Task storage stays version 1 with no migration.
 
@@ -166,7 +170,3 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 `src/shared/viewState.ts` accepts only allowlisted display fields, in precedence order: current sidebar, workspace mirror, legacy tab. `view.state` mirrors preferences; `rendered` completes its handshake after saving display state. The old `dualMind.workbench` serializer starts migration without awaiting rendering, avoiding a VS Code restore deadlock. Failure keeps the old tab and retry entry. `navigation.ack` prevents consuming a new-task request twice. Execution protocols and run-record formats are unchanged.
 
 `dualMind.alignPanelCenter` invokes native panel centering only on manual request; it neither saves nor resets sidebar position. The frontend keeps the task chat mounted across Settings visits to retain drafts and reading position. Task-detail expansion uses the existing per-task display preferences.
-
-## Compact task home
-
-Rows contain only a name button and delete icon; title and accessible name retain the full name. Requirements, role, branch, rounds and status remain in details. Read-only examples open details with deletion disabled. Scenes 28–29 are approved and implemented; see the [proposal](./task-home-compact-proposal.md). The archive now contains 29 pairs.

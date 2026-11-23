@@ -2,6 +2,97 @@ import { t } from './i18n';
 import { modelErrorCodes, type ErrorCode, type Locale, type ModelErrorCode } from './model';
 
 export const errorMessages = {
+  toolFileMissing: [
+    'The requested file does not exist. Inspect the available paths and correct this call.',
+    '请求的文件不存在，请检查可用路径并修正调用。',
+  ],
+  toolPermission: [
+    'The file operation was denied. Inspect permissions or choose an accessible path.',
+    '文件操作权限不足，请检查权限或选择可访问路径。',
+  ],
+  repeatedToolFailure: [
+    'The same tool operation failed three times without progress. Inspect the result, add feedback, then continue.',
+    '同一工具操作三次失败且没有进展。请检查结果、补充反馈后继续。',
+  ],
+  toolBatchRejected: [
+    'Three consecutive tool batches were rejected. No tools in those batches ran. Add feedback or adjust the model before continuing.',
+    '连续三批工具调用被拒绝，这些批次均未执行。请补充反馈或调整模型后继续。',
+  ],
+  toolCallLimit: [
+    'This phase reached its 200 tool-call budget. Saved work and evidence were retained.',
+    '此阶段达到 200 次工具调用预算，已有修改与证据已保留。',
+  ],
+  toolSkipped: [
+    'This call was not executed because an earlier call or batch validation failed.',
+    '前面的调用或整批校验失败，此调用未执行。',
+  ],
+
+  artifactStorage: [
+    'Saved artifact metadata is unavailable or inconsistent. Existing files and Git references were kept.',
+    '成果保存记录不可用或不一致，已有文件和 Git 引用已保留。',
+  ],
+  artifactChanged: [
+    'Files, branches or operation state changed after preview. Refresh and review the current state.',
+    '预览后的文件、分支或操作状态已变化，请刷新并核对当前状态。',
+  ],
+  artifactUnsafe: [
+    'This workspace contains files or repositories that cannot be preserved safely within the supported limits. Nothing will be cleaned up.',
+    '工作树含无法在支持范围内安全保存的文件或仓库，清理已阻止。',
+  ],
+  artifactManagedOnly: [
+    'This operation is only available for DualMind-managed worktrees. Use Git tools for the original project.',
+    '此操作仅适用于 DualMind 管理的工作树，请使用 Git 工具处理原项目。',
+  ],
+  artifactBusy: [
+    'Finish or inspect the pending Git operation before starting another one.',
+    '请先完成或检查待处理的 Git 操作，再开始其他操作。',
+  ],
+  artifactNeedsCommit: [
+    'Commit the task changes and choose another local target branch before merging.',
+    '合入前请提交任务修改，并选择不同的本地目标分支。',
+  ],
+  artifactNotAccepted: [
+    'The current task content has no matching acceptance. Verify this version before merging.',
+    '当前任务内容没有对应的验收结论，请先验收此版本再合入。',
+  ],
+  artifactBranchOccupied: [
+    'The target branch is checked out in another worktree. Its location is shown in the details.',
+    '目标分支已在其他工作树检出，位置见详情。',
+  ],
+  artifactGitFailed: [
+    'The Git operation did not complete. Inspect its saved state before retrying.',
+    'Git 操作未完成，请先检查已保存的状态再重试。',
+  ],
+  artifactConflicts: [
+    'Resolve and stage all merge conflicts before completing this merge.',
+    '完成合并前，请解决并暂存全部冲突。',
+  ],
+  artifactPreservation: [
+    'The saved snapshot does not contain every required file. Cleanup was blocked; the worktree and saved references remain.',
+    '保存的快照未包含全部必要文件。清理已阻止，工作树和已保存引用仍保留。',
+  ],
+  artifactRestorePartial: [
+    'Snapshot restoration is incomplete or files changed. Inspect the new worktree; the saved snapshot remains available.',
+    '快照恢复未完成或文件发生变化，请检查新工作树；已保存快照仍然可用。',
+  ],
+
+  workspaceArchived: [
+    'This task workspace was cleaned up. Create a follow-up task or restore its saved snapshot.',
+    '任务工作树已清理，请创建后续任务或恢复已保存的成果。',
+  ],
+  contextCompaction: [
+    'Context could not be reduced safely. Adjust the model window or model, then continue this run.',
+    '无法安全缩减上下文。请调整模型窗口或模型后继续此运行。',
+  ],
+  contextMinimum: [
+    'The task instructions and current state exceed the available context budget. Select a larger model window or reduce the task.',
+    '任务指令和当前状态超过可用上下文预算，请选择更大模型窗口或缩小任务。',
+  ],
+  contextSnapshot: [
+    'The saved context summary is unavailable or inconsistent. Original execution records were preserved.',
+    '保存的上下文摘要不可用或不一致，原执行记录已保留。',
+  ],
+
   toolArgumentsInvalid: [
     'Tool {tool}, call {callId}: {path} expects {expected}; received {actual}.',
     '工具 {tool}，调用 {callId}：{path} 应为 {expected}，实际为 {actual}。',
@@ -224,8 +315,8 @@ export const errorMessages = {
     '模型响应格式无效或不受支持，请检查协议与工具调用兼容性。',
   ],
   inferenceContext: [
-    'Context exceeds 512 KiB; start a smaller task.',
-    '上下文超过 512 KiB，请缩小任务范围后重新开始。',
+    'The request exceeds the context budget or the 512 KiB request-size guard. Context reduction is required.',
+    '请求超过上下文预算或 512 KiB 请求大小保护上限，需要整理上下文。',
   ],
   inferenceHttp: [
     'Model request failed (HTTP {status}); verify the selected protocol, model and tool support.',

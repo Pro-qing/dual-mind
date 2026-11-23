@@ -2,7 +2,11 @@
 
 [English](../en/design.md) · [文档索引](./README.md)
 
-[原生侧栏工作台](./sidebar-workbench-proposal.md)场景 24–27 已于 **2026-11-22 审核通过**，2026-11-23 接入源码。完整工作台由主侧栏或辅助侧栏承载，提供紧凑导航、可折叠任务详情和手动“终端仅占编辑器区域”操作。旧页签仅用于迁移；现有 29 组审核记录和历史设计保留。
+**当前未提交功能修订：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及工具错误处理的宿主与前端已接入；[场景 30–34](./task-lifecycle-proposal.md)本轮已审核，新结果界面见[场景 35–37](./tool-errors-proposal.md)。保留版本 0.0.5 与既有标签。
+
+**新增已审核设计：**[紧凑任务列表](./task-home-compact-proposal.md)提供场景 28–29，覆盖 240／320／480px 主页、长名称、键盘焦点、只读示例与删除确认。依据 2026-11-23 当前未提交修改补充，归档于 0.0.5，晚于现有标签。
+
+[原生侧栏工作台](./sidebar-workbench-proposal.md)场景 24–27 已于 **2026-11-22 审核通过**，2026-11-23 接入源码。完整工作台由主侧栏或辅助侧栏承载，提供紧凑导航、可折叠任务详情和手动“终端仅占编辑器区域”操作。旧页签仅用于迁移；现有 27 组审核记录和历史设计保留。
 
 **新增已审核修订：**[过程提示、紧凑聊天与最小化](./chat-progress-proposal.md)提供场景 18–20。2026-11-22 已审核通过，并要求缩放按钮仅显示图标；已实现。原 17 组审核记录保留，图中仍为静态示例。
 
@@ -13,35 +17,55 @@
 
 **当前源码版本：0.0.5 · 本地源码标签 `v0.0.5` · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
-**当前共有 29 组已审核 SVG／PNG。** 场景 1–7 记录原工作台与模型选择，8–11 为任务页面修订，12–13 为方案与验收循环，14–17 为任务聊天与持续追问，18–20 为过程提示及紧凑聊天控件，21–23 为故障恢复，24–27 为原生侧栏。原图及历史审核标签保持原样，图中内容均为示例。当前源码已接入模型查询、单任务执行、审查循环、聊天和独立证据面板；专用 worktree 成果应用与并行执行仍待实现。已发布的 0.0.1 保留历史行为，当前操作见[使用说明](./usage.md)。
+**当前共有 37 组 SVG／PNG：37 组已审核。** 场景 1–7 记录原工作台与模型选择，8–11 为任务页面修订，12–13 为方案与验收循环，14–17 为任务聊天与持续追问，18–20 为过程提示及紧凑聊天控件，21–23 为故障恢复，24–27 为原生侧栏。原图及历史审核标签保持原样，图中内容均为示例。当前源码已接入模型查询、单任务执行、审查循环、聊天和独立证据面板；成果合入宿主已实现、页面入口已接入，并行执行仍待实现。已发布的 0.0.1 保留历史行为，当前操作见[使用说明](./usage.md)。
 
 每张画布均为 **1440 × 900**，采用贴近 VS Code 的深色配色，使用可编辑的 SVG 文字与矢量元素。早期场景使用英文标签，后续修订以简体中文为主，各组均有中英双语说明。SVG 没有内嵌图片、脚本、外部字体或外部资源，PNG 为渲染预览。
 
 ## 按版本查找
 
-[设计归档总索引](../design/README.md)列出版本、场景和数量。0.0.1 对应场景 1–5，0.0.2 对应 6–7，0.0.3 对应 8–17，0.0.4 对应 18–23，0.0.5 对应 24–29；每个目录都有同名 SVG／PNG 和 README。目录按开发版本归属，不是每个初始标签的完整快照：场景 8–17 是初始 `v0.0.3` 标签之后的同版本修订；侧栏由此前 0.0.4 候选包的开发记录归入正式的 0.0.5 源码里程碑。历史图稿内容和标签不改写。
+[设计归档总索引](../design/README.md)列出版本、场景和数量。0.0.1 对应场景 1–5，0.0.2 对应 6–7，0.0.3 对应 8–17，0.0.4 对应 18–23，0.0.5 对应 24–37；每个目录都有同名 SVG／PNG 和 README。目录按开发版本归属，不是每个初始标签的完整快照：场景 8–17 是初始 `v0.0.3` 标签之后的同版本修订；侧栏由此前 0.0.4 候选包的开发记录归入正式的 0.0.5 源码里程碑。历史图稿内容和标签不改写。
 
 ## 设计稿导航
 
-| 场景                 | 可编辑源文件                                                      | 预览                                                              |
-| -------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 1. 并行任务工作台    | [SVG](../design/v0.0.1/dual-mind-workbench.svg)                   | [PNG](../design/v0.0.1/dual-mind-workbench.png)                   |
-| 2. API 连接设置      | [SVG](../design/v0.0.1/dual-mind-api-settings.svg)                | [PNG](../design/v0.0.1/dual-mind-api-settings.png)                |
-| 3. Reviewer 角色设置 | [SVG](../design/v0.0.1/dual-mind-reviewer-roles.svg)              | [PNG](../design/v0.0.1/dual-mind-reviewer-roles.png)              |
-| 4. 新建任务          | [SVG](../design/v0.0.1/dual-mind-new-task.svg)                    | [PNG](../design/v0.0.1/dual-mind-new-task.png)                    |
-| 5. 删除任务          | [SVG](../design/v0.0.1/dual-mind-delete-task.svg)                 | [PNG](../design/v0.0.1/dual-mind-delete-task.png)                 |
-| 6. API 模型查询      | [SVG](../design/v0.0.2/dual-mind-api-model-discovery.svg)         | [PNG](../design/v0.0.2/dual-mind-api-model-discovery.png)         |
-| 7. 任务模型选择      | [SVG](../design/v0.0.2/dual-mind-task-model-selection.svg)        | [PNG](../design/v0.0.2/dual-mind-task-model-selection.png)        |
-| 8. 独立任务主页      | [SVG](../design/v0.0.3/dual-mind-task-home-proposal.svg)          | [PNG](../design/v0.0.3/dual-mind-task-home-proposal.png)          |
-| 9. 独立任务详情      | [SVG](../design/v0.0.3/dual-mind-task-detail-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-detail-proposal.png)        |
-| 10. 创建任务         | [SVG](../design/v0.0.3/dual-mind-task-create-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-create-proposal.png)        |
-| 11. 错误与窄窗口     | [SVG](../design/v0.0.3/dual-mind-task-states-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-states-proposal.png)        |
-| 12. 方案与验收循环   | [SVG](../design/v0.0.3/dual-mind-execution-cycle-proposal.svg)    | [PNG](../design/v0.0.3/dual-mind-execution-cycle-proposal.png)    |
-| 13. 附加命令设置     | [SVG](../design/v0.0.3/dual-mind-execution-settings-proposal.svg) | [PNG](../design/v0.0.3/dual-mind-execution-settings-proposal.png) |
-| 14. 聊天与证据面板   | [SVG](../design/v0.0.3/dual-mind-task-chat-proposal.svg)          | [PNG](../design/v0.0.3/dual-mind-task-chat-proposal.png)          |
-| 15. 窄窗口证据抽屉   | [SVG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.svg)   | [PNG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)   |
-| 16. 执行中消息排队   | [SVG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.svg)   | [PNG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)   |
-| 17. 追问与继续修改   | [SVG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.svg) | [PNG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png) |
+| 场景                               | 可编辑源文件                                                          | 预览                                                                  |
+| ---------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1. 并行任务工作台                  | [SVG](../design/v0.0.1/dual-mind-workbench.svg)                       | [PNG](../design/v0.0.1/dual-mind-workbench.png)                       |
+| 2. API 连接设置                    | [SVG](../design/v0.0.1/dual-mind-api-settings.svg)                    | [PNG](../design/v0.0.1/dual-mind-api-settings.png)                    |
+| 3. Reviewer 角色设置               | [SVG](../design/v0.0.1/dual-mind-reviewer-roles.svg)                  | [PNG](../design/v0.0.1/dual-mind-reviewer-roles.png)                  |
+| 4. 新建任务                        | [SVG](../design/v0.0.1/dual-mind-new-task.svg)                        | [PNG](../design/v0.0.1/dual-mind-new-task.png)                        |
+| 5. 删除任务                        | [SVG](../design/v0.0.1/dual-mind-delete-task.svg)                     | [PNG](../design/v0.0.1/dual-mind-delete-task.png)                     |
+| 6. API 模型查询                    | [SVG](../design/v0.0.2/dual-mind-api-model-discovery.svg)             | [PNG](../design/v0.0.2/dual-mind-api-model-discovery.png)             |
+| 7. 任务模型选择                    | [SVG](../design/v0.0.2/dual-mind-task-model-selection.svg)            | [PNG](../design/v0.0.2/dual-mind-task-model-selection.png)            |
+| 8. 独立任务主页                    | [SVG](../design/v0.0.3/dual-mind-task-home-proposal.svg)              | [PNG](../design/v0.0.3/dual-mind-task-home-proposal.png)              |
+| 9. 独立任务详情                    | [SVG](../design/v0.0.3/dual-mind-task-detail-proposal.svg)            | [PNG](../design/v0.0.3/dual-mind-task-detail-proposal.png)            |
+| 10. 创建任务                       | [SVG](../design/v0.0.3/dual-mind-task-create-proposal.svg)            | [PNG](../design/v0.0.3/dual-mind-task-create-proposal.png)            |
+| 11. 错误与窄窗口                   | [SVG](../design/v0.0.3/dual-mind-task-states-proposal.svg)            | [PNG](../design/v0.0.3/dual-mind-task-states-proposal.png)            |
+| 12. 方案与验收循环                 | [SVG](../design/v0.0.3/dual-mind-execution-cycle-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-execution-cycle-proposal.png)        |
+| 13. 附加命令设置                   | [SVG](../design/v0.0.3/dual-mind-execution-settings-proposal.svg)     | [PNG](../design/v0.0.3/dual-mind-execution-settings-proposal.png)     |
+| 14. 聊天与证据面板                 | [SVG](../design/v0.0.3/dual-mind-task-chat-proposal.svg)              | [PNG](../design/v0.0.3/dual-mind-task-chat-proposal.png)              |
+| 15. 窄窗口证据抽屉                 | [SVG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.svg)       | [PNG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)       |
+| 16. 执行中消息排队                 | [SVG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.svg)       | [PNG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)       |
+| 17. 追问与继续修改                 | [SVG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.svg)     | [PNG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png)     |
+| 18. 过程提示与聊天                 | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)          | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)          |
+| 19. 聊天与输出最小化               | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)         | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)         |
+| 20. 紧凑聊天与窄窗口               | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg)    | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)    |
+| 21. 故障与继续执行                 | [SVG](../design/v0.0.4/dual-mind-recovery-failure-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-failure-proposal.png)       |
+| 22. 恢复状态与重试                 | [SVG](../design/v0.0.4/dual-mind-recovery-running-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-running-proposal.png)       |
+| 23. 窄窗口恢复                     | [SVG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.svg)        | [PNG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.png)        |
+| 24. 原生主侧栏                     | [SVG](../design/v0.0.5/dual-mind-sidebar-left-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-sidebar-left-proposal.png)           |
+| 25. 原生辅助侧栏                   | [SVG](../design/v0.0.5/dual-mind-sidebar-right-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-right-proposal.png)          |
+| 26. 侧栏宽度                       | [SVG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.svg)         | [PNG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.png)         |
+| 27. 侧栏表单与证据                 | [SVG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.png)          |
+| 28. 紧凑任务主页（已审核）         | [SVG](../design/v0.0.5/dual-mind-task-home-compact-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-task-home-compact-proposal.png)      |
+| 29. 任务列表交互（已审核）         | [SVG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.svg) | [PNG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.png) |
+| 30. 工作树与基点选择（已审核）     | [SVG](../design/v0.0.5/dual-mind-workspace-base-proposal.svg)         | [PNG](../design/v0.0.5/dual-mind-workspace-base-proposal.png)         |
+| 31. 上下文预算与自动整理（已审核） | [SVG](../design/v0.0.5/dual-mind-context-compaction-proposal.svg)     | [PNG](../design/v0.0.5/dual-mind-context-compaction-proposal.png)     |
+| 32. 成果提交与合入（已审核）       | [SVG](../design/v0.0.5/dual-mind-artifact-integration-proposal.svg)   | [PNG](../design/v0.0.5/dual-mind-artifact-integration-proposal.png)   |
+| 33. 合并冲突处理（已审核）         | [SVG](../design/v0.0.5/dual-mind-merge-conflicts-proposal.svg)        | [PNG](../design/v0.0.5/dual-mind-merge-conflicts-proposal.png)        |
+| 34. 工作树清理与成果恢复（已审核） | [SVG](../design/v0.0.5/dual-mind-workspace-cleanup-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-workspace-cleanup-proposal.png)      |
+| 35. 工具调用与命令结果             | [SVG](../design/v0.0.5/dual-mind-tool-results-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-tool-results-proposal.png)           |
+| 36. 重复错误暂停与继续             | [SVG](../design/v0.0.5/dual-mind-tool-pause-proposal.svg)             | [PNG](../design/v0.0.5/dual-mind-tool-pause-proposal.png)             |
+| 37. 历史失败与当前验收             | [SVG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.png)      |
 
 ## 场景 1–7 的历史设计说明
 
@@ -157,7 +181,7 @@
 
 ## 审核与实现门槛
 
-所有者已批准现有 29 组设计，后续界面变更按[贡献指南](../../CONTRIBUTING.zh.md)提供新的 SVG 提案并经明确审核后实现。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
+所有者已确认现有 37 组设计，后续界面变更按[贡献指南](../../CONTRIBUTING.zh.md)提供新的 SVG 提案并经明确审核后实现。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
 
 已实现模块职责见[架构说明](./architecture.md)，任务关联和配置边界见[通信协议](./protocol.md)。其中记录已实现的设置／执行消息、角色交接与文件访问边界。
 
@@ -173,33 +197,20 @@ npm run docs:check
 npm run format:check
 ```
 
-逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对（当前为 29 组），要求原始基础场景 1–7 齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。更新设计或文档不代表已重建或替换公开 VSIX。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。
+逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对（当前为 37 组），要求原始基础场景 1–7 齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。更新设计或文档不代表已重建或替换公开 VSIX。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。
 
 ## 开发分支的执行界面
 
-实际设置类别为 API 连接、新任务的默认配置、任务执行、Reviewer 角色。活动栏图标打开完整原生侧栏工作台。任务次要详情默认折叠，设置类别使用选择器。当前详情采用场景 14–17 的紧凑模型栏、用户右侧／AI 左侧聊天、常驻输入框和独立证据面板；宽屏证据栏约 360 CSS 像素，低于 1100 CSS 像素时转为宽度不超过 430 CSS 像素及视口的抽屉。聊天与证据分别分页，公开过程在聊天中显示，命令细节在证据中展开；场景 18–20 增加活动条、图标缩放和最小化。保留手动开始、暂停／继续／停止、只读追问及沿用成果继续修改。每工作区同时一个任务；原图中的双栏、并行执行及应用成果入口属于历史设计，当前行为见[使用说明](./usage.md)，实际覆盖见[任务聊天验证](./task-chat-validation.md)。
+实际设置类别为 API 连接、新任务的默认配置、任务执行、Reviewer 角色、模型上下文和保存的成果。活动栏图标打开完整原生侧栏工作台。任务次要详情默认折叠，设置类别使用选择器。当前详情采用场景 14–17 的紧凑模型栏、用户右侧／AI 左侧聊天、常驻输入框和独立证据面板；宽屏证据栏约 360 CSS 像素，低于 1100 CSS 像素时转为宽度不超过 430 CSS 像素及视口的抽屉。聊天与证据分别分页，公开过程在聊天中显示，命令细节在证据中展开；场景 18–20 增加活动条、图标缩放和最小化。保留手动开始、暂停／继续／停止、只读追问及沿用成果继续修改。每工作区同时一个任务；原图中的双栏、并行执行及应用成果入口属于历史设计，当前行为见[使用说明](./usage.md)，实际覆盖见[任务聊天验证](./task-chat-validation.md)。
 
 ## 新增已审核设计：2026-11-22
 
-| 场景                           | 源文件                                                                | 预览                                                                  |
-| ------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 18. Public process / 公开过程  | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)          | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)          |
-| 19. Minimized panel / 最小化   | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)         | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)         |
-| 20. Narrow messages / 窄屏消息 | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg)    | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)    |
-| 21. 故障与继续执行             | [SVG](../design/v0.0.4/dual-mind-recovery-failure-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-failure-proposal.png)       |
-| 22. 恢复状态与重试             | [SVG](../design/v0.0.4/dual-mind-recovery-running-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-running-proposal.png)       |
-| 23. 窄窗口恢复                 | [SVG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.svg)        | [PNG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.png)        |
-| 24. 原生主侧栏                 | [SVG](../design/v0.0.5/dual-mind-sidebar-left-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-sidebar-left-proposal.png)           |
-| 25. 原生辅助侧栏               | [SVG](../design/v0.0.5/dual-mind-sidebar-right-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-right-proposal.png)          |
-| 26. 侧栏宽度                   | [SVG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.svg)         | [PNG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.png)         |
-| 27. 侧栏表单与证据             | [SVG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.png)          |
-| 28. 紧凑任务主页（已审核）     | [SVG](../design/v0.0.5/dual-mind-task-home-compact-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-task-home-compact-proposal.png)      |
-| 29. 任务列表交互（已审核）     | [SVG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.svg) | [PNG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.png) |
+| 场景                           | 源文件                                                             | 预览                                                               |
+| ------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| 18. Public process / 公开过程  | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)       |
+| 19. Minimized panel / 最小化   | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)      | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)      |
+| 20. Narrow messages / 窄屏消息 | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg) | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png) |
 
 ## 已审核：恢复执行
 
 原 20 组设计保留。新增[场景 21–23](./recovery-proposal.md)已审核并接入故障、恢复检查、有限重试及窄屏提示；设计稿中的任务和计数保持静态示例。
-
-## 紧凑主页修订
-
-场景 28–29 已审核并接入，保留原图及历史审核标签；布局与交互见[中英文提案](./task-home-compact-proposal.md)。

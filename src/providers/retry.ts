@@ -32,10 +32,12 @@ export function waitForRetry(ms: number, signal: AbortSignal): Promise<void> {
     signal.addEventListener('abort', abort, { once: true });
   });
 }
-export async function quotaError(response: Response): Promise<boolean> {
+export async function providerFailure(
+  response: Response,
+): Promise<{ quota: boolean; context: boolean }> {
   const reader = response.body?.getReader();
   if (!reader) {
-    return response.status === 402;
+    return { quota: response.status === 402, context: false };
   }
   const chunks: Uint8Array[] = [];
   let bytes = 0;
@@ -56,11 +58,20 @@ export async function quotaError(response: Response): Promise<boolean> {
     reader.releaseLock();
   }
   const text = Buffer.concat(chunks).toString('utf8');
-  return (
-    response.status === 402 ||
-    /insufficient_quota|quota_exceeded|billing_hard_limit|usage[_ ]limit[_ ](?:reached|exceeded)|credit(?:s)?[_ ](?:balance[_ ])?(?:exhausted|insufficient)|exceeded your current quota/i.test(
-      text,
-    )
+  return {
+    quota:
+      response.status === 402 ||
+      /insufficient_quota|quota_exceeded|billing_hard_limit|usage[_ ]limit[_ ](?:reached|exceeded)|credit(?:s)?[_ ](?:balance[_ ])?(?:exhausted|insufficient)|exceeded your current quota/i.test(
+        text,
+      ),
+    context: contextOverflow(text),
+  };
+}
+/** Classify bounded error payloads only, never ordinary model output or unrelated HTTP 400s. */
+export function contextOverflow(value: unknown): boolean {
+  const text = (typeof value === 'string' ? value : JSON.stringify(value ?? '')).slice(0, 8192);
+  return /context_length_exceeded|context_window_exceeded|prompt_too_long|maximum context (?:length|window)|exceed(?:s|ed)? (?:the |your |this model.s )?(?:context|maximum context)|(?:input|prompt) (?:is )?too (?:long|large) for (?:the |this )?model|reduce (?:the length of )?(?:your )?(?:messages|prompt)/i.test(
+    text,
   );
 }
 export function transientNetwork(error: unknown): boolean {

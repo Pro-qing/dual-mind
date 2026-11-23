@@ -108,6 +108,10 @@ npm run package
 
 CI 各组合运行环境及本地存储／React 测试、格式、类型、lint、文档链接、设计资源检查和扩展宿主测试。验证组合包括 Ubuntu 20.04 容器中的 VS Code 1.100.0 和 stable，以及原生 Ubuntu 24.04 上的 stable；Ubuntu 20.04 stable 组合额外验证真实 Webview 和打包，详见[环境验证组合](./environment.md)。修改支持的文本文件后可执行 `npm run format`。手写 SVG 的几何排版不交由 Prettier 修改。
 
+本地测试使用串行工作进程，每个测试进程的 JavaScript 堆限制为 256 MiB。资源有限时，将工程检查与各图形套件分别运行；监测完整进程树、主机可用内存、交换空间和耗时，主机余量不足时停止测试。仅限制 JavaScript 堆不能限制 Electron 总内存。`DUAL_MIND_RESOURCE_UI=1` 为图形测试增加渲染进程／堆限制并禁用无关扩展；`DUAL_MIND_SKIP_NATIVE_UI=1` 只运行 Webview 套件，随后可单独执行 `node scripts/verify-sidebar.mjs`。这些开关本身不提供操作系统级内存配额。
+
+运行 `npm run package` 时设置 `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.5-tool-errors-ui.vsix`，可生成独立候选包并保留默认安装包。打包不会自动安装或发布。
+
 ## 常见问题
 
 | 现象                            | 处理方式                                                                |

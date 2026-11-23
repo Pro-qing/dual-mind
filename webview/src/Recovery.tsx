@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef, useState } from 'react';
 import { formatError, toAppError } from '../../src/shared/errors';
 import { terminalStatuses, type RunSummary } from '../../src/shared/execution';
 import type { MessageKey } from '../../src/shared/i18n';
@@ -40,10 +41,63 @@ export function canResume(run?: RunSummary, latestId?: string, activeId?: string
 export function recoveryNoticeId(taskId: string) {
   return `recovery-${taskId}`;
 }
+function ToolPauseFeedback({ run }: { run: RunSummary }) {
+  const { execute, tr } = useUI();
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const lock = useRef(false);
+  const alive = useRef(true);
+  const id = useId();
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  const send = async () => {
+    if (lock.current || !text.trim() || run.status !== 'paused') {
+      return;
+    }
+    lock.current = true;
+    setBusy(true);
+    try {
+      await execute({ kind: 'feedback', runId: run.id, text });
+      if (alive.current) {
+        setText('');
+      }
+    } catch {
+      // Keep the draft; the host error is displayed by App.
+    } finally {
+      lock.current = false;
+      if (alive.current) {
+        setBusy(false);
+      }
+    }
+  };
+  return (
+    <div className="form-stack">
+      <label htmlFor={id}>{tr('feedback')}</label>
+      <textarea
+        id={id}
+        rows={2}
+        maxLength={8000}
+        value={text}
+        disabled={busy || run.status !== 'paused'}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <button
+        disabled={busy || run.status !== 'paused' || !text.trim()}
+        onClick={() => void send()}
+      >
+        {tr('sendFeedback')}
+      </button>
+    </div>
+  );
+}
 export function RecoveryNotice({ taskId }: { taskId: string }) {
   const { execution, snapshot, tr } = useUI();
   const run = execution.runs.find((item) => item.taskId === taskId);
-  if (!run || !['failed', 'interrupted', 'recovering'].includes(run.status)) {
+  if (!run || (!run.toolPause && !['failed', 'interrupted', 'recovering'].includes(run.status))) {
     return null;
   }
   const recovery = run.recovery;
@@ -76,7 +130,13 @@ export function RecoveryNotice({ taskId }: { taskId: string }) {
     >
       <strong>
         {tr(
-          restoring ? 'run_recovering' : run.status === 'failed' ? 'run_failed' : 'run_interrupted',
+          run.toolPause
+            ? 'repeatedPause'
+            : restoring
+              ? 'run_recovering'
+              : run.status === 'failed'
+                ? 'run_failed'
+                : 'run_interrupted',
         )}
         {recovery &&
           ` · ${tr(recovery.agent ?? 'chatSystem')} · ${tr(recoveryPhase(recovery.phase))}`}
@@ -85,6 +145,11 @@ export function RecoveryNotice({ taskId }: { taskId: string }) {
         <p role="status">{tr(recoveryStep(recovery?.step))}</p>
       ) : (
         <>
+          {run.toolPause && (
+            <p>
+              {tr('repeatedPauseHint')} {run.toolPause.tool} · {run.toolPause.count}
+            </p>
+          )}
           {fault && <ErrorNotice error={fault} locale={snapshot.locale} />}
           {blocked &&
             (!fault ||
@@ -105,6 +170,7 @@ export function RecoveryNotice({ taskId }: { taskId: string }) {
             <p className="hint">{tr('recoveryLegacy')}</p>
           )}
           {other && <p className="hint">{tr('otherTaskActive')}</p>}
+          {run.toolPause && <ToolPauseFeedback key={run.id} run={run} />}
         </>
       )}
       {recovery && (

@@ -15,6 +15,11 @@ export interface CheckResult {
   ok: boolean;
   exitCode: number;
   output: string;
+  stdout?: string;
+  stderr?: string;
+  durationMs?: number;
+  termination?: string;
+  actualExitCode?: number | null;
   reason?: string;
 }
 export interface CommandRunner {
@@ -123,6 +128,9 @@ export async function runProcess(
       return;
     }
     let text = '',
+      stdout = '',
+      stderr = '',
+      exitSignal: string | null = null,
       bytes = 0,
       reason: string | undefined;
     let closed = false,
@@ -155,6 +163,13 @@ export async function runProcess(
           ok: exitCode === 0 && !reason,
           exitCode: exitCode ?? -1,
           output: text,
+          stdout,
+          stderr,
+          durationMs: Date.now() - since,
+          actualExitCode: exitCode,
+          termination:
+            reason ??
+            (exitSignal ? `signal:${exitSignal}` : exitCode === null ? 'unknown' : 'exited'),
           ...(reason ? { reason } : {}),
         });
       }
@@ -201,7 +216,8 @@ export async function runProcess(
       started(false);
       finish(launchError(error, command));
     });
-    child.once('exit', (code) => {
+    child.once('exit', (code, signal) => {
+      exitSignal = signal;
       exitCode = code;
       stop();
     });
@@ -210,12 +226,20 @@ export async function runProcess(
       closed = true;
       stop();
     });
-    const collect = (next: string) => {
+    const collect = (next: string, channel: 'stdout' | 'stderr') => {
       text += next;
+      if (channel === 'stdout') {
+        stdout += next;
+      } else {
+        stderr += next;
+      }
       options.output?.(next);
     };
     // Independent decoders preserve UTF-8 characters split across pipe chunks.
-    for (const stream of [child.stdout!, child.stderr!]) {
+    for (const [channel, stream] of [
+      ['stdout', child.stdout!],
+      ['stderr', child.stderr!],
+    ] as const) {
       const decoder = new StringDecoder('utf8');
       stream.on('data', (chunk: Buffer) => {
         if (settled || reason === 'outputLimit') {
@@ -227,11 +251,11 @@ export async function runProcess(
           stop();
           return;
         }
-        collect(decoder.write(chunk));
+        collect(decoder.write(chunk), channel);
       });
       stream.on('end', () => {
         if (!settled && reason !== 'outputLimit') {
-          collect(decoder.end());
+          collect(decoder.end(), channel);
         }
       });
     }

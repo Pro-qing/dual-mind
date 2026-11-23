@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, open, readFile, rename, rm, stat, truncate } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rename, rm, stat, truncate } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { TaskDraft } from '../shared/model';
 import type { Agent, ExecutionConfig, RunSummary, TaskMessage } from '../shared/execution';
@@ -22,6 +22,7 @@ export interface RecoveryCursor {
   index: number;
 }
 export interface RecoveryState {
+  contexts?: Partial<Record<Agent, import('../shared/context').ContextCheckpoint>>;
   version: 1;
   task: TaskDraft;
   config: ExecutionConfig;
@@ -38,7 +39,7 @@ export interface RecoveryState {
   continuation?: RunSummary;
   phase?: AgentPhase | 'preparing' | 'checking';
   agent?: Agent;
-  budgets: Record<string, { turn: number; corrections: number }>;
+  budgets: Record<string, import('../shared/toolOutcome').ToolBudget>;
   turn: number;
   corrections: number;
   requestId?: string;
@@ -53,13 +54,24 @@ export interface RecoveryState {
   planApplied?: boolean;
 }
 export interface RecoveryOperation {
+  callId?: string;
+  parentOperationId?: string;
+  outcome?: import('../shared/toolOutcome').ToolOutcome;
   id: string;
   generation: number;
   kind: 'model' | 'tool' | 'command' | 'environment';
   phase?: RecoveryState['phase'];
   agent?: Agent;
   name: string;
-  status: 'pending' | 'started' | 'succeeded' | 'failed' | 'unknown';
+  status:
+    | 'pending'
+    | 'started'
+    | 'succeeded'
+    | 'failed'
+    | 'unknown'
+    | 'rejected'
+    | 'skipped'
+    | 'cancelled';
   requestId?: string;
   nextAttempt?: number;
   args?: unknown;
@@ -190,7 +202,9 @@ export class RecoveryStore {
               budget.turn > 20 ||
               !Number.isSafeInteger(budget.corrections) ||
               budget.corrections < 0 ||
-              budget.corrections > 3,
+              budget.corrections > 3 ||
+              (budget.calls !== undefined &&
+                (!Number.isSafeInteger(budget.calls) || budget.calls < 0 || budget.calls > 200)),
           ) ||
           !Array.isArray(value.handling) ||
           !Array.isArray(value.feedback)
@@ -204,7 +218,16 @@ export class RecoveryStore {
           !op ||
           !validId(op.id) ||
           !['model', 'tool', 'command', 'environment'].includes(op.kind) ||
-          !['pending', 'started', 'succeeded', 'failed', 'unknown'].includes(op.status) ||
+          ![
+            'pending',
+            'started',
+            'succeeded',
+            'failed',
+            'unknown',
+            'rejected',
+            'skipped',
+            'cancelled',
+          ].includes(op.status) ||
           !Number.isSafeInteger(op.generation)
         ) {
           throw new OperationError('recoveryInvalid');
@@ -214,7 +237,7 @@ export class RecoveryStore {
           previous &&
           (previous.generation !== op.generation ||
             previous.kind !== op.kind ||
-            ['succeeded', 'failed'].includes(previous.status))
+            ['succeeded', 'failed', 'rejected', 'skipped', 'cancelled'].includes(previous.status))
         ) {
           throw new OperationError('recoveryInvalid');
         }
@@ -259,6 +282,41 @@ export class RecoveryStore {
   }
   operation(value: RecoveryOperation) {
     return this.append({ kind: 'operation', value: structuredClone(value) });
+  }
+  async saveContext(id: string, value: import('../shared/context').ContextSummary): Promise<void> {
+    if (!validId(id) || value.runId !== this.runId) {
+      throw new OperationError('contextSnapshot');
+    }
+    await mkdir(this.folder, { recursive: true, mode: 0o700 });
+    const file = await open(this.file(`context-${id}`), 'wx', 0o600);
+    try {
+      await file.writeFile(JSON.stringify(value));
+      await file.sync();
+    } finally {
+      await file.close();
+    }
+    if (process.platform !== 'win32') {
+      const directory = await open(this.folder, 'r');
+      try {
+        await directory.sync();
+      } finally {
+        await directory.close();
+      }
+    }
+  }
+  async context(id: string): Promise<import('../shared/context').ContextSummary> {
+    if (!validId(id)) {
+      throw new OperationError('contextSnapshot');
+    }
+    try {
+      const file = this.file(`context-${id}`);
+      if ((await stat(file)).size > 32 * 1024) {
+        throw new Error('oversized');
+      }
+      return JSON.parse(await readFile(file, 'utf8'));
+    } catch {
+      throw new OperationError('contextSnapshot');
+    }
   }
   private append(payload: Payload): Promise<void> {
     const next = this.chain.then(async () => {
@@ -337,6 +395,18 @@ export class RecoveryStore {
     await this.chain;
     for (const suffix of ['journal', 'checkpoint', 'previous']) {
       await rm(this.file(suffix), { force: true });
+    }
+    const files = await readdir(this.folder).catch((error) => {
+      if (missing(error)) {
+        return [];
+      }
+      throw error;
+    });
+    for (const name of files) {
+      const prefix = `${this.runId}.context-`;
+      if (name.startsWith(prefix) && validId(name.slice(prefix.length))) {
+        await rm(join(this.folder, name));
+      }
     }
   }
 }

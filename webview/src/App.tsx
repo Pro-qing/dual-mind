@@ -1,3 +1,5 @@
+import { ContextSettings, SavedArtifacts } from './Lifecycle';
+import type { DerivedTask } from './derivedTask';
 import { restoreChatViews, type ChatView, type WorkbenchViewState } from './chatViewState';
 import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
@@ -64,6 +66,10 @@ export function App({
   const settingsView = view !== 'home' && view !== 'task';
   const [preview, setPreview] = useState(false);
   const [taskForm, setTaskForm] = useState<'new' | TaskDraft | null>(null);
+  const [derived, setDerived] = useState<DerivedTask>();
+  const [pendingTaskId, setPendingTaskId] = useState<string>();
+  const routeRef = useRef(JSON.stringify(navigation));
+  routeRef.current = JSON.stringify(navigation);
   const [execution, setExecution] = useState<ExecutionSnapshot>(
     () => snapshot.execution || { config: emptyExecutionConfig(), runs: [] },
   );
@@ -101,6 +107,7 @@ export function App({
   );
   const execute = useCallback(
     async (action: ExecutionAction) => {
+      const origin = routeRef.current;
       setExecutionError(undefined);
       const request = action.kind === 'history' ? ++historyRequest.current : 0;
       if (action.kind === 'history') {
@@ -114,7 +121,7 @@ export function App({
         if (request && request !== historyRequest.current) {
           return result;
         }
-        if (!['conversation', 'evidence'].includes(action.kind)) {
+        if (origin === routeRef.current && !['conversation', 'evidence'].includes(action.kind)) {
           setExecution(result.state);
         }
         if (result.events && request === historyRequest.current) {
@@ -122,7 +129,7 @@ export function App({
         }
         return result;
       } catch (error) {
-        if (!request || request === historyRequest.current) {
+        if (origin === routeRef.current && (!request || request === historyRequest.current)) {
           setExecutionError(toAppError(error));
         }
         throw error;
@@ -144,7 +151,7 @@ export function App({
     }
     setNavigation(next);
   };
-  const setView = (view: 'api' | 'defaults' | 'execution' | 'roles') => {
+  const setView = (view: 'api' | 'defaults' | 'execution' | 'roles' | 'context' | 'artifacts') => {
     setPreview(false);
     navigate({
       view,
@@ -161,13 +168,15 @@ export function App({
     consumedNavigation.current = request.id;
     setPreview(false);
     if (request.newTask) {
+      setDerived(undefined);
       setTaskForm('new');
     } else if (request.taskId) {
+      setDerived(undefined);
       setTaskForm(null);
       navigate(restoreNavigation({ view: 'task', taskId: request.taskId }, snapshot.tasks));
     }
     onNavigationHandled?.(request.id);
-  }, [snapshot.navigationRequest?.id]);
+  }, [snapshot.navigationRequest?.id, snapshot.tasks]);
   useEffect(() => {
     const restored = restoreNavigation(navigation, snapshot.tasks);
     if (JSON.stringify(restored) !== JSON.stringify(navigation)) {
@@ -175,6 +184,13 @@ export function App({
     }
   }, [snapshot.tasks, navigation]);
 
+  useEffect(() => {
+    const id = pendingTaskId;
+    if (id && snapshot.tasks.some((task) => task.id === id)) {
+      setPendingTaskId(undefined);
+      navigate({ view: 'task', taskId: id });
+    }
+  }, [snapshot.tasks, pendingTaskId]);
   const modelQueries = useModelQueries(bridge);
   const [pendingCount, setPendingCount] = useState(0);
   const [notice, setNotice] = useState<{ key: MessageKey; error: boolean } | null>(null);
@@ -239,6 +255,12 @@ export function App({
   return (
     <UIContext.Provider
       value={{
+        openDerived: (value) => {
+          setDerived(value);
+          setTaskForm(null);
+        },
+        openTask: (id) => navigate({ view: 'task', taskId: id }),
+        openContextSettings: () => setView('context'),
         snapshot,
         execution,
         executionEvents,
@@ -322,7 +344,10 @@ export function App({
             onPreviewChange={setPreview}
             onSettings={() => setView('api')}
             onSelect={(id) => navigate({ view: 'task', taskId: id })}
-            onNewTask={() => setTaskForm('new')}
+            onNewTask={() => {
+              setDerived(undefined);
+              setTaskForm('new');
+            }}
             onEditTask={setTaskForm}
             onDeleted={(id) => {
               if (navigation.view === 'task' && navigation.taskId === id) {
@@ -351,13 +376,18 @@ export function App({
                 aria-label={tr('settingsCategory')}
                 value={view}
                 onChange={(event) =>
-                  setView(event.target.value as 'api' | 'defaults' | 'execution' | 'roles')
+                  setView(
+                    event.target.value as
+                      'api' | 'defaults' | 'execution' | 'roles' | 'context' | 'artifacts',
+                  )
                 }
               >
                 <option value="api">{tr('apiTab')}</option>
                 <option value="defaults">{tr('defaults')}</option>
                 <option value="execution">{tr('executionTab')}</option>
                 <option value="roles">{tr('rolesTab')}</option>
+                <option value="context">{tr('contextSettings')}</option>
+                <option value="artifacts">{tr('savedArtifacts')}</option>
               </select>
             </div>
             <div className="settings-content">
@@ -367,19 +397,39 @@ export function App({
                 <Defaults />
               ) : view === 'execution' ? (
                 <ExecutionSettings />
+              ) : view === 'context' ? (
+                <ContextSettings />
+              ) : view === 'artifacts' ? (
+                <SavedArtifacts />
               ) : (
                 <Roles />
               )}
             </div>
           </>
         )}
-        {taskForm && (
+        {(taskForm || derived) && (
           <TaskForm
-            task={taskForm === 'new' ? undefined : taskForm}
-            onClose={() => setTaskForm(null)}
+            key={
+              derived
+                ? `${derived.kind}:${derived.operationId ?? derived.snapshotId ?? derived.taskId}`
+                : taskForm === 'new'
+                  ? 'new'
+                  : taskForm?.id
+            }
+            derived={derived}
+            task={taskForm === 'new' ? undefined : (taskForm ?? undefined)}
+            onClose={() => {
+              setTaskForm(null);
+              setDerived(undefined);
+            }}
             onSaved={(id) => {
               setTaskForm(null);
-              navigate({ view: 'task', taskId: id });
+              setDerived(undefined);
+              if (!derived || snapshot.tasks.some((t) => t.id === id)) {
+                navigate({ view: 'task', taskId: id });
+              } else {
+                setPendingTaskId(id);
+              }
             }}
           />
         )}

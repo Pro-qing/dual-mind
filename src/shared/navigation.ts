@@ -4,7 +4,7 @@ export type TaskLocation = { view: 'home' } | { view: 'task'; taskId: string };
 export type Navigation =
   | TaskLocation
   | {
-      view: 'api' | 'defaults' | 'roles' | 'execution';
+      view: 'api' | 'defaults' | 'roles' | 'execution' | 'context' | 'artifacts';
       returnTo: TaskLocation;
     };
 export function restoreNavigation(value: unknown, tasks: readonly TaskDraft[]): Navigation {
@@ -23,7 +23,9 @@ export function restoreNavigation(value: unknown, tasks: readonly TaskDraft[]): 
     state.view === 'api' ||
     state.view === 'defaults' ||
     state.view === 'roles' ||
-    state.view === 'execution'
+    state.view === 'execution' ||
+    state.view === 'context' ||
+    state.view === 'artifacts'
   ) {
     const target = restoreNavigation(
       state.returnTo && typeof state.returnTo === 'object'

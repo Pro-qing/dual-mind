@@ -36,6 +36,13 @@ function nodeCommand(script: string) {
 async function setup(
   t: TestContext,
   options: {
+    toolBehavior?: {
+      mode: 'file' | 'command' | 'order' | 'unknown' | 'calls';
+      enabled: boolean;
+      agent?: 'worker' | 'reviewer';
+    };
+    splitCommandOutput?: boolean;
+    contextOverflow?: { once: boolean; summaryFailure?: boolean; large: boolean };
     git?: import('../../src/shared/model').GitStrategy;
     flip?: boolean;
     approve?: boolean;
@@ -115,6 +122,71 @@ async function setup(
         (tool) => (tool.name || tool.function?.name) === 'submit_answer',
       );
       const phase = answering ? 'answering' : planning ? 'planning' : agent;
+      const summarize = tools.some(
+        (tool) => (tool.name || tool.function?.name) === 'submit_context_summary',
+      );
+      const sendSummary = () => {
+        const call = {
+          name: 'submit_context_summary',
+          arguments: JSON.stringify({
+            summary:
+              'Goal: change file.txt to fixed. Original files were inspected. Preserve acceptance criterion artifact; read saved operation output if needed. No acceptance has been granted yet.',
+          }),
+        };
+        response.setHeader('Content-Type', 'text/event-stream');
+        const events = body.input
+          ? [
+              {
+                type: 'response.completed',
+                response: {
+                  status: 'completed',
+                  output: [{ type: 'function_call', call_id: 'summary', ...call }],
+                },
+              },
+            ]
+          : [
+              {
+                choices: [
+                  {
+                    index: 0,
+                    delta: {
+                      tool_calls: [{ index: 0, id: 'summary', type: 'function', function: call }],
+                    },
+                    finish_reason: 'tool_calls',
+                  },
+                ],
+              },
+              '[DONE]',
+            ];
+        response.end(
+          events
+            .map(
+              (event) => `data: ${typeof event === 'string' ? event : JSON.stringify(event)}\n\n`,
+            )
+            .join(''),
+        );
+      };
+      if (summarize) {
+        if (agent === 'worker') {
+          workerCalls--;
+        } else {
+          reviewerCalls--;
+        }
+        if (options.contextOverflow?.summaryFailure) {
+          response.writeHead(401);
+          response.end('{}');
+        } else {
+          sendSummary();
+        }
+        return;
+      }
+      if (options.contextOverflow?.once && agent === 'worker' && count === 2) {
+        options.contextOverflow.once = false;
+        workerCalls--;
+        response.writeHead(400, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ error: { code: 'context_length_exceeded' } }));
+        return;
+      }
       if (
         options.failure?.enabled &&
         agent === options.failure.agent &&
@@ -150,11 +222,23 @@ async function setup(
       const messages = (body.messages || body.input) as Record<string, unknown>[];
       const commandIds = messages
         .flatMap((message) => {
-          if (message.role !== 'tool' && message.type !== 'function_call_output') {
+          if (
+            message.role !== 'tool' &&
+            message.type !== 'function_call_output' &&
+            message.role !== 'user'
+          ) {
             return [];
           }
           try {
             const result = JSON.parse(String(message.content || message.output));
+            if (result.handoff === 'execution_recovery') {
+              return result.commands
+                .filter(
+                  (command: { purpose: string; ok: boolean }) =>
+                    command.purpose === 'verify' && command.ok,
+                )
+                .map((command: { id: string }) => command.id);
+            }
             return result.id && result.purpose === 'verify' ? [result.id as string] : [];
           } catch {
             return [];
@@ -347,7 +431,7 @@ async function setup(
                             }),
                           };
       const id = `${agent}-${count}`;
-      const batch =
+      let batch =
         (options.badCheck && agent === 'worker') || invalidArguments
           ? [
               {
@@ -358,6 +442,68 @@ async function setup(
               { id, ...call },
             ]
           : [{ id, ...call }];
+      if (options.toolBehavior?.enabled && agent === (options.toolBehavior.agent ?? 'worker')) {
+        const mode = options.toolBehavior.mode;
+        if (mode === 'calls') {
+          batch = Array.from({ length: 100 }, (_, index) => ({
+            id: `${id}-${index}`,
+            name: 'read_file',
+            arguments: '{"path":"budget-missing.txt"}',
+          }));
+        } else if (mode === 'unknown') {
+          batch = [
+            { id, name: 'nonexistent_tool', arguments: '{}' },
+            {
+              id: `${id}-write`,
+              name: 'write_file',
+              arguments: '{"path":"file.txt","content":"must-not-execute"}',
+            },
+          ];
+        } else if (mode === 'order') {
+          batch = [
+            {
+              id,
+              name: 'finish_work',
+              arguments: JSON.stringify({
+                summary: 'This batch must be rejected before execution',
+                completedSteps: [],
+                evidence: [{ criterionId: 'result', commandIds: [], evidence: 'Not executed' }],
+                unresolved: [],
+              }),
+            },
+            { id: `${id}-read`, name: 'list_files', arguments: '{}' },
+          ];
+        } else if (count % 2 === 0) {
+          batch = [{ id, name: 'list_files', arguments: '{}' }];
+        } else {
+          batch = [
+            {
+              id,
+              name: mode === 'file' ? 'read_file' : 'run_command',
+              arguments:
+                mode === 'file'
+                  ? '{"path":"missing.txt"}'
+                  : JSON.stringify({
+                      name: `Changed label ${count}`,
+                      command: nodeCommand('console.error("failed probe"); process.exit(7)'),
+                      purpose: 'explore',
+                      criterionIds: [],
+                    }),
+            },
+            agent === 'worker'
+              ? {
+                  id: `${id}-write`,
+                  name: 'write_file',
+                  arguments: '{"path":"file.txt","content":"must-not-execute"}',
+                }
+              : { id: `${id}-read`, name: 'list_files', arguments: '{}' },
+          ];
+        }
+      }
+      const publicText =
+        options.contextOverflow?.large && agent === 'worker' && count === 1
+          ? 'public investigation '.repeat(1500)
+          : `${agent} public output`;
       const send = () => {
         response.setHeader('Content-Type', 'text/event-stream');
         if (options.streamSecret) {
@@ -374,13 +520,16 @@ async function setup(
         }
         const events = request.url?.endsWith('/responses')
           ? [
-              { type: 'response.output_text.delta', delta: `${agent} public output` },
+              { type: 'response.output_text.delta', delta: publicText },
               {
                 type: 'response.completed',
                 response: {
                   status: 'completed',
                   output: [
                     { type: 'reasoning', encrypted_content: `${agent}_PRIVATE_PROTOCOL` },
+                    ...(options.contextOverflow?.large && agent === 'worker' && count === 1
+                      ? [{ type: 'message', content: [{ type: 'output_text', text: publicText }] }]
+                      : []),
                     ...batch.map((item) => ({
                       type: 'function_call',
                       call_id: item.id,
@@ -398,7 +547,7 @@ async function setup(
                   {
                     index: 0,
                     delta: {
-                      content: `${agent} public output`,
+                      content: publicText,
                       tool_calls: batch.map((item, index) => ({
                         index,
                         id: item.id,
@@ -501,7 +650,20 @@ async function setup(
         name: command.name,
         ok,
         exitCode: ok ? 0 : 1,
-        output: ok ? 'check passed' : 'expected fixed',
+        output: options.splitCommandOutput
+          ? 'test-secret-worker'
+          : ok
+            ? 'check passed'
+            : 'expected fixed',
+        ...(options.splitCommandOutput
+          ? {
+              stdout: 'test-secret-',
+              stderr: 'worker',
+              durationMs: 1,
+              termination: 'exited' as const,
+              actualExitCode: ok ? 0 : 1,
+            }
+          : {}),
       };
     },
   };
@@ -758,9 +920,10 @@ for (const option of ['badReviewer', 'badCheck'] as const) {
   test(`rejects unauthorized model tool use (${option})`, async (t) => {
     const h = await setup(t, { [option]: true });
     await h.service.request({ kind: 'start', taskId: h.task.id });
-    await waitUntil(() => terminalStatuses.includes(h.service.snapshot().runs[0].status));
+    await waitUntil(() => h.service.snapshot().runs[0].status === 'paused');
     const run = h.service.snapshot().runs[0];
-    assert.equal(run.status, 'failed');
+    assert.equal(run.status, 'paused');
+    assert.equal(run.toolPause?.reason, 'toolBatchRejected');
     assert.notEqual(await readFile(join(run.directory!, 'file.txt'), 'utf8'), 'reviewer-write');
     assert.notEqual(await readFile(join(run.directory!, 'file.txt'), 'utf8'), 'must-not-execute');
     assert.equal(await readFile(join(h.repo, 'file.txt'), 'utf8'), 'baseline');
@@ -1113,15 +1276,19 @@ for (const flip of [false, true]) {
     test(`argument correction is atomic and bounded (${badArguments}, flip=${flip})`, async (t) => {
       const h = await setup(t, { flip, badArguments, readingOnly: true, fixedInitially: true });
       await h.service.request({ kind: 'start', taskId: h.task.id });
-      await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+      await waitUntil(
+        () =>
+          terminalStatuses.includes(h.records.runs[0].status) ||
+          h.records.runs[0].status === 'paused',
+      );
       const run = h.records.runs[0];
       const events = await h.records.history(run.id);
       assert.ok(events.some((event) => event.fault?.code === 'toolArgumentsInvalid'));
-      assert.ok(events.some((event) => event.text.includes('entire batch was skipped')));
+      assert.ok(events.some((event) => event.tool?.status === 'skipped'));
       assert.ok(!JSON.stringify(events).includes('must-not-log'));
       assert.equal(h.commands(), 0);
       if (badArguments === 'always') {
-        assert.equal(run.fault?.code, 'toolCorrectionLimit');
+        assert.equal(run.fault?.code, 'toolBatchRejected');
         assert.equal(h.captured.filter((call) => call.agent === 'worker').length, 3);
         assert.equal(await readFile(join(run.directory!, 'file.txt'), 'utf8'), 'baseline');
       } else {
@@ -1505,18 +1672,26 @@ test('uncertain command process blocks recovery and prevents new work from start
   });
   await service.shutdown();
 });
-test('correction limits survive storage and cannot be reset with resume', async (t) => {
+test('correction pause survives storage and explicit resume keeps total call budgets', async (t) => {
   const h = await setup(t, { badArguments: 'always', readingOnly: true });
   await h.service.request({ kind: 'start', taskId: h.task.id });
-  await waitUntil(() => h.service.snapshot().runs[0].status === 'failed');
+  await waitUntil(() => h.service.snapshot().runs[0].status === 'paused');
   const run = h.service.snapshot().runs[0];
-  assert.equal(run.fault?.code, 'toolCorrectionLimit');
-  assert.equal(run.recovery?.available, false);
+  assert.equal(run.fault?.code, 'toolBatchRejected');
+  assert.equal(run.recovery?.available, true);
   const saved = await h.records.recovery(run.id).load();
-  assert.ok(Object.values(saved!.state.budgets).some((budget) => budget.corrections === 3));
-  await assert.rejects(h.service.request({ kind: 'resume', runId: run.id }), {
-    code: 'recoveryUnavailable',
-  });
+  const key = run.toolPause!.budgetKey;
+  assert.equal(saved!.state.budgets[key].corrections, 3);
+  assert.equal(saved!.state.budgets[key].calls, 6);
+  await h.service.request({ kind: 'resume', runId: run.id });
+  await waitUntil(
+    () =>
+      h.captured.filter((call) => call.agent === 'worker').length >= 6 &&
+      h.records.runs[0].status === 'paused',
+  );
+  const next = await h.records.recovery(run.id).load();
+  assert.equal(next!.state.budgets[key].turn, 6);
+  assert.equal(next!.state.budgets[key].calls, 12);
 });
 
 test('stop during recovery initialization waits for cleanup and cannot launch a model afterwards', async (t) => {
@@ -1570,3 +1745,303 @@ test('a failed recovery preflight remains retryable after missing credentials ar
   await waitUntil(() => terminalStatuses.includes(h.service.snapshot().runs[0].status));
   assert.equal(h.service.snapshot().runs[0].status, 'completed');
 });
+
+for (const flip of [false, true]) {
+  test(`context overflow summarizes and resumes the same request without replaying tools (flip=${flip})`, async (t) => {
+    const h = await setup(t, {
+      flip,
+      readingOnly: true,
+      contextOverflow: { once: true, large: true },
+    });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => terminalStatuses.includes(h.records.runs[0]?.status));
+    const run = h.records.runs[0];
+    assert.equal(run.status, 'completed', run.error);
+    assert.ok((run.context?.worker?.summaries ?? 0) > 0);
+    const saved = await h.records.recovery(run.id).load();
+    assert.ok(saved?.state.contexts?.worker);
+    assert.equal(
+      saved?.operations.filter(
+        (op) => op.kind === 'tool' && op.name === 'write_file' && op.status === 'succeeded',
+      ).length,
+      1,
+    );
+    assert.equal(
+      saved?.state.budgets['1:1:worker:']?.turn,
+      2,
+      'summary/rejected requests do not spend business tool turns',
+    );
+    assert.equal(await readFile(join(run.directory!, 'file.txt'), 'utf8'), 'fixed');
+    const summary = await h.records.recovery(run.id).context(saved!.state.contexts!.worker!.id);
+    assert.ok(!JSON.stringify(summary).includes('PRIVATE_PROTOCOL'));
+    assert.equal((await h.workspaces.artifacts.inspect(h.task.id)).accepted, true);
+  });
+}
+
+test('failed summary remains recoverable and a later continuation keeps the same accepted file work', async (t) => {
+  const options = { once: true, summaryFailure: true, large: true };
+  const h = await setup(t, { readingOnly: true, contextOverflow: options });
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => terminalStatuses.includes(h.records.runs[0]?.status));
+  const failed = h.records.runs[0];
+  assert.equal(failed.status, 'failed');
+  assert.equal(failed.recovery?.available, true);
+  assert.equal(await readFile(join(failed.directory!, 'file.txt'), 'utf8'), 'fixed');
+  options.summaryFailure = false;
+  options.large = false;
+  await h.service.request({ kind: 'resume', runId: failed.id });
+  await waitUntil(() => terminalStatuses.includes(h.records.runs[0]?.status));
+  assert.equal(h.records.runs[0].id, failed.id);
+  assert.equal(h.records.runs[0].status, 'completed', h.records.runs[0].error);
+  const saved = await h.records.recovery(failed.id).load();
+  assert.equal(
+    saved?.operations.filter(
+      (op) => op.kind === 'tool' && op.name === 'write_file' && op.status === 'succeeded',
+    ).length,
+    1,
+  );
+});
+
+test('host reload restores a persisted role summary and does not replay earlier file writes', async (t) => {
+  const failure = { agent: 'worker' as const, at: 3, enabled: true };
+  const h = await setup(t, {
+    autonomous: true,
+    realCommands: true,
+    readingOnly: true,
+    failure,
+    contextOverflow: { once: true, large: true },
+  });
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => h.records.runs[0]?.status === 'failed');
+  const run = h.records.runs[0];
+  const checkpoint = (await h.records.recovery(run.id).load())?.state.contexts?.worker;
+  assert.ok(checkpoint);
+  await h.service.shutdown();
+  const records = new RunRecords(h.f.workspace, () => h.storage);
+  const service = new ExecutionService(h.f.store, h.workspaces, records, h.runner);
+  t.after(() => service.shutdown());
+  await service.ready;
+  failure.enabled = false;
+  const requests = h.captured.length;
+  await service.request({ kind: 'resume', runId: run.id });
+  await waitUntil(() => terminalStatuses.includes(records.runs[0].status));
+  assert.equal(records.runs[0].status, 'completed', records.runs[0].error);
+  assert.ok(JSON.stringify(h.captured[requests].body).includes('DualMind public context summary'));
+  const state = await records.recovery(run.id).load();
+  assert.equal(
+    state?.operations.filter(
+      (op) => op.kind === 'tool' && op.name === 'write_file' && op.status === 'succeeded',
+    ).length,
+    1,
+  );
+  assert.ok(!JSON.stringify(state).includes('PRIVATE_PROTOCOL'));
+});
+
+test('typed artifact actions preserve old delete semantics and restore a deleted task snapshot', async (t) => {
+  const h = await setup(t, { readingOnly: true });
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+  const preview = await h.service.request({ kind: 'git.artifacts', taskId: h.task.id });
+  assert.equal(preview.artifact?.accepted, true);
+  const cleanupId = randomUUID();
+  await h.service.deleteTask(h.task.id, { operationId: cleanupId, token: preview.artifact!.token });
+  assert.equal((await h.f.store.snapshot()).tasks.length, 0);
+  const saved = (await h.service.request({ kind: 'git.saved' })).savedArtifacts!;
+  assert.equal(saved.length, 1);
+  const id = randomUUID();
+  const restore = {
+    kind: 'git.restore' as const,
+    snapshotId: saved[0].id,
+    operationId: id,
+    input: taskInput({
+      name: 'Restored',
+      roleId: h.task.role.id,
+      worker: h.task.worker,
+      reviewer: h.task.reviewer,
+    }),
+  };
+  const result = await h.service.request(restore);
+  assert.equal(result.createdTaskId, id);
+  await h.service.request(restore);
+  assert.equal((await h.f.store.snapshot()).tasks.length, 1);
+  const workspace = await h.workspaces.binding(id);
+  assert.equal(await readFile(join(workspace.directory, 'file.txt'), 'utf8'), 'fixed');
+  await h.service.deleteTask(id);
+  assert.equal(
+    await readFile(join(workspace.directory, 'file.txt'), 'utf8'),
+    'fixed',
+    'old delete leaves the worktree',
+  );
+});
+
+test('an idle Git operation gate allows creation of a new saved task', async (t) => {
+  const h = await setup(t, { readingOnly: true });
+  const id = await h.f.store.dispatch({
+    kind: 'task.save',
+    input: taskInput({ name: 'Another task' }),
+  });
+  assert.ok(id);
+  assert.equal((await h.f.store.snapshot()).tasks.length, 2);
+});
+
+test('cleaned tasks remain readable but reject new execution, messages and edits before changing history', async (t) => {
+  const h = await setup(t, { readingOnly: true });
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+  const preview = (await h.service.request({ kind: 'git.artifacts', taskId: h.task.id })).artifact!;
+  await h.service.request({
+    kind: 'git.cleanup',
+    taskId: h.task.id,
+    operationId: randomUUID(),
+    token: preview.token,
+  });
+  const count = h.records.runs.length;
+  await assert.rejects(h.service.request({ kind: 'start', taskId: h.task.id }), {
+    code: 'workspaceArchived',
+  });
+  await assert.rejects(
+    h.service.request({
+      kind: 'message.send',
+      taskId: h.task.id,
+      messageId: randomUUID(),
+      text: 'keep working',
+    }),
+    { code: 'workspaceArchived' },
+  );
+  await assert.rejects(
+    h.f.store.dispatch({ kind: 'task.save', id: h.task.id, input: taskInput() }),
+    { code: 'workspaceArchived' },
+  );
+  assert.equal(h.records.runs.length, count);
+  assert.ok((await h.service.request({ kind: 'conversation', taskId: h.task.id })).conversation);
+});
+
+for (const flip of [false, true]) {
+  for (const mode of ['file', 'command', 'unknown', 'order'] as const) {
+    test(`tool ${mode} failures pair all results, skip later writes and pause safely (flip=${flip})`, async (t) => {
+      const behavior = { mode, enabled: true };
+      const h = await setup(t, {
+        flip,
+        readingOnly: true,
+        realCommands: true,
+        toolBehavior: behavior,
+      });
+      await h.service.request({ kind: 'start', taskId: h.task.id });
+      await waitUntil(() => h.records.runs[0].status === 'paused', 30000);
+      const run = h.records.runs[0];
+      assert.equal(
+        run.toolPause?.reason,
+        mode === 'unknown' || mode === 'order' ? 'toolBatchRejected' : 'repeatedToolFailure',
+      );
+      assert.equal(await readFile(join(run.directory!, 'file.txt'), 'utf8'), 'baseline');
+      const saved = await h.records.recovery(run.id).load();
+      const outcomes = saved!.operations.filter(
+        (op) => op.kind === 'tool' && op.agent === 'worker',
+      );
+      assert.ok(outcomes.every((op) => op.outcome && op.callId));
+      if (mode === 'order') {
+        assert.ok(
+          outcomes
+            .filter((op) => op.name === 'finish_work')
+            .every((op) => op.outcome?.fault?.code === 'completionOrder'),
+        );
+      }
+      assert.equal(outcomes.filter((op) => op.outcome?.status === 'skipped').length, 3);
+      assert.ok(!outcomes.some((op) => op.name === 'write_file' && op.status === 'succeeded'));
+      if (mode === 'command') {
+        const evidence = (await h.records.evidence(h.task.id)).events.filter(
+          (e) => e.detail?.type === 'command',
+        );
+        assert.equal(evidence.length, 3);
+        assert.ok(
+          evidence.every(
+            (e) =>
+              e.tool?.status === 'failed' &&
+              e.detail?.type === 'command' &&
+              e.detail.command.exitCode === 7,
+          ),
+        );
+        assert.equal((await h.records.evidence(h.task.id)).summary?.errors, 3);
+      }
+      const before = saved!.state.budgets[run.toolPause!.budgetKey].calls!;
+      await h.service.request({
+        kind: 'feedback',
+        runId: run.id,
+        text: 'Inspect paths; do not repeat the failed operation.',
+      });
+      await h.service.request({ kind: 'resume', runId: run.id });
+      await waitUntil(
+        () =>
+          h.records.runs[0].status === 'paused' &&
+          h.captured.filter((r) => r.agent === 'worker').length >
+            (mode === 'file' || mode === 'command' ? 5 : 3),
+        30000,
+      );
+      const next = await h.records.recovery(run.id).load();
+      assert.ok(next!.state.budgets[run.toolPause!.budgetKey].calls! > before);
+    });
+  }
+}
+test('200-call budget is durable and an oversized next batch has no tool effects', async (t) => {
+  const h = await setup(t, { readingOnly: true, toolBehavior: { mode: 'calls', enabled: true } });
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => h.records.runs[0].status === 'failed', 30000);
+  const run = h.records.runs[0];
+  assert.equal(run.fault?.code, 'toolCallLimit');
+  const saved = await h.records.recovery(run.id).load();
+  const calls = saved!.operations.filter((op) => op.kind === 'tool' && op.agent === 'worker');
+  assert.equal(calls.filter((op) => op.status === 'failed').length, 2);
+  assert.equal(calls.filter((op) => op.status === 'skipped').length, 198);
+  assert.equal(calls.filter((op) => op.status === 'rejected').length, 100);
+  assert.ok(Object.values(saved!.state.budgets).some((budget) => budget.calls === 200));
+  assert.equal(run.recovery?.available, false);
+});
+
+for (const flip of [false, true]) {
+  test(`Reviewer repeated file failures pause in planning without executing skipped diagnostics (flip=${flip})`, async (t) => {
+    const h = await setup(t, {
+      flip,
+      readingOnly: true,
+      toolBehavior: { mode: 'file', enabled: true, agent: 'reviewer' },
+    });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => h.records.runs[0].status === 'paused');
+    const run = h.records.runs[0];
+    assert.equal(run.toolPause?.reason, 'repeatedToolFailure');
+    assert.equal(h.captured.filter((r) => r.agent === 'worker').length, 0);
+    const saved = await h.records.recovery(run.id).load();
+    const calls = saved!.operations.filter((op) => op.kind === 'tool');
+    assert.equal(calls.filter((op) => op.status === 'failed').length, 3);
+    assert.equal(calls.filter((op) => op.status === 'skipped').length, 3);
+    assert.equal(calls.filter((op) => op.status === 'succeeded').length, 2);
+    assert.ok(calls.every((op) => op.agent === 'reviewer' && op.outcome?.callId));
+    assert.equal(await readFile(join(run.directory!, 'file.txt'), 'utf8'), 'baseline');
+  });
+  test(`split command credentials are withheld from both channel views and persisted records (flip=${flip})`, async (t) => {
+    const h = await setup(t, { flip, splitCommandOutput: true });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+    const run = h.records.runs[0];
+    assert.equal(run.status, 'completed');
+    const events = await h.records.history(
+      run.id,
+      Number.MAX_SAFE_INTEGER,
+      Number.MAX_SAFE_INTEGER,
+    );
+    const commands = events.flatMap((e) =>
+      e.detail?.type === 'command' ? [e.detail.command] : [],
+    );
+    assert.ok(commands.length > 0);
+    assert.ok(
+      commands.every(
+        (c) =>
+          c.stdout === '[redacted; see combined output]' &&
+          c.stderr === '[redacted; see combined output]',
+      ),
+    );
+    const journal = await readFile(join(h.storage, 'recovery', `${run.id}.journal`), 'utf8');
+    assert.ok(!JSON.stringify(events).includes('test-secret-'));
+    assert.ok(!journal.includes('test-secret-'));
+    assert.ok(events.some((e) => e.text.includes('[redacted]')));
+  });
+}

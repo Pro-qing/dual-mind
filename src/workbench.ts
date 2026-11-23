@@ -1,7 +1,7 @@
 import { OperationError, errorText } from './shared/errors';
 import * as vscode from 'vscode';
 import { randomUUID, randomBytes } from 'node:crypto';
-import { LocalStore, StoreError } from './core/store';
+import { LocalStore, StoreError, parseAction } from './core/store';
 import { ModelQueries } from './core/modelQueries';
 import { TaskWorkspaces } from './git/taskWorkspaces';
 import { ExecutionService } from './execution/service';
@@ -390,7 +390,15 @@ export class Workbench implements vscode.Disposable, vscode.WebviewViewProvider 
       }
       try {
         const action = message.action as ExecutionAction;
-        if (action.kind === 'openDirectory') {
+        if (action.kind === 'git.openMerge') {
+          const directory = await this.taskWorkspaces.artifacts.mergeDirectory(
+            action.taskId,
+            action.operationId,
+          );
+          await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(directory), {
+            forceNewWindow: true,
+          });
+        } else if (action.kind === 'openDirectory') {
           const directory = await this.execution.directory(action.runId);
           const run = this.execution.snapshot().runs.find((item) => item.id === action.runId);
           if (run?.git?.strategy && run.git.strategy.mode !== 'managed') {
@@ -412,9 +420,14 @@ export class Workbench implements vscode.Disposable, vscode.WebviewViewProvider 
           await vscode.languages.setTextDocumentLanguage(document, 'diff');
           await vscode.window.showTextDocument(document, { preview: true });
         }
-        const result = ['openDirectory', 'preview'].includes(action.kind)
+        const result = ['openDirectory', 'preview', 'git.openMerge'].includes(action.kind)
           ? { state: this.execution.snapshot() }
           : await this.execution.request(action);
+        if ('createdTaskId' in result && typeof result.createdTaskId === 'string') {
+          this.navigationRequest = { id: randomUUID(), taskId: result.createdTaskId };
+          this.changes.fire();
+          await post({ type: 'snapshot', snapshot: await this.snapshot() });
+        }
         await post({ type: 'execution.result', requestId: message.requestId, result });
       } catch (error) {
         await post({
@@ -495,15 +508,14 @@ export class Workbench implements vscode.Disposable, vscode.WebviewViewProvider 
       return;
     }
     try {
-      const action = message.action as
-        { kind?: string; id?: string; confirmed?: boolean } | undefined;
+      const action = parseAction(message.action);
       let savedTaskId: string | undefined;
       if (
         action?.kind === 'task.delete' &&
         action.confirmed === true &&
         typeof action.id === 'string'
       ) {
-        await this.execution.deleteTask(action.id);
+        await this.execution.deleteTask(action.id, action.cleanup);
       } else {
         savedTaskId = await this.store.dispatch(message.action);
       }

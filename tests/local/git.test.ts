@@ -146,7 +146,7 @@ test('checks Git, trust, saved task, repository, commits, branch and folder cons
 });
 
 for (const change of ['staged', 'unstaged', 'untracked'] as const) {
-  test(`blocks ${change} source changes without modifying them`, async (t) => {
+  test(`isolates from the committed base while preserving ${change} source changes`, async (t) => {
     const h = await harness(t);
     const id = await h.task();
     const file = change === 'untracked' ? 'other.txt' : 'file.txt';
@@ -155,10 +155,13 @@ for (const change of ['staged', 'unstaged', 'untracked'] as const) {
       await h.run('add', file);
     }
     const before = await h.run('status', '--porcelain=v1');
-    await assert.rejects(h.service.prepare(id), { code: 'dirtyRepository' });
+    const prepared = await h.service.prepare(id);
     assert.equal(await h.run('status', '--porcelain=v1'), before);
     assert.equal(await readFile(join(h.repo, file), 'utf8'), 'preserve');
-    assert.equal(h.f.workspace.values.has(taskGitStorageKey), false);
+    assert.equal(await readFile(join(prepared.directory, 'file.txt'), 'utf8'), 'baseline\n');
+    if (change === 'untracked') {
+      await assert.rejects(readFile(join(prepared.directory, file)), { code: 'ENOENT' });
+    }
   });
 }
 
@@ -401,7 +404,12 @@ test('does not copy ignored source files and rejects stale role handles after fo
 test('direct current mode stays in the source, freezes each run and requires clean restarts', async (t) => {
   const h = await harness(t);
   const id = await h.task();
-  assert.deepEqual(await h.service.branches(), { currentBranch: 'main', branches: ['main'] });
+  assert.deepEqual(await h.service.branches(), {
+    currentBranch: 'main',
+    branches: ['main'],
+    dirty: false,
+    branchHeads: { main: (await h.run('rev-parse', 'HEAD')).trim() },
+  });
   const before = await h.run('worktree', 'list', '--porcelain');
   const first = await h.service.prepare(id, { mode: 'current' });
   assert.equal(first.directory, h.repo);

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+<title id="title">34. 工作树清理与成果恢复 — 待审核</title>
+<desc id="description">DualMind 工作树、上下文与成果收尾静态设计，2026-11-23。场景 30–34 待视觉审核，新增页面控件尚未接入。任务、目录、分支、估算量和错误均为示例，不是运行或验证结果。</desc>
+<style>text { font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif; }</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="28" y="37" font-size="23" fill="#e4e8f0" font-weight="700" text-anchor="start">34. 工作树清理与成果恢复</text>
+<text x="28" y="66" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">保存成果后再清理 · 快照独立于任务记录 · 清理后通过新任务继续</text>
+<text x="1412" y="31" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">v0.0.5 修订 · 待审核 · 2026-11-23</text>
+<path d="M28 86H1412" fill="none" stroke="#394352"/>
+<rect x="48" y="120" width="416" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="48" y="120" width="416" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="60" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">清理任务工作树</text>
+<path d="M48 154H464" fill="none" stroke="#394352"/>
+<text x="64" y="182" font-size="19" fill="#e4e8f0" font-weight="700" text-anchor="start">完善导出操作</text>
+<text x="64" y="220" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">即将保存：暂存／未暂存修改、未跟踪文件与需要保留的忽略文件。</text>
+<text x="64" y="293" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">工作树</text>
+<rect x="64" y="303" width="384" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="74" y="326" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">…/task-worktrees/…/任务 ID</text>
+<text x="64" y="373" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">排除的可再生成目录</text>
+<rect x="64" y="388" width="384" height="60" rx="4" fill="#20242c" stroke="#394352"/>
+<text x="76" y="413" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">node_modules/</text>
+<text x="76" y="436" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">.venv/</text>
+<rect x="64" y="472" width="384" height="102" rx="5" fill="#302b23" stroke="#716047"/>
+<text x="76" y="495" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">保存不完整时阻止清理。独有提交保留任务分支；本操作保留任务历</text>
+<text x="76" y="515" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">史。</text>
+<text x="64" y="611" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">删除任务另需确认；保存的成果不随任务记录删除。</text>
+<path d="M48 704H464" fill="none" stroke="#394352"/>
+<rect x="232" y="720" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="246" y="742" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">取消</text>
+<rect x="304" y="720" width="93" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="318" y="742" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">保存并清理</text>
+<rect x="512" y="120" width="416" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="512" y="120" width="416" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="524" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">设置 · 保存的成果</text>
+<path d="M512 154H928" fill="none" stroke="#394352"/>
+<text x="528" y="182" font-size="17" fill="#e4e8f0" font-weight="700" text-anchor="start">完善导出操作</text>
+<text x="528" y="212" font-size="12" fill="#93dfcd" font-weight="400" text-anchor="start">已保存 · 2026-11-23 14:32</text>
+<text x="528" y="262" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">基点／提交</text>
+<rect x="528" y="272" width="384" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="538" y="295" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">main · f29c810</text>
+<text x="528" y="337" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">3 个文件 · 包含未提交成果</text>
+<text x="528" y="357" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">原任务已删除；快照仍可恢复。</text>
+<rect x="528" y="406" width="106" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="542" y="428" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">查看保存内容</text>
+<rect x="528" y="455" width="106" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="542" y="477" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">恢复为新任务</text>
+<rect x="528" y="522" width="384" height="102" rx="5" fill="#213047" stroke="#456a91"/>
+<text x="540" y="545" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">恢复会建立新的隔离工作树和任务分支，恢复文件与暂存状态。新任</text>
+<text x="540" y="565" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">务重新规划及验收。</text>
+<text x="528" y="685" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">恢复后的依赖目录由项目工具重新生成。</text>
+<rect x="976" y="120" width="416" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="976" y="120" width="416" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="988" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">原任务 · 历史记录</text>
+<path d="M976 154H1392" fill="none" stroke="#394352"/>
+<text x="992" y="182" font-size="19" fill="#e4e8f0" font-weight="700" text-anchor="start">完善导出操作</text>
+<text x="992" y="214" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">工作树已清理 · 历史只读</text>
+<rect x="992" y="246" width="384" height="100" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="1004" y="272" font-size="13" fill="#91bbff" font-weight="700" text-anchor="start">Reviewer · 验收记录</text>
+<text x="1004" y="299" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">已验证导出需求与回归检查。此处保留当时的任务结论。</text>
+<text x="992" y="399" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">后续任务基点</text>
+<rect x="992" y="409" width="384" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="1002" y="432" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">已整合目标 · main</text>
+<path d="M1353 423l5 5 5-5" fill="none" stroke="#b1bdce" stroke-width="1.5"/>
+<rect x="992" y="472" width="106" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="1006" y="494" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">创建后续任务</text>
+<text x="992" y="540" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">若成果尚未整合，可从“保存的成果”恢复到新任务；不会自动丢弃上次</text>
+<text x="992" y="560" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">未提交修改。</text>
+<rect x="992" y="644" width="384" height="94" rx="5" fill="#213047" stroke="#456a91"/>
+<text x="1004" y="667" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">清理后停止接受原任务的新执行消息。后续任务沿用选择的需求和角</text>
+<text x="1004" y="687" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">色，重新取得证据。</text>
+<text x="48" y="816" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">快照、任务分支与执行记录分别保存；固定恢复标识可查找，清理不依赖会变动的 stash 序号。</text>
+<path d="M28 863H1412" fill="none" stroke="#394352"/>
+<text x="28" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="start">静态示例 · 新增界面待审核 · 27 组已审核 + 7 组待审核</text>
+<text x="1412" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">1440 × 900 · 可编辑 SVG · 说明不属于产品界面</text>
+</svg>

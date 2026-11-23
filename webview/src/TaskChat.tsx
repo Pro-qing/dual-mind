@@ -36,7 +36,10 @@ export function TaskChat({
   preview?: boolean;
   visible?: boolean;
 }) {
-  const { execution, execute, tr, snapshot, chatViews, updateChatView } = useUI();
+  const { execution, execute, tr, snapshot, chatViews, updateChatView, openDerived } = useUI();
+  const cleaned =
+    !preview && execution.artifacts?.find((entry) => entry.taskId === task.id && entry.cleaned);
+  const sourceTask = snapshot.tasks.find((entry) => entry.id === task.id);
   const [previewView, setPreviewView] = useState<ChatView>({});
   const view = preview ? previewView : (chatViews[task.id] ?? {});
   const viewRef = useRef(view);
@@ -70,7 +73,7 @@ export function TaskChat({
   const panelOpen = panelMode === 'open';
   const panelOpenRef = useRef(panelOpen);
   panelOpenRef.current = panelOpen;
-  const [totals, setTotals] = useState({
+  const [totals, setTotals] = useState<{ records: number; errors: number; blockers?: number }>({
     records: view.seenRecords ?? 0,
     errors: view.seenErrors ?? 0,
   });
@@ -492,7 +495,11 @@ export function TaskChat({
         </span>
       )}
       {totals.errors > 0 && (
-        <span className="chat-error-badge" aria-label={`${tr('chatError')}: ${totals.errors}`}>
+        <span
+          className="chat-error-badge"
+          title={tr('historicalErrors')}
+          aria-label={`${tr('chatError')}: ${totals.errors}`}
+        >
           ! {totals.errors}
         </span>
       )}
@@ -517,6 +524,16 @@ export function TaskChat({
         </div>
         {!preview && <ChatActivity taskId={task.id} />}
         {!preview && <RecoveryNotice taskId={task.id} />}
+        {!preview && latest?.submission && totals.blockers !== undefined && (
+          <p
+            className={totals.blockers ? 'acceptance-status warning-text' : 'acceptance-status'}
+            role="status"
+          >
+            {totals.blockers
+              ? `${tr('acceptanceBlockers')}: ${totals.blockers}`
+              : tr('noAcceptanceBlockers')}
+          </p>
+        )}
         <div
           className="chat-messages"
           ref={scroller}
@@ -641,74 +658,104 @@ export function TaskChat({
             {tr('chatNewMessages')}
           </button>
         )}
-        <form
-          className="chat-composer"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void send();
-          }}
-        >
-          {pending.length > 0 && (
-            <div className="chat-queue" role="status">
-              {tr(needsRecovery ? 'recoveryQueued' : active ? 'chatQueuedHint' : 'chatResumeHint')}{' '}
-              ({pending.length})
-              {!active && latest && !needsRecovery && (
+        {cleaned ? (
+          <div className="chat-composer archived-task">
+            <p>{tr('artifactCleaned')}</p>
+            <div className="button-row">
+              <button
+                onClick={() =>
+                  openDerived({ kind: 'followup', taskId: task.id, source: sourceTask })
+                }
+              >
+                {tr('artifactFollowup')}
+              </button>
+              {cleaned.snapshotId && (
                 <button
-                  type="button"
                   onClick={() =>
-                    void execute({ kind: 'messages.resume', taskId: task.id }).catch((e) =>
-                      setError(toAppError(e)),
-                    )
+                    openDerived({
+                      kind: 'restore',
+                      snapshotId: cleaned.snapshotId,
+                      source: sourceTask,
+                    })
                   }
                 >
-                  {tr('chatResume')}
+                  {tr('artifactRestore')}
                 </button>
               )}
             </div>
-          )}
-          {error && <ErrorNotice error={error} locale={snapshot.locale} />}
-          <label htmlFor="task-chat-input">{tr('chatInput')}</label>
-          <textarea
-            id="task-chat-input"
-            rows={2}
-            maxLength={50000}
-            value={text}
-            disabled={preview || sending}
-            placeholder={tr('chatPlaceholder')}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (
-                e.key === 'Enter' &&
-                !e.shiftKey &&
-                !e.nativeEvent.isComposing &&
-                e.keyCode !== 229
-              ) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-          />
-          <div className="composer-actions">
-            <span className="hint">
-              {tr(
-                !latest
-                  ? 'chatStartHint'
-                  : active?.status === 'paused'
-                    ? 'chatPausedHint'
-                    : 'chatSendHint',
-              )}
-            </span>
-            <button
-              className="primary chat-send"
-              aria-label={tr('chatSend')}
-              title={tr('chatSend')}
-              disabled={preview || sending || !text.trim()}
-            >
-              <Icon name="play" />
-              <span>{tr('chatSend')}</span>
-            </button>
           </div>
-        </form>
+        ) : (
+          <form
+            className="chat-composer"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void send();
+            }}
+          >
+            {pending.length > 0 && (
+              <div className="chat-queue" role="status">
+                {tr(
+                  needsRecovery ? 'recoveryQueued' : active ? 'chatQueuedHint' : 'chatResumeHint',
+                )}{' '}
+                ({pending.length})
+                {!active && latest && !needsRecovery && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void execute({ kind: 'messages.resume', taskId: task.id }).catch((e) =>
+                        setError(toAppError(e)),
+                      )
+                    }
+                  >
+                    {tr('chatResume')}
+                  </button>
+                )}
+              </div>
+            )}
+            {error && <ErrorNotice error={error} locale={snapshot.locale} />}
+            <label htmlFor="task-chat-input">{tr('chatInput')}</label>
+            <textarea
+              id="task-chat-input"
+              rows={2}
+              maxLength={50000}
+              value={text}
+              disabled={preview || sending}
+              placeholder={tr('chatPlaceholder')}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === 'Enter' &&
+                  !e.shiftKey &&
+                  !e.nativeEvent.isComposing &&
+                  e.keyCode !== 229
+                ) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+            />
+            <div className="composer-actions">
+              <span className="hint">
+                {tr(
+                  !latest
+                    ? 'chatStartHint'
+                    : active?.status === 'paused'
+                      ? 'chatPausedHint'
+                      : 'chatSendHint',
+                )}
+              </span>
+              <button
+                className="primary chat-send"
+                aria-label={tr('chatSend')}
+                title={tr('chatSend')}
+                disabled={preview || sending || !text.trim()}
+              >
+                <Icon name="play" />
+                <span>{tr('chatSend')}</span>
+              </button>
+            </div>
+          </form>
+        )}
       </div>
       {panelOpen && narrow && (
         <div
@@ -791,10 +838,11 @@ export function TaskChat({
           {events.map((e) => {
             const id = eventId(e),
               minimized = Boolean(view.minimizedEvidence?.includes(id));
-            const failed =
-              Boolean(e.fault) ||
-              e.kind === 'error' ||
-              (e.detail?.type === 'command' && !e.detail.command.ok);
+            const failed = e.tool
+              ? ['failed', 'rejected', 'unknown'].includes(e.tool.status)
+              : Boolean(e.fault) ||
+                e.kind === 'error' ||
+                (e.detail?.type === 'command' && !e.detail.command.ok);
             return (
               <div className="evidence-item" key={id} data-minimized={minimized}>
                 <details
@@ -831,7 +879,11 @@ export function TaskChat({
                               : 'chatTool',
                         )}{' '}
                     <small>#{e.sequence}</small>
-                    {failed ? (
+                    {e.tool ? (
+                      <span className={failed ? 'chat-error-badge' : 'chat-result-badge'}>
+                        {tr(`outcome_${e.tool.status}`)}
+                      </span>
+                    ) : failed ? (
                       <span className="chat-error-badge">{tr('chatError')}</span>
                     ) : e.detail?.type === 'command' ? (
                       <span className="chat-result-badge">{tr('commandPassed')}</span>

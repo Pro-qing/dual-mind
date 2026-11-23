@@ -1,5 +1,5 @@
 import { toAppError, redactError, redactText, type AppError } from '../shared/errors';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import {
   type Action,
   type AgentBindings,
@@ -12,6 +12,7 @@ import {
   type ModelBinding,
   type RoleText,
   type TaskInput,
+  type TaskDraft,
   type WorkspaceData,
   emptyBinding,
   isBuiltIn,
@@ -101,20 +102,22 @@ function taskInput(value: unknown): TaskInput {
     throw new StoreError('invalidRounds');
   }
   const git = v.git === undefined ? undefined : object(v.git);
-  if (
-    git &&
-    (!['managed', 'current', 'branch'].includes(String(git.mode)) ||
-      (git.mode === 'branch' &&
-        (typeof git.branch !== 'string' ||
-          !git.branch ||
-          git.branch.startsWith('-') ||
-          [...git.branch].some(
-            (char) =>
-              char.charCodeAt(0) <= 32 || char.charCodeAt(0) === 127 || '~^:?*[\\'.includes(char),
-          ) ||
-          git.branch.includes('..') ||
-          git.branch.includes('@{'))))
-  ) {
+  const branch = (value: unknown) => {
+    const name = string(value, true, 1000);
+    if (
+      name.startsWith('-') ||
+      [...name].some(
+        (char) =>
+          char.charCodeAt(0) <= 32 || char.charCodeAt(0) === 127 || '~^:?*[\\'.includes(char),
+      ) ||
+      name.includes('..') ||
+      name.includes('@{')
+    ) {
+      throw new StoreError('invalidMessage');
+    }
+    return name;
+  };
+  if (git && !['managed', 'current', 'branch'].includes(String(git.mode))) {
     throw new StoreError('invalidMessage');
   }
   return {
@@ -122,8 +125,13 @@ function taskInput(value: unknown): TaskInput {
       ? {
           git:
             git.mode === 'branch'
-              ? { mode: 'branch' as const, branch: string(git.branch, true, 1000) }
-              : { mode: git.mode as 'managed' | 'current' },
+              ? { mode: 'branch' as const, branch: branch(git.branch) }
+              : git.mode === 'managed'
+                ? {
+                    mode: 'managed' as const,
+                    ...(git.baseBranch === undefined ? {} : { baseBranch: branch(git.baseBranch) }),
+                  }
+                : { mode: 'current' as const },
         }
       : {}),
     ...bindings(v),
@@ -152,7 +160,31 @@ function connectionInput(value: unknown): Omit<ConnectionRecord, 'id'> {
   if (v.protocol !== undefined && v.protocol !== 'chatCompletions' && v.protocol !== 'responses') {
     throw new StoreError('invalidMessage');
   }
+  let contextWindows: Record<string, number> | undefined;
+  if (v.contextWindows !== undefined) {
+    const entries = Object.entries(object(v.contextWindows));
+    if (entries.length > 200) {
+      throw new StoreError('invalidMessage');
+    }
+    contextWindows = Object.fromEntries(
+      entries.map(([model, window]) => {
+        if (
+          !model.trim() ||
+          model.length > 500 ||
+          model !== model.trim() ||
+          [...model].some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127) ||
+          !Number.isSafeInteger(window) ||
+          (window as number) < 8192 ||
+          (window as number) > 4 * 1024 * 1024
+        ) {
+          throw new StoreError('invalidMessage');
+        }
+        return [model, window as number];
+      }),
+    );
+  }
   return {
+    ...(contextWindows === undefined ? {} : { contextWindows }),
     ...(v.protocol === undefined
       ? {}
       : { protocol: v.protocol as 'chatCompletions' | 'responses' }),
@@ -175,8 +207,17 @@ export function parseAction(value: unknown): Action {
       return { kind: v.kind, id: optionalId(v.id), input: taskInput(v.input) };
     case 'task.select':
       return { kind: v.kind, id: id(v.id) };
-    case 'task.delete':
-      return { kind: v.kind, id: id(v.id), confirmed: confirmed(v) };
+    case 'task.delete': {
+      const cleanup = v.cleanup === undefined ? undefined : object(v.cleanup);
+      return {
+        kind: v.kind,
+        id: id(v.id),
+        confirmed: confirmed(v),
+        ...(cleanup
+          ? { cleanup: { operationId: id(cleanup.operationId), token: id(cleanup.token) } }
+          : {}),
+      };
+    }
     case 'connection.save':
       return { kind: v.kind, id: optionalId(v.id), input: connectionInput(v.input) };
     case 'connection.key':
@@ -372,11 +413,85 @@ export class LocalStore {
         return {
           ...c,
           model: binding.model,
+          contextWindowTokens:
+            c.contextWindows && Object.hasOwn(c.contextWindows, binding.model)
+              ? c.contextWindows[binding.model]
+              : undefined,
           key,
           protocol: c.protocol || ('chatCompletions' as const),
         };
       };
       return { task, worker: await endpoint(task.worker), reviewer: await endpoint(task.reviewer) };
+    });
+  }
+  /** Host-only creation with an idempotent operation ID; no model request is started. */
+  createDerivedTask(
+    taskId: string,
+    value: TaskInput,
+    origin: { taskId?: string; snapshotId?: string },
+    seed?: TaskDraft,
+  ): Promise<string> {
+    if (!/^[0-9a-f-]{36}$/.test(taskId)) {
+      throw new StoreError('invalidMessage');
+    }
+    const input = taskInput(value);
+    const requestHash = createHash('sha256')
+      .update(JSON.stringify({ input, origin }))
+      .digest('hex');
+    return this.serialize(async () => {
+      if (!this.ports.hasWorkspace()) {
+        throw new StoreError('workspaceRequired');
+      }
+      const { global, workspace } = this.read();
+      const existing = workspace.tasks.find((t) => t.id === taskId);
+      if (existing) {
+        if (existing.origin?.requestHash !== requestHash) {
+          throw new StoreError('invalidMessage');
+        }
+        return taskId;
+      }
+      const activeLocale = resolveLocale(this.ports.getLanguage(), this.ports.editorLanguage());
+      const preset = reviewerPresets(global, activeLocale).find((r) => r.id === input.roleId);
+      const role =
+        seed?.role.id === input.roleId
+          ? seed.role
+          : preset
+            ? { ...preset, locale: preset.builtIn ? activeLocale : ('original' as const) }
+            : undefined;
+      if (!role) {
+        throw new StoreError('notFound');
+      }
+      for (const agent of ['worker', 'reviewer'] as const) {
+        const id = input[agent].connectionId;
+        if (
+          id &&
+          !global.connections.some((c) => c.id === id) &&
+          id !== seed?.[agent].connectionId
+        ) {
+          throw new StoreError('notFound');
+        }
+      }
+      const fields = {
+        name: input.name,
+        requirements: input.requirements,
+        worker: input.worker,
+        reviewer: input.reviewer,
+        maxRounds: input.maxRounds,
+        git: input.git,
+      };
+      const now = new Date().toISOString();
+      workspace.tasks.unshift({
+        ...fields,
+        id: taskId,
+        status: 'draft',
+        role: structuredClone(role),
+        origin: { ...origin, requestHash },
+        createdAt: now,
+        updatedAt: now,
+      });
+      workspace.selectedTaskId = taskId;
+      await this.ports.workspace.update(workspaceStorageKey, workspace);
+      return taskId;
     });
   }
   async dispatch(value: unknown): Promise<string | undefined> {
@@ -435,6 +550,7 @@ export class LocalStore {
           const now = new Date().toISOString();
           const task = {
             ...input,
+            ...(existing?.origin ? { origin: existing.origin } : {}),
             id: existing?.id || randomUUID(),
             status: 'draft' as const,
             role: existing?.role || {
@@ -470,7 +586,13 @@ export class LocalStore {
           break;
         case 'connection.save': {
           const previous = action.id ? findConnection(action.id) : undefined;
-          const item = { ...action.input, id: action.id || randomUUID() };
+          const item = {
+            ...action.input,
+            ...(action.input.contextWindows === undefined && previous?.contextWindows
+              ? { contextWindows: previous.contextWindows }
+              : {}),
+            id: action.id || randomUUID(),
+          };
           global.connections = action.id
             ? global.connections.map((c) => (c.id === action.id ? item : c))
             : [...global.connections, item];

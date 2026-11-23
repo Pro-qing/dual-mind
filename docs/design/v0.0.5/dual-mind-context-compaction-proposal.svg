@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+<title id="title">31. 上下文预算与自动整理 — 待审核</title>
+<desc id="description">DualMind 工作树、上下文与成果收尾静态设计，2026-11-23。场景 30–34 待视觉审核，新增页面控件尚未接入。任务、目录、分支、估算量和错误均为示例，不是运行或验证结果。</desc>
+<style>text { font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif; }</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="28" y="37" font-size="23" fill="#e4e8f0" font-weight="700" text-anchor="start">31. 上下文预算与自动整理</text>
+<text x="28" y="66" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">两个角色独立摘要 · 历史与验收证据保留 · 容量未知时明确标注估算</text>
+<text x="1412" y="31" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">v0.0.5 修订 · 待审核 · 2026-11-23</text>
+<path d="M28 86H1412" fill="none" stroke="#394352"/>
+<rect x="48" y="120" width="320" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="48" y="120" width="320" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="60" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">设置 · 模型上下文</text>
+<path d="M48 154H368" fill="none" stroke="#394352"/>
+<text x="64" y="185" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">连接</text>
+<rect x="64" y="195" width="288" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="74" y="218" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">团队模型服务</text>
+<path d="M329 209l5 5 5-5" fill="none" stroke="#b1bdce" stroke-width="1.5"/>
+<text x="64" y="262" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">模型 ID</text>
+<rect x="64" y="272" width="288" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="74" y="295" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">reasoning-model</text>
+<path d="M329 286l5 5 5-5" fill="none" stroke="#b1bdce" stroke-width="1.5"/>
+<text x="64" y="339" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">已知上下文窗口（Token）</text>
+<rect x="64" y="349" width="288" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="74" y="372" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">留空：使用默认估算</text>
+<text x="64" y="410" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">默认估算 32K，预留 4K 输出；接近可用输入预算的 80</text>
+<text x="64" y="430" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">% 时自动整理。</text>
+<rect x="64" y="484" width="288" height="102" rx="5" fill="#213047" stroke="#456a91"/>
+<text x="76" y="507" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">此值按连接和模型保存。字节上限与模型 Token </text>
+<text x="76" y="527" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">窗口不同；未知容量不会显示为精确测量。</text>
+<rect x="64" y="701" width="80" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="78" y="723" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">保存设置</text>
+<rect x="408" y="120" width="480" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="408" y="120" width="480" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="420" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">任务 · 正在整理上下文</text>
+<path d="M408 154H888" fill="none" stroke="#394352"/>
+<text x="424" y="181" font-size="19" fill="#e4e8f0" font-weight="700" text-anchor="start">完善导出操作</text>
+<text x="424" y="215" font-size="13" fill="#93dfcd" font-weight="400" text-anchor="start">Worker · 第 2 / 5 轮</text>
+<rect x="424" y="238" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="438" y="260" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">暂停</text>
+<rect x="496" y="238" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="510" y="260" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">停止</text>
+<rect x="424" y="294" width="448" height="74" rx="5" fill="#213047" stroke="#456a91"/>
+<text x="436" y="317" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">Worker · 正在整理上下文</text>
+<text x="436" y="337" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">整理完成后自动继续，当前文件修改保留。</text>
+<text x="424" y="403" font-size="13" fill="#91bbff" font-weight="700" text-anchor="start">上下文 · 估算</text>
+<text x="424" y="434" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">Worker   约 23K / 28K 可用输入</text>
+<rect x="424" y="449" width="448" height="6" rx="3" fill="#293443" stroke="none"/>
+<rect x="424" y="449" width="368" height="6" rx="3" fill="#91bbff" stroke="none"/>
+<text x="424" y="493" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">Reviewer   约 9K / 28K 可用输入</text>
+<rect x="424" y="508" width="448" height="6" rx="3" fill="#293443" stroke="none"/>
+<rect x="424" y="508" width="144" height="6" rx="3" fill="#93dfcd" stroke="none"/>
+<text x="424" y="557" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">已整理 1 次 · 当前方案和验收条件保持</text>
+<text x="424" y="577" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">历史对话与命令结果仍可查看。</text>
+<rect x="424" y="663" width="448" height="76" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="436" y="692" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">补充要求或提问…</text>
+<rect x="928" y="120" width="240" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="928" y="120" width="240" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="940" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">恢复提示 · 240px</text>
+<path d="M928 154H1168" fill="none" stroke="#394352"/>
+<text x="940" y="178" font-size="16" fill="#e4e8f0" font-weight="700" text-anchor="start">Worker · 需要处理</text>
+<rect x="940" y="200" width="216" height="180" rx="5" fill="#302b23" stroke="#716047"/>
+<text x="952" y="223" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">无法安全缩减上下文。请调整模型窗</text>
+<text x="952" y="243" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">口或模型后继续此运行。已完成的文</text>
+<text x="952" y="263" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">件修改和操作记录保持。</text>
+<rect x="940" y="405" width="80" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="954" y="427" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">前往设置</text>
+<rect x="940" y="455" width="80" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="954" y="477" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">继续执行</text>
+<text x="940" y="526" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">恢复沿用同一任务与阶段，不重放已完成</text>
+<text x="940" y="546" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">工具操作。</text>
+<text x="1200" y="170" font-size="13" fill="#91bbff" font-weight="700" text-anchor="start">整理结果</text>
+<text x="1200" y="202" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">摘要先保存，再替换模型上下文。</text>
+<text x="1200" y="287" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">最多两轮超限恢复；失败时保留原</text>
+<text x="1200" y="307" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">始记录。</text>
+<text x="1200" y="391" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">数字为静态示例，展示预算含义。</text>
+<text x="48" y="816" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">摘要调用只生成公开事实，不提供文件写入或命令工具；聊天记录与模型请求上下文分别管理。</text>
+<path d="M28 863H1412" fill="none" stroke="#394352"/>
+<text x="28" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="start">静态示例 · 新增界面待审核 · 27 组已审核 + 7 组待审核</text>
+<text x="1412" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">1440 × 900 · 可编辑 SVG · 说明不属于产品界面</text>
+</svg>

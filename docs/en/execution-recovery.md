@@ -2,6 +2,10 @@
 
 [简体中文](../zh/execution-recovery.md) · [Usage](./usage.md) · [Approved UI design](./recovery-proposal.md)
 
+[Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
+
+**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+
 **Status: host recovery and approved recovery controls are implemented.** This describes development source, not an installed or published release. Use the play icon with **Continue execution** after resolving a failure, including after reloading VS Code. The notice identifies Worker, Reviewer or System, phase, operation and recovery attempts. Disabled controls include an explanation; uncertain processes can be checked again without bypassing cleanup.
 
 ## Recovery scope
@@ -18,7 +22,7 @@ Recovery resumes role phases and recorded operation boundaries, not operating-sy
 
 Operations distinguish pending, started, succeeded, failed and unknown. A crash after a file changes but before its result is durable still leaves an uncertainty window; it does not prove the operation never ran. Accepted plans, submissions, reviews and answers persist their application position with state. Public conversation projections can be repaired with stable deduplication identities, independently of the latest 80 events.
 
-Normal pauses retain in-memory history. Failure recovery rebuilds public context from the plan, artifacts, evidence, unresolved operations and recent operation summaries. The read-only `read_operation` tool paginates older records; `read_command_output` retains full command output access. Protocol switches do not concatenate raw protocol histories. Credentials, raw environment values, private reasoning and encrypted reasoning are excluded from recovery files and the UI. The existing 512 KiB request-context limit still applies.
+Normal pauses retain in-memory history. Failure recovery rebuilds public context from the plan, artifacts, evidence, unresolved operations and recent operation summaries. The read-only `read_operation` tool paginates older records; `read_command_output` retains full command output access. Protocol switches do not concatenate raw protocol histories. Credentials, raw environment values, private reasoning and encrypted reasoning are excluded from recovery files and the UI. The separate 512 KiB serialized-request guard still applies. Role summaries are synced and referenced by recovery checkpoints before memory replacement. Reload validates role and hash and combines the summary with public operations; recognized model context errors allow bounded compaction before continuing. See [task lifecycle](./task-lifecycle.md).
 
 ## Errors and retries
 

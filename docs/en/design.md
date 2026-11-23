@@ -2,6 +2,10 @@
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
+**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+
+**Approved new designs:** [Compact task list](./task-home-compact-proposal.md), scenes 28–29, covers 240/320/480px homes, long names, keyboard focus, read-only examples, and deletion confirmation. These drawings document uncommitted changes recorded November 23, 2026, in the 0.0.5 archive after the existing tag.
+
 [Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
 
 **New approved revision:** [Activity, compact chat and minimization](./chat-progress-proposal.md), scenes 18–20. Approved November 22, 2026 with icon-only sizing buttons; implemented. The 17 earlier approvals remain intact. These remain static design references.
@@ -13,35 +17,55 @@
 
 **Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
-**There are currently 29 approved SVG/PNG pairs.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, 14–17 task chat and follow-up, 18–20 activity and compact-chat controls, 21–23 failure recovery, and 24–27 the native sidebar. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; dedicated-worktree application and parallel execution remain planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
+**There are currently 37 SVG/PNG pairs: 37 approved.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, 14–17 task chat and follow-up, 18–20 activity and compact-chat controls, 21–23 failure recovery, and 24–27 the native sidebar. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; artifact integration has host support with UI integrated; parallel execution remains planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
 
 Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. Early scenes use English labels; later revisions mainly use Simplified Chinese. Each group has explanations in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
 
 ## Browse by version
 
-The [design archive index](../design/README.md) maps versions to scenes and counts: 0.0.1 → 1–5, 0.0.2 → 6–7, 0.0.3 → 8–17, 0.0.4 → 18–23, and 0.0.5 → 24–29. Each folder has paired SVG/PNG assets and a README. These folders describe development versions, not complete snapshots of each initial tag: scenes 8–17 followed the original `v0.0.3` tag, and the sidebar moves from earlier 0.0.4 candidate validation into the 0.0.5 source milestone. Historical artwork and tags remain unchanged.
+The [design archive index](../design/README.md) maps versions to scenes and counts: 0.0.1 → 1–5, 0.0.2 → 6–7, 0.0.3 → 8–17, 0.0.4 → 18–23, and 0.0.5 → 24–37. Each folder has paired SVG/PNG assets and a README. These folders describe development versions, not complete snapshots of each initial tag: scenes 8–17 followed the original `v0.0.3` tag, and the sidebar moves from earlier 0.0.4 candidate validation into the 0.0.5 source milestone. Historical artwork and tags remain unchanged.
 
 ## Design gallery
 
-| Scene                               | Editable source                                                   | Preview                                                           |
-| ----------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 1. Parallel task workbench          | [SVG](../design/v0.0.1/dual-mind-workbench.svg)                   | [PNG](../design/v0.0.1/dual-mind-workbench.png)                   |
-| 2. API Connections                  | [SVG](../design/v0.0.1/dual-mind-api-settings.svg)                | [PNG](../design/v0.0.1/dual-mind-api-settings.png)                |
-| 3. Reviewer Roles                   | [SVG](../design/v0.0.1/dual-mind-reviewer-roles.svg)              | [PNG](../design/v0.0.1/dual-mind-reviewer-roles.png)              |
-| 4. New task                         | [SVG](../design/v0.0.1/dual-mind-new-task.svg)                    | [PNG](../design/v0.0.1/dual-mind-new-task.png)                    |
-| 5. Delete task                      | [SVG](../design/v0.0.1/dual-mind-delete-task.svg)                 | [PNG](../design/v0.0.1/dual-mind-delete-task.png)                 |
-| 6. API model discovery              | [SVG](../design/v0.0.2/dual-mind-api-model-discovery.svg)         | [PNG](../design/v0.0.2/dual-mind-api-model-discovery.png)         |
-| 7. Task model selection             | [SVG](../design/v0.0.2/dual-mind-task-model-selection.svg)        | [PNG](../design/v0.0.2/dual-mind-task-model-selection.png)        |
-| 8. Task home                        | [SVG](../design/v0.0.3/dual-mind-task-home-proposal.svg)          | [PNG](../design/v0.0.3/dual-mind-task-home-proposal.png)          |
-| 9. Task detail                      | [SVG](../design/v0.0.3/dual-mind-task-detail-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-detail-proposal.png)        |
-| 10. Create task                     | [SVG](../design/v0.0.3/dual-mind-task-create-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-create-proposal.png)        |
-| 11. Errors and narrow view          | [SVG](../design/v0.0.3/dual-mind-task-states-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-task-states-proposal.png)        |
-| 12. Planning and acceptance         | [SVG](../design/v0.0.3/dual-mind-execution-cycle-proposal.svg)    | [PNG](../design/v0.0.3/dual-mind-execution-cycle-proposal.png)    |
-| 13. Additional command settings     | [SVG](../design/v0.0.3/dual-mind-execution-settings-proposal.svg) | [PNG](../design/v0.0.3/dual-mind-execution-settings-proposal.png) |
-| 14. Chat and evidence panel         | [SVG](../design/v0.0.3/dual-mind-task-chat-proposal.svg)          | [PNG](../design/v0.0.3/dual-mind-task-chat-proposal.png)          |
-| 15. Narrow evidence drawer          | [SVG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.svg)   | [PNG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)   |
-| 16. Queued messages                 | [SVG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.svg)   | [PNG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)   |
-| 17. Questions and continued changes | [SVG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.svg) | [PNG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png) |
+| Scene                                          | Editable source                                                       | Preview                                                               |
+| ---------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1. Parallel task workbench                     | [SVG](../design/v0.0.1/dual-mind-workbench.svg)                       | [PNG](../design/v0.0.1/dual-mind-workbench.png)                       |
+| 2. API Connections                             | [SVG](../design/v0.0.1/dual-mind-api-settings.svg)                    | [PNG](../design/v0.0.1/dual-mind-api-settings.png)                    |
+| 3. Reviewer Roles                              | [SVG](../design/v0.0.1/dual-mind-reviewer-roles.svg)                  | [PNG](../design/v0.0.1/dual-mind-reviewer-roles.png)                  |
+| 4. New task                                    | [SVG](../design/v0.0.1/dual-mind-new-task.svg)                        | [PNG](../design/v0.0.1/dual-mind-new-task.png)                        |
+| 5. Delete task                                 | [SVG](../design/v0.0.1/dual-mind-delete-task.svg)                     | [PNG](../design/v0.0.1/dual-mind-delete-task.png)                     |
+| 6. API model discovery                         | [SVG](../design/v0.0.2/dual-mind-api-model-discovery.svg)             | [PNG](../design/v0.0.2/dual-mind-api-model-discovery.png)             |
+| 7. Task model selection                        | [SVG](../design/v0.0.2/dual-mind-task-model-selection.svg)            | [PNG](../design/v0.0.2/dual-mind-task-model-selection.png)            |
+| 8. Task home                                   | [SVG](../design/v0.0.3/dual-mind-task-home-proposal.svg)              | [PNG](../design/v0.0.3/dual-mind-task-home-proposal.png)              |
+| 9. Task detail                                 | [SVG](../design/v0.0.3/dual-mind-task-detail-proposal.svg)            | [PNG](../design/v0.0.3/dual-mind-task-detail-proposal.png)            |
+| 10. Create task                                | [SVG](../design/v0.0.3/dual-mind-task-create-proposal.svg)            | [PNG](../design/v0.0.3/dual-mind-task-create-proposal.png)            |
+| 11. Errors and narrow view                     | [SVG](../design/v0.0.3/dual-mind-task-states-proposal.svg)            | [PNG](../design/v0.0.3/dual-mind-task-states-proposal.png)            |
+| 12. Planning and acceptance                    | [SVG](../design/v0.0.3/dual-mind-execution-cycle-proposal.svg)        | [PNG](../design/v0.0.3/dual-mind-execution-cycle-proposal.png)        |
+| 13. Additional command settings                | [SVG](../design/v0.0.3/dual-mind-execution-settings-proposal.svg)     | [PNG](../design/v0.0.3/dual-mind-execution-settings-proposal.png)     |
+| 14. Chat and evidence panel                    | [SVG](../design/v0.0.3/dual-mind-task-chat-proposal.svg)              | [PNG](../design/v0.0.3/dual-mind-task-chat-proposal.png)              |
+| 15. Narrow evidence drawer                     | [SVG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.svg)       | [PNG](../design/v0.0.3/dual-mind-task-chat-narrow-proposal.png)       |
+| 16. Queued messages                            | [SVG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.svg)       | [PNG](../design/v0.0.3/dual-mind-task-chat-queued-proposal.png)       |
+| 17. Questions and continued changes            | [SVG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.svg)     | [PNG](../design/v0.0.3/dual-mind-task-chat-followup-proposal.png)     |
+| 18. Activity and chat                          | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)          | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)          |
+| 19. Chat and output minimization               | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)         | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)         |
+| 20. Compact chat and narrow view               | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg)    | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)    |
+| 21. Failure and continued execution            | [SVG](../design/v0.0.4/dual-mind-recovery-failure-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-failure-proposal.png)       |
+| 22. Recovery activity and retries              | [SVG](../design/v0.0.4/dual-mind-recovery-running-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-running-proposal.png)       |
+| 23. Narrow recovery                            | [SVG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.svg)        | [PNG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.png)        |
+| 24. Native primary sidebar                     | [SVG](../design/v0.0.5/dual-mind-sidebar-left-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-sidebar-left-proposal.png)           |
+| 25. Native secondary sidebar                   | [SVG](../design/v0.0.5/dual-mind-sidebar-right-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-right-proposal.png)          |
+| 26. Sidebar widths                             | [SVG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.svg)         | [PNG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.png)         |
+| 27. Sidebar forms and evidence                 | [SVG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.png)          |
+| 28. Compact task home (approved)               | [SVG](../design/v0.0.5/dual-mind-task-home-compact-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-task-home-compact-proposal.png)      |
+| 29. Task-list interactions (approved)          | [SVG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.svg) | [PNG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.png) |
+| 30. Worktree base selection（已审核）          | [SVG](../design/v0.0.5/dual-mind-workspace-base-proposal.svg)         | [PNG](../design/v0.0.5/dual-mind-workspace-base-proposal.png)         |
+| 31. Context budgeting and compaction（已审核） | [SVG](../design/v0.0.5/dual-mind-context-compaction-proposal.svg)     | [PNG](../design/v0.0.5/dual-mind-context-compaction-proposal.png)     |
+| 32. Commit and merge artifacts（已审核）       | [SVG](../design/v0.0.5/dual-mind-artifact-integration-proposal.svg)   | [PNG](../design/v0.0.5/dual-mind-artifact-integration-proposal.png)   |
+| 33. Merge conflicts（已审核）                  | [SVG](../design/v0.0.5/dual-mind-merge-conflicts-proposal.svg)        | [PNG](../design/v0.0.5/dual-mind-merge-conflicts-proposal.png)        |
+| 34. Cleanup and artifact restoration（已审核） | [SVG](../design/v0.0.5/dual-mind-workspace-cleanup-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-workspace-cleanup-proposal.png)      |
+| 35. Tool and command outcomes                  | [SVG](../design/v0.0.5/dual-mind-tool-results-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-tool-results-proposal.png)           |
+| 36. Repeated-error pause and continuation      | [SVG](../design/v0.0.5/dual-mind-tool-pause-proposal.svg)             | [PNG](../design/v0.0.5/dual-mind-tool-pause-proposal.png)             |
+| 37. Historical failures and acceptance         | [SVG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.png)      |
 
 ## Historical descriptions of scenes 1–7
 
@@ -157,7 +181,7 @@ Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection setti
 
 ## Review and implementation gate
 
-The owner has approved the existing 27 designs. Future interface changes require an updated SVG proposal and explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
+The owner has approved the existing 37 designs. Future interface changes require an updated SVG proposal and explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
 
 See [Architecture](./architecture.md) for implemented module responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. Implemented settings/execution messages, role handoffs and file-access boundaries are documented there.
 
@@ -173,33 +197,20 @@ npm run docs:check
 npm run format:check
 ```
 
-Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair (currently 23), requires the original baseline scenes 1–7, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Updating designs or documentation does not indicate that a public VSIX has been rebuilt or replaced. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
+Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair (currently 37), requires the original baseline scenes 1–7, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Updating designs or documentation does not indicate that a public VSIX has been rebuilt or replaced. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
 
 ## Execution interface in the development branch
 
-The actual settings categories are API Connections, Defaults for new tasks, Task execution and Reviewer Roles. The activity-bar icon opens the complete native sidebar workbench; secondary task details initially collapse. Current detail uses scenes 14–17: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with public process cards in chat and original command details in evidence; scenes 18–20 add activity, icon-only sizing and minimization. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace. The original two-column, parallel-execution and apply-result controls remain historical designs; see [Usage](./usage.md) for current behavior and [task chat validation](./task-chat-validation.md) for actual coverage.
+The actual settings categories are API Connections, Defaults for new tasks, Task execution, Reviewer Roles, Model context, and Saved artifacts. The activity-bar icon opens the complete native sidebar workbench; secondary task details initially collapse. Current detail uses scenes 14–17: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with public process cards in chat and original command details in evidence; scenes 18–20 add activity, icon-only sizing and minimization. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace. The original two-column, parallel-execution and apply-result controls remain historical designs; see [Usage](./usage.md) for current behavior and [task chat validation](./task-chat-validation.md) for actual coverage.
 
 ## Approved additions: November 22, 2026
 
-| Scene                                 | Source                                                                | Preview                                                               |
-| ------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 18. Public process / 公开过程         | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)          | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)          |
-| 19. Minimized panel / 最小化          | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)         | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)         |
-| 20. Narrow messages / 窄屏消息        | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg)    | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)    |
-| 21. Failure and continued execution   | [SVG](../design/v0.0.4/dual-mind-recovery-failure-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-failure-proposal.png)       |
-| 22. Recovery activity and retries     | [SVG](../design/v0.0.4/dual-mind-recovery-running-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-running-proposal.png)       |
-| 23. Narrow recovery                   | [SVG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.svg)        | [PNG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.png)        |
-| 24. Native primary sidebar            | [SVG](../design/v0.0.5/dual-mind-sidebar-left-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-sidebar-left-proposal.png)           |
-| 25. Native secondary sidebar          | [SVG](../design/v0.0.5/dual-mind-sidebar-right-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-right-proposal.png)          |
-| 26. Sidebar widths                    | [SVG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.svg)         | [PNG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.png)         |
-| 27. Sidebar forms and evidence        | [SVG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.png)          |
-| 28. Compact task home (approved)      | [SVG](../design/v0.0.5/dual-mind-task-home-compact-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-task-home-compact-proposal.png)      |
-| 29. Task-list interactions (approved) | [SVG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.svg) | [PNG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.png) |
+| Scene                          | Source                                                             | Preview                                                            |
+| ------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| 18. Public process / 公开过程  | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)       |
+| 19. Minimized panel / 最小化   | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)      | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)      |
+| 20. Narrow messages / 窄屏消息 | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg) | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png) |
 
 ## Approved: execution recovery
 
 The original 20 designs remain. [Scenes 21–23](./recovery-proposal.md) were approved on 2026-11-22 and now provide failure recovery, preparation, bounded retry and narrow-screen notices. Illustrated task data and historical artwork labels remain examples.
-
-## Compact home revision
-
-Scenes 28–29 are approved and integrated; original artwork and historical labels remain intact. See the [bilingual proposal](./task-home-compact-proposal.md) for layout and interactions.

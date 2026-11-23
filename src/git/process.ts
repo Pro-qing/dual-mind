@@ -63,7 +63,7 @@ export class GitProcess {
           '--null',
           '--name-only',
           '--get-regexp',
-          '^filter\\..*\\.(clean|smudge|process|required)$',
+          '^(filter\\..*\\.(clean|smudge|process|required)|merge\\..*\\.driver)$',
         ],
         cwd,
       );
@@ -71,10 +71,16 @@ export class GitProcess {
         throw new GitTaskError('gitFailed', 'Cannot inspect Git content filters.');
       }
       for (const key of new Set(config.stdout.split('\0').filter(Boolean))) {
-        if (!/^filter\..*\.(clean|smudge|process|required)$/.test(key) || key.includes('=')) {
+        if (
+          !/^(filter\..*\.(clean|smudge|process|required)|merge\..*\.driver)$/.test(key) ||
+          key.includes('=')
+        ) {
           throw new GitTaskError('gitFailed', 'Cannot safely disable a Git content filter.');
         }
-        overrides.push('-c', `${key}=${key.endsWith('.required') ? 'false' : ''}`);
+        overrides.push(
+          '-c',
+          `${key}=${key.endsWith('.required') || key.startsWith('merge.') ? 'false' : ''}`,
+        );
       }
     }
     return this.execute([...overrides, ...args], cwd);
@@ -108,6 +114,10 @@ export class GitProcess {
           'diff.external=',
           '-c',
           'submodule.recurse=false',
+          '-c',
+          'commit.gpgSign=false',
+          '-c',
+          'merge.autoStash=false',
           ...args,
         ],
         {

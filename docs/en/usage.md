@@ -2,6 +2,10 @@
 
 [简体中文](../zh/usage.md) · [Documentation](./README.md)
 
+[Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
+
+**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+
 **Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Home, task detail, and errors
@@ -11,6 +15,8 @@ The workbench opens on task home. Open a task to enter its separate detail page.
 **Back to home** does not stop execution. Settings opened from detail return to that task, and native task-selection commands open the corresponding detail. Reload restores the page and task, falling back to home if the task is gone. Deleting the current task returns home; active executions must still stop successfully before deletion.
 
 Application errors follow the interface language, including run failures, check commands, Git, inference, and bridge timeouts. Expand **Original details** for redacted source text when available. Command output and model responses remain verbatim. Old historical errors receive localized context with their original text. Changing language reformats structured errors immediately.
+
+**Current workspace revision (uncommitted):** home rows contain only a name and delete icon; select the name to open detail. Long names use a single-line ellipsis and expose the complete name on hover. Counts remain at the top; requirements, role, branch, rounds, and individual state are available in detail. Deletion requires confirmation, with Stop and delete for active tasks. Example names open detail, while deletion and the page New task button are disabled. [Scenes 28–29](./task-home-compact-proposal.md) are approved and integrated; this note does not claim inclusion in existing tags or installed packages.
 
 ## Requirements
 
@@ -113,16 +119,16 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 ## Current limitations
 
-The development branch executes tasks in dedicated worktrees or directly on a selected local branch with streaming, checks/review rounds and pause/continue/stop. Automatic editor-context collection, parallel execution and applying dedicated-worktree results to the original workspace remain unavailable. Examples remain isolated read-only content.
+The development branch executes tasks in dedicated worktrees or directly on a selected local branch with streaming, checks/review rounds and pause/continue/stop. Automatic editor-context collection and parallel execution remain unavailable. Host result integration is implemented, but its page controls are integrated. Examples remain isolated read-only content.
 
-The 20 [approved design scenes](./design.md) remain in the repository. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+The [design archive](./design.md) contains 37 pairs: 37 approved. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
 
 ## Executing tasks (development source)
 
 Open the workbench from the **DualMind activity-bar icon** and create a task. Creation opens its detail page in the pending state. For a new task, **Start** begins the first model request and execution.
 
 1. Configure Worker and Reviewer connections, keys and models, selecting Chat Completions or Responses as appropriate. Models must support streaming and tool calls.
-2. Open a trusted single-folder Git repository with a committed named branch and a clean directory for initial preparation. Select a managed worktree, the current branch or an existing local branch.
+2. Open a trusted single-folder Git repository with a committed named branch. Direct mode requires a clean directory; managed mode permits source changes and does not copy them. Select a managed worktree, the current branch or an existing local branch.
 3. Describe the requirements and press Start. **Reviewer first reads relevant project context, decomposes the request and issues an executable plan with acceptance criteria.** Initial planning does not consume an execution round.
 4. **Worker implements that plan**, prepares project dependencies as needed, changes files and selects concrete verification commands. No preparation/check configuration is required. Worker does not automatically install system toolchains.
 5. Worker submits artifacts, actual execution evidence and outstanding issues. **Reviewer inspects actual files and differences and accepts each criterion.** Approval completes the task. Rejection must include the next executable plan, which Worker automatically follows until approval, the round limit or a stop request.
@@ -184,6 +190,12 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 
 See [sidebar validation](./sidebar-workbench-validation.md) for actual versions, platforms and screenshots, and [the approved proposal](./sidebar-workbench-proposal.md) for scenes 24–27.
 
-## Compact task home
+## Lifecycle pages
 
-Rows contain only a name button and delete icon; title and accessible name retain the full name. Requirements, role, branch, rounds and status remain in details. Read-only examples open details with deletion disabled. Scenes 28–29 are approved and implemented; see the [proposal](./task-home-compact-proposal.md). The archive now contains 29 pairs.
+Settings adds Model context and Saved artifacts. Configure per-connection/model windows, leaving the value blank for the estimated default. Saved artifacts lists manifests, exclusions, origin and recovery IDs and restores new tasks. Without a Git workspace, artifact pages explain the limitation while connection settings remain available.
+
+Managed task creation selects a base, defaulting to the current branch at preparation. Task detail expands Model context usage and Task artifacts. Artifact actions refresh previews, commit, merge, check/complete/abort conflicts, clean up and create follow-up tasks. Commit messages are editable; changing the selected target requires a fresh preview, and merges check its captured commit. Conflict completion/abort confirmations show the actual merge directory and target commit. Direct mode cannot clean the source directory.
+
+Deletion defaults to records only, with explicit preserve/cleanup opt-in. Active tasks stop before a refreshed cleanup confirmation. Cleaned tasks retain read-only chat/evidence and show follow-up/restore actions instead of the composer. Restoration opens a new pending task without starting it. After a timeout, inspect the saved state and reuse the operation ID for retry.
+
+Tool failures, skipped/rejected calls and unknown results have separate labels. Three failures without progress pause for feedback and continuation. Historical errors and current acceptance blockers are separate; see [tool errors](./tool-errors.md).

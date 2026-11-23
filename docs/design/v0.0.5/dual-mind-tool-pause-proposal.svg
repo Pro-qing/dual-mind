@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img"><title>36. 重复错误暂停与继续 — 已确认实施</title><desc>DualMind 工具错误处理与前端统一接入，2026-11-23。按本轮确认方案实施，不另设视觉审批停点。任务、结果与输出均为静态示例，不表示真实测试结果。</desc><style>text {font-family:"Noto Sans CJK SC","DejaVu Sans",sans-serif}</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="28" y="38" font-size="23" fill="#e4e8f0" font-weight="700">36. 重复错误暂停与继续</text>
+<text x="28" y="67" font-size="13" fill="#b1bdce" font-weight="400">第三次无进展失败暂停 · 反馈后由模型调整 · 总调用预算保持</text>
+<text x="1110" y="32" font-size="12" fill="#b1bdce" font-weight="400">已确认实施 · 2026-11-23</text>
+<rect x="80" y="118" width="320" height="660" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="80" y="118" width="320" height="36" rx="0" fill="#20242c" stroke="none"/>
+<text x="92" y="142" font-size="14" fill="#e4e8f0" font-weight="700">任务 · 重复错误后已暂停</text>
+<text x="96" y="182" font-size="18" fill="#e4e8f0" font-weight="700">修复重试取消逻辑</text>
+<rect x="96" y="211" width="288" height="185" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="96" y="211" width="3" height="185" rx="0" fill="#efaaaa" stroke="none"/>
+<text x="110" y="237" font-size="14" fill="#efaaaa" font-weight="700">Worker · 重复错误后已暂停</text>
+<text x="110" y="265" font-size="12" fill="#b1bdce" font-weight="400">同一工具操作三次失败且没有进展。请检查结果</text>
+<text x="110" y="286" font-size="12" fill="#b1bdce" font-weight="400">、补充反馈后继续。</text>
+<text x="110" y="307" font-size="12" fill="#b1bdce" font-weight="400">run_command · 3 次</text>
+<rect x="96" y="420" width="110" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="108" y="443" font-size="13" fill="#e4e8f0" font-weight="400">继续执行</text>
+<rect x="218" y="420" width="70" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="230" y="443" font-size="13" fill="#e4e8f0" font-weight="400">停止</text>
+<text x="96" y="497" font-size="13" fill="#91bbff" font-weight="700">反馈</text>
+<rect x="96" y="512" width="288" height="105" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="108" y="537" font-size="13" fill="#b1bdce" font-weight="400">先检查可用测试脚本，再调整命令；不要重复</text>
+<text x="108" y="558" font-size="13" fill="#b1bdce" font-weight="400">执行相同失败操作。</text>
+<rect x="96" y="637" width="110" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="108" y="660" font-size="13" fill="#e4e8f0" font-weight="400">发送反馈</text>
+<rect x="448" y="118" width="480" height="660" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="448" y="118" width="480" height="36" rx="0" fill="#20242c" stroke="none"/>
+<text x="460" y="142" font-size="14" fill="#e4e8f0" font-weight="700">输出记录 · 当前失败与跳过项</text>
+<rect x="464" y="178" width="448" height="130" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="464" y="178" width="3" height="130" rx="0" fill="#efaaaa" stroke="none"/>
+<text x="478" y="204" font-size="14" fill="#efaaaa" font-weight="700">run_command · 失败</text>
+<text x="478" y="232" font-size="12" fill="#b1bdce" font-weight="400">退出码 127 · 程序不存在</text>
+<text x="478" y="253" font-size="12" fill="#b1bdce" font-weight="400">命令：dualmind_missing_check</text>
+<rect x="464" y="326" width="448" height="120" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="464" y="326" width="3" height="120" rx="0" fill="#b1bdce" stroke="none"/>
+<text x="478" y="352" font-size="14" fill="#b1bdce" font-weight="700">write_file · 未执行</text>
+<text x="478" y="380" font-size="12" fill="#b1bdce" font-weight="400">前面的调用失败，当前调用未执行。</text>
+<rect x="464" y="464" width="448" height="120" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="464" y="464" width="3" height="120" rx="0" fill="#b1bdce" stroke="none"/>
+<text x="478" y="490" font-size="14" fill="#b1bdce" font-weight="700">finish_work · 未执行</text>
+<text x="478" y="518" font-size="12" fill="#b1bdce" font-weight="400">此次批次未提交成果，不会自动进入验收。</text>
+<text x="464" y="625" font-size="13" fill="#b1bdce" font-weight="400">只读诊断不清除同一操作的失败计数。参数或相关状态改变后开始新的计数。</text>
+<rect x="976" y="118" width="320" height="660" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="976" y="118" width="320" height="36" rx="0" fill="#20242c" stroke="none"/>
+<text x="988" y="142" font-size="14" fill="#e4e8f0" font-weight="700">重载与恢复</text>
+<text x="992" y="182" font-size="14" fill="#91bbff" font-weight="700">保存的位置</text>
+<text x="992" y="211" font-size="13" fill="#b1bdce" font-weight="400">Worker · 第 2 轮</text>
+<text x="992" y="232" font-size="13" fill="#b1bdce" font-weight="400">待处理阶段：实施</text>
+<text x="992" y="253" font-size="13" fill="#b1bdce" font-weight="400">重复错误：3 次</text>
+<rect x="992" y="310" width="288" height="166" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="992" y="310" width="3" height="166" rx="0" fill="#91bbff" stroke="none"/>
+<text x="1006" y="336" font-size="14" fill="#91bbff" font-weight="700">继续的含义</text>
+<text x="1006" y="364" font-size="12" fill="#b1bdce" font-weight="400">明确继续开启新的纠错观察窗口。</text>
+<text x="1006" y="385" font-size="12" fill="#b1bdce" font-weight="400">已执行工具不重放，20 次模型往返及 200 次工具</text>
+<text x="1006" y="406" font-size="12" fill="#b1bdce" font-weight="400">调用总预算不重置。</text>
+<text x="992" y="538" font-size="13" fill="#b1bdce" font-weight="400">暂停原因在证据面板最小化和窄窗口中仍然可见；</text>
+<text x="992" y="559" font-size="13" fill="#b1bdce" font-weight="400">无法确认进程退出时继续保持阻塞。</text>
+<text x="80" y="818" font-size="12" fill="#b1bdce" font-weight="400">各列是独立状态；反馈、继续和停止沿用现有入口，不新增自动修复脚本或备用模型重放。</text>
+<rect x="28" y="858" width="1384" height="1" rx="0" fill="#394352" stroke="none"/>
+<text x="28" y="882" font-size="11" fill="#b1bdce" font-weight="400">静态示例 · 工具结果、命令成功与正式验收分别表达 · 37 组设计已确认</text>
+<text x="1155" y="882" font-size="11" fill="#b1bdce" font-weight="400">1440 × 900 · 可编辑 SVG</text>
+</svg>

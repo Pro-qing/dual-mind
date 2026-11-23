@@ -833,17 +833,17 @@ for (const locale of ['en', 'zh-CN'] as const) {
     const ui = rtl.within(rtl.screen.getByRole('dialog'));
     const strategy = ui.getByRole('combobox', { name: tr('gitStrategy') }) as HTMLSelectElement;
     assert.equal(strategy.value, 'managed');
-    assert.equal(queries, 0);
+    assert.equal(queries, 1);
     rtl.fireEvent.change(strategy, { target: { value: 'current' } });
     assert.ok(ui.getByText(tr('gitDirectHint')));
-    assert.equal(queries, 0);
+    assert.equal(queries, 1);
     rtl.fireEvent.change(strategy, { target: { value: 'branch' } });
     await rtl.waitFor(() => assert.ok(ui.queryByRole('option', { name: 'feature' })));
     rtl.fireEvent.change(ui.getByRole('combobox', { name: tr('localBranch') }), {
       target: { value: 'feature' },
     });
     rtl.fireEvent.click(ui.getByRole('button', { name: tr('refreshBranches') }));
-    await rtl.waitFor(() => assert.equal(queries, 2));
+    await rtl.waitFor(() => assert.equal(queries, 3));
     rtl.fireEvent.change(ui.getByLabelText(new RegExp(tr('taskName'))), {
       target: { value: 'Branch draft' },
     });
@@ -951,7 +951,10 @@ test('creating a task navigates using its saved ID without executing; a failed c
   await rtl.screen.findByRole('heading', { name: 'Keep this new task' });
   const task = (await f.store.snapshot()).tasks[0];
   await rtl.waitFor(() => assert.deepEqual(navigation, { view: 'task', taskId: task.id }));
-  assert.deepEqual(operations, []);
+  assert.deepEqual(
+    operations.filter((kind) => kind !== 'git.branches'),
+    [],
+  );
   assert.equal(task.status, 'draft', 'Old storage format stays compatible');
   assert.ok(!document.body.textContent?.includes('draft'));
   assert.ok(rtl.screen.getByRole('button', { name: 'Start' }).hasAttribute('disabled'));
@@ -994,7 +997,7 @@ test('native task selection and creation requests respect task routes and cancel
       onNavigationHandled={acknowledge}
     />,
   );
-  assert.equal(rtl.screen.queryByRole('dialog'), null);
+  assert.ok(rtl.screen.queryByRole('dialog') === null);
   assert.deepEqual(handled, ['select', 'new']);
   assert.equal(
     (rtl.screen.getByRole('combobox', { name: 'Settings category' }) as HTMLSelectElement).value,
@@ -1802,6 +1805,20 @@ test('activity shows silent waiting and command state, then removes animation on
     />,
   );
   await rtl.screen.findByText(/Running command: Regression/);
+  for (const locale of ['en', 'zh-CN'] as const) {
+    ui.rerender(
+      <App
+        snapshot={{
+          ...snapshot,
+          locale,
+          execution: { ...state, activity: { ...state.activity!, stage: 'compacting' } },
+        }}
+        bridge={bridge}
+      />,
+    );
+    await rtl.screen.findByText(new RegExp(t(locale, 'chatCompacting')));
+    assert.ok(document.querySelector('.activity-spinner'));
+  }
   for (const status of ['paused', 'stopped', 'failed', 'interrupted'] as const) {
     ui.rerender(
       <App
@@ -1886,14 +1903,14 @@ test('streamed process updates keep card identity and reader position; narrow mi
     rtl.fireEvent.click(trigger);
     assert.ok(rtl.screen.getByRole('dialog'));
     click('Minimize evidence panel');
-    assert.equal(rtl.screen.queryByRole('dialog'), null);
+    assert.ok(rtl.screen.queryByRole('dialog') === null);
     assert.equal(document.activeElement, trigger);
     const restore = rtl.screen.getByRole('button', { name: 'Restore evidence panel' });
     assert.equal(restore, trigger);
     rtl.fireEvent.click(restore);
     assert.ok(rtl.screen.getByRole('dialog'));
     rtl.fireEvent.keyDown(document, { key: 'Escape' });
-    assert.equal(rtl.screen.queryByRole('dialog'), null);
+    assert.ok(rtl.screen.queryByRole('dialog') === null);
     assert.equal(document.activeElement, trigger);
   } finally {
     Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
@@ -2181,3 +2198,278 @@ test('sidebar Settings visits retain the same composer, draft and reading positi
   assert.equal(composer.value, 'Keep my unsent draft');
   assert.equal(conversation.scrollTop, 125);
 });
+
+for (const locale of ['en', 'zh-CN'] as const) {
+  test(`${locale}: managed base and context-window controls save explicit values and preserve other model settings`, async () => {
+    const f = fixture({ editorLanguage: locale });
+    await f.store.dispatch({
+      kind: 'connection.save',
+      input: {
+        name: 'Models',
+        baseUrl: 'http://example.invalid',
+        defaultModel: 'worker',
+        contextWindows: { other: 65536 },
+      },
+    });
+    await mount(f, undefined, undefined, {
+      execute: async () => ({
+        state: { config: { prepare: [], checks: [] }, runs: [] },
+        repository: { currentBranch: 'main', branches: ['main', 'feature'], dirty: true },
+      }),
+    });
+    const tr = (key: MessageKey) => t(locale, key);
+    click(tr('newTask'));
+    const dialog = rtl.within(rtl.screen.getByRole('dialog'));
+    await dialog.findByText(tr('baseDirty'));
+    rtl.fireEvent.change(dialog.getByRole('combobox', { name: tr('baseBranch') }), {
+      target: { value: 'feature' },
+    });
+    rtl.fireEvent.change(dialog.getByLabelText(new RegExp(tr('taskName'))), {
+      target: { value: 'Selected base' },
+    });
+    rtl.fireEvent.change(dialog.getByLabelText(new RegExp(tr('requirements'))), {
+      target: { value: 'Implement carefully' },
+    });
+    rtl.fireEvent.click(dialog.getAllByRole('radio')[0]);
+    click(tr('createTask'));
+    await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
+    assert.deepEqual((await f.store.snapshot()).tasks[0].git, {
+      mode: 'managed',
+      baseBranch: 'feature',
+    });
+    click(tr('settings'));
+    click(tr('contextSettings'));
+    rtl.fireEvent.change(rtl.screen.getByRole('spinbutton', { name: tr('contextWindow') }), {
+      target: { value: '131072' },
+    });
+    click(tr('save'));
+    await rtl.screen.findByText(tr('contextSaved'));
+    assert.deepEqual((await f.store.snapshot()).connections[0].contextWindows, {
+      other: 65536,
+      worker: 131072,
+    });
+    rtl.fireEvent.change(rtl.screen.getByRole('spinbutton', { name: tr('contextWindow') }), {
+      target: { value: '' },
+    });
+    click(tr('save'));
+    await rtl.waitFor(async () =>
+      assert.deepEqual((await f.store.snapshot()).connections[0].contextWindows, { other: 65536 }),
+    );
+  });
+}
+
+async function lifecycleUI(locale: 'en' | 'zh-CN' = 'en', failCommit = false) {
+  const f = fixture({ editorLanguage: locale });
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot(),
+    task = snapshot.tasks[0];
+  let artifact: import('../../src/shared/artifacts').TaskArtifactStatus = {
+    taskId: task.id,
+    managed: true,
+    directory: '/fixture/task',
+    branch: 'dualmind/task',
+    sourceBranch: 'main',
+    baseCommit: 'a'.repeat(40),
+    head: 'a'.repeat(40),
+    token: 'b'.repeat(64),
+    changes: ' M file.txt',
+    changedFiles: [{ path: 'file.txt', status: ' M' }],
+    files: ['file.txt'],
+    excluded: ['node_modules'],
+    accepted: true,
+    state: 'ready',
+  };
+  const state: import('../../src/shared/execution').ExecutionSnapshot = {
+    config: { prepare: [], checks: [] },
+    runs: [],
+    preparedTaskIds: [task.id],
+    artifacts: [],
+  };
+  const calls: import('../../src/shared/execution').ExecutionAction[] = [];
+  const bridge: Bridge = {
+    request: async (action) => {
+      await f.store.dispatch(action);
+      return f.store.snapshot();
+    },
+    queryModels: async () => ({ models: [], fetchedAt: '' }),
+    onModelsInvalidated: () => () => undefined,
+    execute: async (action) => {
+      calls.push(action);
+      if (action.kind === 'git.commit') {
+        artifact = {
+          ...artifact,
+          pendingCommitMessage: action.message,
+          commitOperationId: action.operationId,
+        };
+        if (failCommit) {
+          failCommit = false;
+          throw new OperationError('operationTimeout');
+        }
+        artifact = {
+          ...artifact,
+          state: 'committed',
+          changes: '',
+          changedFiles: [],
+          commitOperationId: undefined,
+        };
+      }
+      if (action.kind === 'git.merge') {
+        artifact = {
+          ...artifact,
+          state: 'conflicted',
+          merge: {
+            operationId: action.operationId,
+            sourceHead: 'a'.repeat(40),
+            targetBranch: 'main',
+            targetHead: 'a'.repeat(40),
+            directory: '/fixture/source',
+            temporary: false,
+            state: 'conflicted',
+          },
+          conflicts: ['file.txt'],
+        };
+      }
+      if (action.kind === 'git.merge.check') {
+        artifact = { ...artifact, conflicts: [] };
+      }
+      if (action.kind === 'git.merge.complete') {
+        artifact = {
+          ...artifact,
+          state: 'integrated',
+          merge: { ...artifact.merge!, state: 'integrated', verificationRequired: true },
+        };
+      }
+      if (action.kind === 'git.cleanup') {
+        artifact = { ...artifact, state: 'cleaned', snapshotId: 'snapshot' };
+        state.artifacts = [
+          { taskId: task.id, cleaned: true, pending: false, snapshotId: 'snapshot' },
+        ];
+      }
+      return {
+        state: structuredClone(state),
+        artifact: structuredClone(artifact),
+        repository: {
+          currentBranch: 'main',
+          branches: ['main', 'dualmind/task'],
+          branchHeads: { main: 'a'.repeat(40) },
+        },
+        conversation: { messages: [] },
+        evidence: { events: [] },
+      };
+    },
+  };
+  rtl.render(
+    <App
+      snapshot={{ ...snapshot, execution: state }}
+      bridge={bridge}
+      initialNavigation={{ view: 'task', taskId: task.id }}
+    />,
+  );
+  rtl.fireEvent.click(document.querySelector('.artifact-panel summary')!);
+  await rtl.screen.findByText('/fixture/task');
+  return { task, f, calls, tr: (key: MessageKey) => t(locale, key) };
+}
+test('artifact commit retries retain the operation ID, merge conflicts are checked, and cleanup leaves a read-only composer', async () => {
+  const h = await lifecycleUI('en', true);
+  click('Commit task changes');
+  click('Confirm');
+  await rtl.within(rtl.screen.getByRole('dialog')).findByText(/No final reply yet/);
+  rtl.fireEvent.click(
+    rtl.within(rtl.screen.getByRole('dialog')).getByRole('button', { name: 'Refresh preview' }),
+  );
+  await rtl.waitFor(() => assert.ok(rtl.screen.getByRole('button', { name: 'Confirm' })));
+  click('Confirm');
+  await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
+  const commits = h.calls.filter((c) => c.kind === 'git.commit');
+  assert.equal(commits.length, 2);
+  assert.equal(commits[0].operationId, commits[1].operationId);
+  click('Merge into target branch');
+  await rtl.waitFor(() => assert.ok(rtl.screen.getByRole('option', { name: 'main' })));
+  rtl.fireEvent.change(rtl.screen.getByRole('combobox', { name: 'Target local branch' }), {
+    target: { value: 'main' },
+  });
+  rtl.fireEvent.click(
+    rtl.within(rtl.screen.getByRole('dialog')).getByRole('button', { name: 'Refresh preview' }),
+  );
+  await rtl.waitFor(() => assert.ok(rtl.screen.getByRole('button', { name: 'Confirm' })));
+  assert.equal(h.calls.filter((c) => c.kind === 'git.merge').length, 0);
+  click('Confirm');
+  await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
+  assert.ok(rtl.screen.getByRole('button', { name: 'Complete merge' }).hasAttribute('disabled'));
+  click('Recheck merge');
+  await rtl.waitFor(() =>
+    assert.ok(!rtl.screen.getByRole('button', { name: 'Complete merge' }).hasAttribute('disabled')),
+  );
+  click('Complete merge');
+  assert.ok(rtl.within(rtl.screen.getByRole('dialog')).getByText('/fixture/source'));
+  click('Confirm');
+  await rtl.waitFor(() => assert.ok(rtl.screen.queryByRole('dialog') === null));
+  click('Clean up worktree');
+  await rtl.within(rtl.screen.getByRole('dialog')).findByText(/Save staged/);
+  click('Confirm');
+  await rtl.waitFor(() => assert.ok(document.querySelector('.chat-composer textarea') === null));
+  assert.ok(rtl.screen.getAllByRole('button', { name: 'Create follow-up task' }).length);
+  assert.ok(!rtl.screen.queryByRole('button', { name: 'Start' }));
+});
+test('saved artifacts stay available without the original task and open a new restore form', async () => {
+  const f = fixture();
+  const sample: import('../../src/shared/artifacts').SavedArtifact = {
+    id: 'snapshot',
+    taskId: 'deleted',
+    taskName: 'Saved task',
+    createdAt: '2026-11-23',
+    repository: '/source',
+    commonDir: '/source/.git',
+    baseCommit: 'a'.repeat(40),
+    sourceBranch: 'main',
+    branch: 'dualmind/task',
+    head: 'a'.repeat(40),
+    headRef: 'refs/dualmind/snapshots/snapshot/head',
+    files: [{ path: 'private.txt', mode: 384, hash: 'a'.repeat(40), bytes: 4, kind: 'file' }],
+    excluded: ['node_modules'],
+    ready: true,
+  };
+  await mount(f, { view: 'artifacts', returnTo: { view: 'home' } }, undefined, {
+    execute: async () => ({
+      state: { config: { prepare: [], checks: [] }, runs: [] },
+      savedArtifacts: [sample],
+    }),
+  });
+  await rtl.screen.findByText('Saved task');
+  click('Restore as new task');
+  assert.ok(rtl.screen.getByRole('dialog', { name: 'Restore as new task' }));
+  assert.ok(rtl.screen.getByText(/Restore files and index state/));
+});
+
+for (const locale of ['en', 'zh-CN'] as const) {
+  test(`${locale}: repeated-tool pause accepts feedback once and keeps explicit continuation`, async () => {
+    const h = await recoveryUI(
+      {
+        status: 'paused',
+        fault: { code: 'repeatedToolFailure' },
+        toolPause: {
+          reason: 'repeatedToolFailure',
+          budgetKey: 'worker',
+          tool: 'read_file',
+          operationId: 'operation',
+          count: 3,
+        },
+      },
+      locale,
+    );
+    const field = rtl.screen.getByRole('textbox', {
+      name: t(locale, 'feedback'),
+    }) as HTMLTextAreaElement;
+    rtl.fireEvent.change(field, {
+      target: { value: 'Inspect existing paths before trying again.' },
+    });
+    click(t(locale, 'sendFeedback'));
+    click(t(locale, 'sendFeedback'));
+    await rtl.waitFor(() => assert.equal(field.value, ''));
+    const feedback = h.calls.filter((a) => a.kind === 'feedback');
+    assert.equal(feedback.length, 1);
+    assert.equal(feedback[0].runId, h.run.id);
+    assert.equal(feedback[0].text, 'Inspect existing paths before trying again.');
+    assert.equal(h.calls.filter((a) => a.kind === 'resume').length, 0);
+  });
+}

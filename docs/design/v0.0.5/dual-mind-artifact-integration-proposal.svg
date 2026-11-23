@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+<title id="title">32. 任务成果提交与合入 — 待审核</title>
+<desc id="description">DualMind 工作树、上下文与成果收尾静态设计，2026-11-23。场景 30–34 待视觉审核，新增页面控件尚未接入。任务、目录、分支、估算量和错误均为示例，不是运行或验证结果。</desc>
+<style>text { font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif; }</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="28" y="37" font-size="23" fill="#e4e8f0" font-weight="700" text-anchor="start">32. 任务成果提交与合入</text>
+<text x="28" y="66" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">验收通过后保留成果 · 显式提交与普通合并 · 不自动推送或清理</text>
+<text x="1412" y="31" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">v0.0.5 修订 · 待审核 · 2026-11-23</text>
+<path d="M28 86H1412" fill="none" stroke="#394352"/>
+<rect x="48" y="120" width="352" height="642" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="48" y="120" width="352" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="60" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">任务 · 成果</text>
+<path d="M48 154H400" fill="none" stroke="#394352"/>
+<text x="64" y="181" font-size="20" fill="#e4e8f0" font-weight="700" text-anchor="start">完善导出操作</text>
+<text x="64" y="216" font-size="13" fill="#93dfcd" font-weight="400" text-anchor="start">验收通过 · 修改尚未提交</text>
+<text x="64" y="265" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">任务分支</text>
+<rect x="64" y="275" width="320" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="74" y="298" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">dualmind/导出操作-a1b2c3d4</text>
+<text x="64" y="343" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">基点</text>
+<rect x="64" y="353" width="320" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="74" y="376" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">main · 8db317a</text>
+<text x="64" y="420" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">2 个已修改文件 · 1 个新文件</text>
+<rect x="64" y="467" width="80" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="78" y="489" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">预览修改</text>
+<rect x="64" y="515" width="106" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="78" y="537" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">提交任务修改</text>
+<g opacity="0.48">
+<rect x="64" y="564" width="106" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="78" y="586" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">合入目标分支</text>
+</g>
+<text x="64" y="638" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">文件内容发生变化后，须重新取得对应版本的验收。</text>
+<rect x="440" y="120" width="456" height="642" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="440" y="120" width="456" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="452" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">提交任务修改</text>
+<path d="M440 154H896" fill="none" stroke="#394352"/>
+<text x="456" y="182" font-size="15" fill="#e4e8f0" font-weight="700" text-anchor="start">将以下修改保存到任务分支</text>
+<rect x="456" y="207" width="424" height="34" rx="3" fill="#20242c" stroke="#394352"/>
+<text x="468" y="229" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">M  src/export.ts</text>
+<rect x="456" y="245" width="424" height="34" rx="3" fill="#20242c" stroke="#394352"/>
+<text x="468" y="267" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">M  tests/export.test.ts</text>
+<rect x="456" y="283" width="424" height="34" rx="3" fill="#20242c" stroke="#394352"/>
+<text x="468" y="305" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">A  docs/export.md</text>
+<text x="456" y="366" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">提交说明</text>
+<rect x="456" y="376" width="424" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="466" y="399" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">feat: add export / 增加导出操作</text>
+<text x="456" y="441" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">提交前会重新核对文件状态。预览后内容变化时，需刷新预览后再次确认。</text>
+<path d="M440 697H896" fill="none" stroke="#394352"/>
+<rect x="688" y="713" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="702" y="735" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">取消</text>
+<rect x="760" y="713" width="80" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="774" y="735" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">确认提交</text>
+<rect x="936" y="120" width="456" height="642" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="936" y="120" width="456" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="948" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">合入目标分支</text>
+<path d="M936 154H1392" fill="none" stroke="#394352"/>
+<text x="952" y="185" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">来源</text>
+<rect x="952" y="195" width="424" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="962" y="218" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">dualmind/导出操作-a1b2c3d4</text>
+<text x="952" y="262" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">目标本地分支</text>
+<rect x="952" y="272" width="424" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="962" y="295" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">main</text>
+<path d="M1353 286l5 5 5-5" fill="none" stroke="#b1bdce" stroke-width="1.5"/>
+<text x="952" y="347" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">方式：普通合并（允许快进）</text>
+<text x="952" y="387" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">保留任务提交历史。目标为原目录当前分支时，在该干净目录合并；其他未检出</text>
+<text x="952" y="407" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">的目标使用临时工作树。</text>
+<rect x="952" y="491" width="424" height="82" rx="5" fill="#213047" stroke="#456a91"/>
+<text x="964" y="514" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">原任务验收覆盖任务成果。目标分支合入后的项目状态，仍需验证。</text>
+<path d="M936 697H1392" fill="none" stroke="#394352"/>
+<rect x="1184" y="713" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="1198" y="735" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">取消</text>
+<rect x="1256" y="713" width="80" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="1270" y="735" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">确认合入</text>
+<text x="48" y="811" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">提交、合并、清理是独立操作；此画面展示三个不同阶段，不会同时打开多个弹窗。</text>
+<path d="M28 863H1412" fill="none" stroke="#394352"/>
+<text x="28" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="start">静态示例 · 新增界面待审核 · 27 组已审核 + 7 组待审核</text>
+<text x="1412" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">1440 × 900 · 可编辑 SVG · 说明不属于产品界面</text>
+</svg>

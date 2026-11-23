@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+<title id="title">33. 合并冲突与人工处理 — 待审核</title>
+<desc id="description">DualMind 工作树、上下文与成果收尾静态设计，2026-11-23。场景 30–34 待视觉审核，新增页面控件尚未接入。任务、目录、分支、估算量和错误均为示例，不是运行或验证结果。</desc>
+<style>text { font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif; }</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="28" y="37" font-size="23" fill="#e4e8f0" font-weight="700" text-anchor="start">33. 合并冲突与人工处理</text>
+<text x="28" y="66" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">保留本次合并现场 · 重新检查暂存冲突状态 · 可完成或中止本次合并</text>
+<text x="1412" y="31" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">v0.0.5 修订 · 待审核 · 2026-11-23</text>
+<path d="M28 86H1412" fill="none" stroke="#394352"/>
+<rect x="48" y="120" width="320" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="48" y="120" width="320" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="60" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">任务 · 合并冲突</text>
+<path d="M48 154H368" fill="none" stroke="#394352"/>
+<text x="64" y="180" font-size="20" fill="#e4e8f0" font-weight="700" text-anchor="start">完善导出操作</text>
+<rect x="64" y="210" width="288" height="101" rx="5" fill="#302b23" stroke="#716047"/>
+<text x="76" y="233" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">合入 main 时发生冲突。任务分支及目标合并现场</text>
+<text x="76" y="253" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">已保留。</text>
+<text x="64" y="351" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">冲突文件</text>
+<rect x="64" y="372" width="288" height="66" rx="4" fill="#20242c" stroke="#394352"/>
+<text x="76" y="397" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">src/export.ts</text>
+<text x="76" y="420" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">tests/export.test.ts</text>
+<rect x="64" y="475" width="106" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="78" y="497" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">打开冲突目录</text>
+<rect x="64" y="524" width="80" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="78" y="546" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">重新检查</text>
+<g opacity="0.48">
+<rect x="64" y="573" width="80" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="78" y="595" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">完成合并</text>
+</g>
+<rect x="64" y="622" width="106" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="78" y="644" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">中止本次合并</text>
+<rect x="408" y="120" width="480" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="408" y="120" width="480" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="420" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">人工处理后 · 完成合并</text>
+<path d="M408 154H888" fill="none" stroke="#394352"/>
+<text x="424" y="182" font-size="17" fill="#e4e8f0" font-weight="700" text-anchor="start">所有冲突已解决并暂存</text>
+<text x="424" y="234" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">目标分支</text>
+<rect x="424" y="244" width="448" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="434" y="267" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">main</text>
+<text x="424" y="310" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">合并工作目录</text>
+<rect x="424" y="320" width="448" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="434" y="343" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">原项目目录 · /projects/demo</text>
+<rect x="424" y="388" width="448" height="102" rx="5" fill="#302b23" stroke="#716047"/>
+<text x="436" y="411" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">人工解决后的内容不同于原验收版本。本次完成只记录合并结果，不自动沿用任</text>
+<text x="436" y="431" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">务验收结论。</text>
+<text x="424" y="531" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">提交完成前，宿主再次核对目标提交、本次合并来源与冲突状态。</text>
+<path d="M408 704H888" fill="none" stroke="#394352"/>
+<rect x="680" y="720" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="694" y="742" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">取消</text>
+<rect x="752" y="720" width="80" height="34" rx="5" fill="#305981" stroke="#394352"/>
+<text x="766" y="742" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">完成合并</text>
+<rect x="928" y="120" width="464" height="650" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="928" y="120" width="464" height="34" rx="0" fill="#20242c" stroke="none"/>
+<text x="940" y="143" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">中止本次合并</text>
+<path d="M928 154H1392" fill="none" stroke="#394352"/>
+<text x="944" y="182" font-size="18" fill="#e4e8f0" font-weight="700" text-anchor="start">中止当前冲突合并？</text>
+<text x="944" y="225" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">仅中止 DualMind 记录的这次合并。已提交的任务成果继续留在任务分支中。</text>
+<rect x="944" y="309" width="432" height="103" rx="5" fill="#302b23" stroke="#716047"/>
+<text x="956" y="332" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">本次合并的冲突解决修改将由 Git 的中止操作撤回。若目录状态被其他操作改</text>
+<text x="956" y="352" font-size="12" fill="#eac58c" font-weight="400" text-anchor="start">变，宿主会阻止中止并要求检查。</text>
+<text x="944" y="464" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">来源任务提交</text>
+<rect x="944" y="474" width="432" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="954" y="497" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">f29c810</text>
+<text x="944" y="543" font-size="12" fill="#b1bdce" font-weight="700" text-anchor="start">目标合并前提交</text>
+<rect x="944" y="553" width="432" height="36" rx="5" fill="#171c24" stroke="#394352"/>
+<text x="954" y="576" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">8db317a</text>
+<path d="M928 704H1392" fill="none" stroke="#394352"/>
+<rect x="1184" y="720" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="1198" y="742" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">取消</text>
+<rect x="1256" y="720" width="80" height="34" rx="5" fill="#793f49" stroke="#a56973"/>
+<text x="1270" y="742" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">确认中止</text>
+<text x="48" y="816" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">示例包含原项目目标；未检出的目标分支在专用临时工作树中合并，冲突期间保留该目录。</text>
+<path d="M28 863H1412" fill="none" stroke="#394352"/>
+<text x="28" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="start">静态示例 · 新增界面待审核 · 27 组已审核 + 7 组待审核</text>
+<text x="1412" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">1440 × 900 · 可编辑 SVG · 说明不属于产品界面</text>
+</svg>

@@ -39,13 +39,15 @@ export function ChatActivity({ taskId }: { taskId: string }) {
         ? waiting
           ? tr(remaining === 0 ? 'retryStarting' : 'retryWaiting')
           : tr(
-              activity.stage === 'waiting'
-                ? 'chatWaiting'
-                : activity.stage === 'receiving'
-                  ? 'chatReceiving'
-                  : activity.stage === 'command'
-                    ? 'chatRunningCommand'
-                    : 'chatRunningTool',
+              activity.stage === 'compacting'
+                ? 'chatCompacting'
+                : activity.stage === 'waiting'
+                  ? 'chatWaiting'
+                  : activity.stage === 'receiving'
+                    ? 'chatReceiving'
+                    : activity.stage === 'command'
+                      ? 'chatRunningCommand'
+                      : 'chatRunningTool',
             )
         : tr(statusKey(run.status));
   const seconds = Math.max(0, Math.floor((now - Date.parse(activity?.startedAt ?? '')) / 1000));

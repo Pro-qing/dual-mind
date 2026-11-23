@@ -123,8 +123,8 @@ for (const protocol of ['chatCompletions', 'responses'] as const) {
     }
   });
 }
-test('inference rejects redirects, malformed/incomplete streams, unknown tools', async () => {
-  for (const scenario of ['redirect', 'invalid', 'incomplete', 'tool']) {
+test('inference rejects redirects and malformed/incomplete streams', async () => {
+  for (const scenario of ['redirect', 'invalid', 'incomplete']) {
     const server = await modelServer((_req, res) => {
       if (scenario === 'redirect') {
         res.writeHead(302, { Location: 'http://127.0.0.1:1' });
@@ -222,7 +222,7 @@ test('inference enforces timeout, cancellation, response and context limits', as
         new AbortController().signal,
         () => undefined,
       ),
-      /Context exceeds/,
+      { code: 'inferenceContext' },
     );
   } finally {
     await server.close();
@@ -507,3 +507,83 @@ test('retry waiting can be cancelled and a partial stream is never retried', asy
     await server.close();
   }
 });
+
+for (const protocol of ['chatCompletions', 'responses'] as const) {
+  for (const streamed of [false, true]) {
+    test(`${protocol} classifies ${streamed ? 'streamed' : 'HTTP'} context overflow without transport retry or raw error exposure`, async () => {
+      let requests = 0;
+      const server = await modelServer((_req, res) => {
+        requests++;
+        const error = {
+          code: 'context_length_exceeded',
+          message: 'maximum context length exceeded; echoed-secret',
+        };
+        if (streamed) {
+          send(
+            res,
+            protocol === 'responses'
+              ? [{ type: 'response.failed', response: { status: 'failed', error } }]
+              : [{ error }],
+          );
+        } else {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error }));
+        }
+      });
+      try {
+        await assert.rejects(
+          new Inference().turn(
+            { baseUrl: server.url, key: 'test', model: 'test', protocol },
+            [],
+            definitions,
+            new AbortController().signal,
+            () => undefined,
+          ),
+          (error: unknown) => {
+            assert.equal((error as { code: string }).code, 'inferenceContext');
+            assert.ok(!String(error).includes('echoed-secret'));
+            return true;
+          },
+        );
+        assert.equal(requests, 1);
+      } finally {
+        await server.close();
+      }
+    });
+  }
+  test(`${protocol} exposes validated token usage for budget calibration`, async () => {
+    const server = await modelServer((_req, res) =>
+      send(
+        res,
+        protocol === 'responses'
+          ? [
+              {
+                type: 'response.completed',
+                response: {
+                  status: 'completed',
+                  output: [],
+                  usage: { input_tokens: 123, output_tokens: 7 },
+                },
+              },
+            ]
+          : [
+              { choices: [{ index: 0, delta: { content: 'ok' }, finish_reason: 'stop' }] },
+              { choices: [], usage: { prompt_tokens: 123, completion_tokens: 7 } },
+              '[DONE]',
+            ],
+      ),
+    );
+    try {
+      const result = await new Inference().turn(
+        { baseUrl: server.url, key: 'test', model: 'test', protocol },
+        [],
+        definitions,
+        new AbortController().signal,
+        () => undefined,
+      );
+      assert.deepEqual(result.usage, { inputTokens: 123, outputTokens: 7 });
+    } finally {
+      await server.close();
+    }
+  });
+}

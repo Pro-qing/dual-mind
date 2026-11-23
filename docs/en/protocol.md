@@ -2,6 +2,10 @@
 
 [简体中文](../zh/protocol.md) · [Documentation](./README.md)
 
+[Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
+
+**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+
 **Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Page state and error compatibility
@@ -70,7 +74,7 @@ Successful address/key changes and deletion invalidate results. Request and conn
 
 ## Remaining protocol work
 
-Application of dedicated-worktree results to the original workspace and parallel task execution remain future work. The [retained design reference](./design.md) describes the intended UI. Implemented asynchronous execution messages identify both task and run. Active-task deletion waits for stop acknowledgement; failures preserve records. The read-only example view uses UI-only data and does not emit task mutations.
+Dedicated-worktree artifact operations have host interfaces, with UI integrated; parallel task execution remains future work. The [retained design reference](./design.md) describes the intended UI. Implemented asynchronous execution messages identify both task and run. Active-task deletion waits for stop acknowledgement; failures preserve records. The read-only example view uses UI-only data and does not emit task mutations.
 
 ## Role handoffs
 
@@ -90,7 +94,7 @@ The development branch adds host-only `prepare(taskId)` and `files(taskId, role)
 
 Preparation returns the registered baseline, branch, directory and phase. Errors distinguish unavailable/old Git, workspace trust or shape, missing task/repository/commit, detached HEAD, submodules, dirty source, conflicts, changed ownership, storage failure, invalid paths, output limits and timeout. Intent and partial resources survive failures; errors identify the affected location without returning raw Git stderr. File access is revoked after task deletion or workspace/binding changes.
 
-Deleting a task retains the Git record, worktree and branch. There is no automated cleanup endpoint. For dedicated worktrees only (never the directly opened project), to clean up manually, first inspect and preserve the task's work (including untracked/ignored files), then run `git -C <source-repository> worktree remove <task-directory>` without force. Delete the branch with `git -C <source-repository> branch -d <task-branch>` only when Git confirms it is safely merged. If either command refuses, retain the resources and resolve the remaining work yourself. Historical registry records remain as recovery information; the service never adopts unknown branches/directories or recreates a missing ready directory automatically.
+Legacy task deletion retains the Git record, worktree and branch. New host operations support explicit preservation/cleanup and optional cleanup on deletion, with UI integrated; see [task lifecycle](./task-lifecycle.md). For dedicated worktrees only (never the directly opened project), to clean up manually, first inspect and preserve the task's work (including untracked/ignored files), then run `git -C <source-repository> worktree remove <task-directory>` without force. Delete the branch with `git -C <source-repository> branch -d <task-branch>` only when Git confirms it is safely merged. If either command refuses, retain the resources and resolve the remaining work yourself. Historical registry records remain as recovery information; the service never adopts unknown branches/directories or recreates a missing ready directory automatically.
 
 ## Execution messages and persistence
 
@@ -100,13 +104,13 @@ Deleting a task retains the Git record, worktree and branch. There is no automat
 
 Runs transition through preparing, planning, worker, checking, reviewer, answering, pausing, paused, stopping and the terminal statuses answered/stopped/completed/roundLimit/failed/interrupted. Answered indicates completion of a question reply, not acceptance. Paused runs occupy the workspace slot. Stop is acknowledged only after cancellation and command shutdown; host reload interrupts pending runs, and explicit restart creates a new execution ID without replaying prior calls. Active task edits and changes to the referenced connection URL/protocol/key are rejected by the host. Deleting an active task first stops it, removes its visible execution history, and retains the Git artifacts.
 
-`submit_plan` issues the initial plan, `finish_work` submits artifacts, and `submit_review` accepts them or issues the next plan. Plain text never substitutes for these tools. After each submission, the host runs enabled additional checks and verifies actual evidence and artifact fingerprints before accepting approval. Role histories are never joined. Manual application/commit/merge is outside this protocol.
+`submit_plan` issues the initial plan, `finish_work` submits artifacts, and `submit_review` accepts them or issues the next plan. Plain text never substitutes for these tools. After each submission, the host runs enabled additional checks and verifies actual evidence and artifact fingerprints before accepting approval. Role histories are never joined. Explicit commit/merge uses separate host artifact operations, outside model tool permissions.
 
 ## Task branch selection
 
 `TaskInput.git` / `TaskDraft.git` is optional: `{mode: "managed"}`, `{mode: "current"}`, or `{mode: "branch", branch: "existing-local-name"}`. Missing means managed for old tasks. An edit omitting the field preserves an existing selection. The host rejects strategy changes after preparation. No arbitrary paths, revision expressions or Git command arguments are accepted.
 
-Execution action `git.branches` is readonly and returns `repository: {currentBranch, branches}` alongside execution state. It lists local branches only and needs no saved task. Execution state includes `preparedTaskIds` to lock the form even after interrupted preparation. `RunSummary.git` holds the actual frozen binding, including `baseCommit` and `headCommit`. Older run records without that field use their managed registration. `binding(taskId, expected?)` validates without preparing; preview/openDirectory cannot switch or reset. Each direct start/restart rechecks cleanliness and records a new baseline. Old runs refuse access if their branch or HEAD no longer matches. Chat continuation uses `binding` to retain the directory and uncommitted artifacts without calling `prepare`; new artifacts require fresh verification evidence.
+Execution action `git.branches` is readonly and returns `repository: {currentBranch, branches, dirty, branchHeads}` alongside execution state. It lists local branches only and needs no saved task. Execution state includes `preparedTaskIds` to lock the form even after interrupted preparation. `RunSummary.git` holds the actual frozen binding, including `baseCommit` and `headCommit`. Older run records without that field use their managed registration. `binding(taskId, expected?)` validates without preparing; preview/openDirectory cannot switch or reset. Each direct start/restart rechecks cleanliness and records a new baseline. Old runs refuse access if their branch or HEAD no longer matches. Chat continuation uses `binding` to retain the directory and uncommitted artifacts without calling `prepare`; new artifacts require fresh verification evidence.
 
 Deletion retains the registration and results. Dedicated worktree cleanup instructions above do not apply to direct mode: never remove the user's opened repository with worktree cleanup commands. Direct mode never automatically reverts files or restores the previous branch.
 
@@ -166,3 +170,31 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 `dualMind.tasks` is a native WebviewView. Optional `AppSnapshot.initialViewState` contains only allowlisted display state: version, navigation and per-task expansion/minimization preferences. It contains no credentials, raw environment or recovery context. Existing page state wins, followed by the workspace mirror and legacy-tab state. Older clients ignore the added field.
 
 UI → host `view.state` mirrors display state; `navigation.ack` consumes a navigation request by ID. `rendered` may include display state; the host saves it before completing initialization and closing a legacy tab. State writes are serialized and callbacks from replaced pages cannot reply to the new page. Retrying `ready` requests a fresh snapshot. Hidden execution remains in the host; reveal refreshes snapshots and paged chat. Execution requests, run records and recovery formats are unchanged.
+
+## Current uncommitted lifecycle interfaces
+
+New operations use `execution.request/result`. The host resolves directories and refs, never arbitrary frontend paths. Operation UUIDs support idempotent retry; `token` is the last inspected state token.
+
+| Operation                        | Input and result                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `git.artifacts`                  | `taskId` → `artifact`, including files, exclusions, branch, token, acceptance and pending operations |
+| `git.commit`                     | `taskId, operationId, token, message` → updated artifact state                                       |
+| `git.merge`                      | `taskId, operationId, token, targetBranch` → integrated or conflicted state                          |
+| `git.merge.check/complete/abort` | `taskId, operationId`; operate only on that recorded merge                                           |
+| `git.openMerge`                  | Host validates and opens the registered merge directory                                              |
+| `git.cleanup`                    | `taskId, operationId, token`; preserve before removing the managed worktree                          |
+| `git.saved`                      | Independent `savedArtifacts`, including preserved records needing inspection after failure           |
+| `git.restore`                    | `snapshotId, operationId, input` → `createdTaskId`, a new task from the snapshot                     |
+| `task.followup`                  | `taskId, operationId, input` → `createdTaskId`, a new task from the selected base                    |
+
+`task.delete` optionally carries `cleanup: {operationId, token}`; omission retains the worktree. Connections add `contextWindows: Record<modelId, tokenWindow>`, and managed strategies add optional `baseBranch`. Older omitted fields remain compatible; storage stays at version 1. Derived task IDs use the operation UUID with an input digest to prevent duplicate creation.
+
+`RunSummary.context` reports per-role window, estimated status, input budget, request bytes and summary count; `ExecutionActivity.stage` adds `compacting`. `RecoveryState.contexts` references separately synced summary files. `ExecutionSnapshot.artifacts` and `gitOperationTaskId` expose cleaned tasks and ongoing artifact operations; artifact records use independent `dualMind.git.artifacts.v1` storage.
+
+## Tool outcomes and frontend integration revision
+
+Optional `RunEvent.tool` and `RecoveryOperation.outcome` carry `ToolOutcome`: call/request/operation IDs, tool, `execution`, `status`, structured `fault`, linked `commandId`, and `causedBy`. `CommandEvidence.toolOperationId` links the parent tool so aggregation counts one operation; legacy records retain their existing display.
+
+Commands add optional `stdout`, `stderr`, `durationMs`, `termination`, and `actualExitCode` (null when unknown), retaining `exitCode` and `ok`. `ToolBudget` adds `calls` and failure identities; `RunSummary.toolPause` stores reason, budget key, operation and count. Explicit continuation clears only the correction observation window, not total call budgets. `EvidencePage.summary.blockers` is independent of historical error totals.
+
+`RepositoryInfo` adds read-only `dirty` and `branchHeads`; optional `git.merge.expectedTargetHead` detects changes since target preview. Artifact status adds structured `changedFiles`, pending commit messages and restoration operation IDs. `context`/`artifacts` settings routes preserve their return target; the host publishes the derived task in a snapshot/navigation request before reporting creation success.

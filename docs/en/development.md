@@ -108,6 +108,10 @@ npm run package
 
 CI runs environment and local store/React tests, formatting, types, lint, documentation links, design-asset checks, and extension-host tests in each matrix job. It covers VS Code 1.100.0 and stable in Ubuntu 20.04 containers, plus stable on native Ubuntu 24.04. The Ubuntu 20.04 stable job additionally validates the real Webview and packaging; see the [validation matrix](./environment.md). Use `npm run format` after editing supported text files. The SVG is intentionally excluded from Prettier so its hand-authored geometry stays readable.
 
+Local tests use serial workers and a 256 MiB JavaScript heap per test process. On a constrained host, run checks and GUI suites separately; observe the entire process tree, available memory, swap and elapsed time, and stop the test if the host loses its reserve. A JavaScript heap cap alone does not bound Electron memory. `DUAL_MIND_RESOURCE_UI=1` adds renderer/heap limits and disables unrelated extensions in GUI fixtures; `DUAL_MIND_SKIP_NATIVE_UI=1` runs the Webview suite alone so `node scripts/verify-sidebar.mjs` can follow separately. These flags do not impose an OS memory quota.
+
+Set `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.5-tool-errors-ui.vsix` when running `npm run package` to keep a separate candidate without replacing the default package. Packaging does not install or publish the extension.
+
 ## Troubleshooting
 
 | Symptom                                  | Action                                                                                                   |
