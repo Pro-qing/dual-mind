@@ -31,3 +31,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Offline command-line tools / 离线命令
+
+Linux x64 packages also contain unmodified upstream executables: ripgrep 16.0.0, fd 10.5.2 and jq 1.8.2. Their complete upstream license files are distributed alongside the executables under `dist/tools/linux-x64/<tool>/`. The [locked asset manifest](./resources/tools/manifest.json) identifies every license file, source and digest. These commands are fallback programs for task subprocesses; development-only ZIP validation packages are not bundled into the extension code.
+
+Linux x64 包另含未经修改的上游 ripgrep 16.0.0、fd 10.5.2、jq 1.8.2 可执行文件。完整上游许可随程序置于 `dist/tools/linux-x64/<tool>/`，文件来源与摘要见资产清单；用于开发的 ZIP 校验依赖不打入运行代码。
+
+Additional linked-library notices include musl for the static Linux binaries, PCRE2 10.45 used by ripgrep, and the Oniguruma revision pinned by jq (`4ef89209a239c1aea328cf13c05a2807e5c146d1`). The jq COPYING file also contains its incorporated third-party notices. These files are locked and verified alongside the executables.
+
+静态 Linux 程序随附 musl 声明，ripgrep 另附 PCRE2 10.45 声明，jq 附其固定 Oniguruma 修订的声明；jq COPYING 同时保留其他内含组件声明。上述文件与可执行文件一起锁定并校验。

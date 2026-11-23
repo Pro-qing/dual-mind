@@ -39,3 +39,7 @@ Each recovery starts a new generation. Old model output, callbacks and handoffs 
 Changed artifacts invalidate old acceptance evidence. Reviewer must reverify or request Worker changes; a newer failure cannot be overridden by an older success. Recovery neither consumes another normal work round nor resets completed role calls or argument-correction counts.
 
 Actual local and CI coverage is reported in the [development log](./development-log.md). Unrun platforms are not claimed as verified.
+
+## Bundled command-line tools
+
+Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).

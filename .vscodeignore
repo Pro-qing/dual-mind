@@ -31,3 +31,4 @@ package-lock.json
 !CODE_OF_CONDUCT.md
 !resources/icon.png
 !resources/activity-icon.svg
+!resources/tools/manifest.json

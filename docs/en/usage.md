@@ -199,3 +199,7 @@ Managed task creation selects a base, defaulting to the current branch at prepar
 Deletion defaults to records only, with explicit preserve/cleanup opt-in. Active tasks stop before a refreshed cleanup confirmation. Cleaned tasks retain read-only chat/evidence and show follow-up/restore actions instead of the composer. Restoration opens a new pending task without starting it. After a timeout, inspect the saved state and reuse the operation ID for retry.
 
 Tool failures, skipped/rejected calls and unknown results have separate labels. Three failures without progress pause for feedback and continuation. Historical errors and current acceptance blockers are separate; see [tool errors](./tool-errors.md).
+
+## Bundled command-line tools
+
+Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).

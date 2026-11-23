@@ -48,6 +48,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: npm run tools:fetch
       - run: npm run check
       - name: Test inside the extension host / 扩展宿主测试
         run: xvfb-run -a npm test
@@ -77,6 +78,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xvfb xauth
       - run: npm ci
+      - run: npm run tools:fetch
       - run: npm run check
       - name: Test inside the extension host / 扩展宿主测试
         run: xvfb-run -a npm test
@@ -100,6 +102,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: npm run tools:fetch
       - run: npm run check
       - run: npm test
       - run: npm run package

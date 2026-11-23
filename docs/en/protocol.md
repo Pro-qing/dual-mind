@@ -198,3 +198,7 @@ Optional `RunEvent.tool` and `RecoveryOperation.outcome` carry `ToolOutcome`: ca
 Commands add optional `stdout`, `stderr`, `durationMs`, `termination`, and `actualExitCode` (null when unknown), retaining `exitCode` and `ok`. `ToolBudget` adds `calls` and failure identities; `RunSummary.toolPause` stores reason, budget key, operation and count. Explicit continuation clears only the correction observation window, not total call budgets. `EvidencePage.summary.blockers` is independent of historical error totals.
 
 `RepositoryInfo` adds read-only `dirty` and `branchHeads`; optional `git.merge.expectedTargetHead` detects changes since target preview. Artifact status adds structured `changedFiles`, pending commit messages and restoration operation IDs. `context`/`artifacts` settings routes preserve their return target; the host publishes the derived task in a snapshot/navigation request before reporting creation success.
+
+## Bundled tool environment summary
+
+The optional `ExecutionEnvironmentSummary.bundledTools?` array contains `name` (`rg`/`fd`/`jq`), bundled `version`, `status` (`available`/`unavailable`) and optional `reason` (`unsupportedPlatform`, `unconfigured`, `missing`, `integrity`, `architecture`, `permission`, `unreadable`). This describes fallbacks, not actual PATH selection. Older snapshots remain valid without the field. Raw environment values are not persisted; recovery reconstructs the current environment. Model tools and command result protocols are unchanged. See [bundled commands](./bundled-tools.md).

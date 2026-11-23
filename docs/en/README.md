@@ -55,3 +55,5 @@ The [development log](./development-log.md) records code/documentation review, d
 
 - [Tool errors](./tool-errors.md): outcomes, repeated-error pauses, skipped batches and acceptance boundaries.
 - [Tool-error UI](./tool-errors-proposal.md): scenes 35–37, implemented under this round’s confirmation.
+
+- [Bundled command-line tools](./bundled-tools.md): offline CLI fallbacks, system priority and integrity checks.

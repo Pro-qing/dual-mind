@@ -1,10 +1,11 @@
+import { BundledTools } from '../../src/execution/bundledTools';
 import { realpath } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fixture, taskInput } from './fixtures';
 import { modelServer } from './modelServer';
 import { GitProcess } from '../../src/git/process';
@@ -59,6 +60,7 @@ async function setup(
     unavailable?: boolean;
     shutdownFailure?: boolean;
     realCommands?: boolean;
+    bundledTools?: boolean;
     badArguments?: 'once' | 'always' | 'json';
     streamSecret?: string;
     reviewerCommands?: boolean;
@@ -668,7 +670,14 @@ async function setup(
     },
   };
   const records = new RunRecords(f.workspace, () => storage);
-  const service = new ExecutionService(f.store, workspaces, records, runner);
+  const service = new ExecutionService(
+    f.store,
+    workspaces,
+    records,
+    runner,
+    undefined,
+    options.bundledTools ? new BundledTools(resolve('dist/tools')) : undefined,
+  );
   f.ports.assertMutable = (action) => service.assertMutable(action);
   cleanup.service = service;
   await service.ready;
@@ -2043,5 +2052,24 @@ for (const flip of [false, true]) {
     assert.ok(!JSON.stringify(events).includes('test-secret-'));
     assert.ok(!journal.includes('test-secret-'));
     assert.ok(events.some((e) => e.text.includes('[redacted]')));
+  });
+}
+
+for (const flip of [false, true]) {
+  test(`bundled fallback metadata and search guidance reach both roles and protocols (flip=${flip})`, async (t) => {
+    const h = await setup(t, { flip, readingOnly: true, bundledTools: true });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+    assert.equal(h.records.runs[0].status, 'completed');
+    assert.equal(h.records.runs[0].environment?.bundledTools?.length, 3);
+    for (const agent of ['worker', 'reviewer']) {
+      const request = h.captured.find((item) => item.agent === agent);
+      assert.ok(request);
+      const text = JSON.stringify(request.body);
+      assert.match(text, /bundledTools/);
+      assert.match(text, /System commands have priority/);
+      assert.match(text, /search_status/);
+      assert.ok(!text.includes('test-secret-worker'));
+    }
   });
 }

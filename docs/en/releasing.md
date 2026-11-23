@@ -87,3 +87,7 @@ Marketplace displays the README from the uploaded extension package. Committing 
 Official references: [Publishing extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension), [Extension manifest](https://code.visualstudio.com/api/references/extension-manifest), and [GitHub releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository). API credentials must not be stored in source files or exposed in command arguments.
 
 `v0.0.5` is the requested local annotated source tag, containing sidebar implementation, design reorganization and version metadata. This operation does not push tags, install the extension or publish a release. Historical `v0.0.2`/`v0.0.3` tags and older VSIX files are retained. Public distribution still requires the exact-commit and target-platform CI checks above. See the [0.0.5 version notes](./release-notes-0.0.5.md) for this local operation and its actual validation.
+
+## Bundled command-line tools
+
+Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).

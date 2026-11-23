@@ -1,3 +1,4 @@
+import { BundledTools } from './execution/bundledTools';
 import { OperationError, errorText } from './shared/errors';
 import * as vscode from 'vscode';
 import { randomUUID, randomBytes } from 'node:crypto';
@@ -87,6 +88,8 @@ export class Workbench implements vscode.Disposable, vscode.WebviewViewProvider 
       this.taskWorkspaces,
       new RunRecords(context.workspaceState, () => context.storageUri?.fsPath),
       new LocalCommands(),
+      undefined,
+      new BundledTools(vscode.Uri.joinPath(context.extensionUri, 'dist', 'tools').fsPath),
     );
     this.execution.subscribe((update) => this.executionUpdate(update));
     void this.execution.ready.then(() => this.changes.fire()).catch(() => undefined);

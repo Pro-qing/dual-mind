@@ -198,3 +198,7 @@ UI → 宿主 `view.state` 镜像显示状态，`navigation.ack` 使用导航请
 命令新增可选 `stdout`、`stderr`、`durationMs`、`termination` 和 `actualExitCode`（未知为 null），旧 `exitCode` 与 `ok` 继续兼容。`ToolBudget` 增加 `calls` 与失败身份计数，`RunSummary.toolPause` 保存暂停原因、预算键、操作及次数。仅明确继续清理纠错观察计数，总调用预算保留。`EvidencePage.summary.blockers` 独立提供验收阻塞数，不从历史错误总数推断。
 
 `RepositoryInfo` 增加只读 `dirty` 和 `branchHeads`；`git.merge` 可选 `expectedTargetHead` 校验预览后的目标变化。成果状态增加结构化 `changedFiles`、待提交说明及恢复操作标识。`context`／`artifacts` 设置路由保留返回位置；新任务由宿主先发布包含任务的快照与导航请求，再通知创建结果。
+
+## 内置工具环境摘要
+
+`ExecutionEnvironmentSummary.bundledTools?` 是可选数组，项包含 `name`（`rg`／`fd`／`jq`）、内置 `version`、`status`（`available`／`unavailable`）及可选 `reason`（`unsupportedPlatform`、`unconfigured`、`missing`、`integrity`、`architecture`、`permission`、`unreadable`）。它描述备用工具，不是 PATH 实际选择结果；旧快照缺失该字段时保持兼容。环境值不持久化，恢复重建当前运行环境，模型工具和命令结果协议保持不变。详见[内置命令](./bundled-tools.md)。

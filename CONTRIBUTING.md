@@ -7,7 +7,7 @@ DualMind’s local React workbench is available as a GitHub preview. Start with 
 ## Making a change
 
 1. Discuss a feature or significant change in an issue before broad implementation. Use the bilingual issue templates.
-2. Use nvm and `.nvmrc`, install with `npm ci`, and keep changes focused on the agreed task.
+2. Use nvm and `.nvmrc`, install with `npm ci`, prepare the pinned CLI cache with `npm run tools:fetch`, and keep changes focused on the agreed task.
 3. Every code change must search and review relevant documentation across the repository and synchronize affected English and Chinese descriptions in the same change. Documentation review is a completion requirement. Follow the [documentation synchronization workflow](./docs/en/development.md#code-and-documentation-synchronization) to check descriptions, examples, limitations, status and cross-references. Label future behavior clearly.
 4. Every code change must append English and Chinese development-log entries covering the change, documentation search/review scope, actual updates, validation results and unrun checks. Even when no documentation text needs updating, record the review and its reason; “no documentation impact” cannot replace the search or log entry.
 5. Run `npm run check`, relevant extension-host tests, and `npm run package` when changing runtime/build behavior. For documentation-only changes, run `npm run docs:check`, `npm run format:check` and `git diff --check`, then manually compare the documentation with current behavior.

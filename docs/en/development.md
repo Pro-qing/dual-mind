@@ -24,6 +24,7 @@ npm --version
 command -v node      # should point into your nvm installation
 npm run check:env
 npm ci
+npm run tools:fetch
 ```
 
 `.npmrc` enables strict engine checks. The environment check also runs before installation, checks, builds, and watch commands. Do not bypass `EBADENGINE` with `--force` or replace the system Node.js binary. Load nvm and select the repository version instead. nvm selection is per shell; run `nvm use` in each new terminal. See the [environment guide](./environment.md#prepare-the-development-toolchain) for initialization that preserves the machine default. Run `nvm use system` after project work to return to system Node.js; changing directories alone does not switch versions.
@@ -126,7 +127,7 @@ Build output, downloaded editors, dependencies, and VSIX files are ignored by Gi
 
 ## Resource-bounded model verification
 
-Local tests run serially with a 512 MiB JavaScript heap and the 30-second per-test timeout (90 seconds on native Windows). Run each verification command separately with a 1 GiB memory / 60-second limit for individual local batches (180 seconds for the full `npm run check`, which includes the real command timeout test), or 2 GiB / 300 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
+Local tests run serially with a 256 MiB JavaScript heap and the 30-second per-test timeout (90 seconds on native Windows). Run each verification command separately with a 1 GiB memory / 60-second limit for individual local batches (420 seconds for the full `npm run check`, which includes the real command timeout test), or 2 GiB / 300 seconds for Electron, and no swap. On Linux, a user systemd service can enforce these using `MemoryMax`, `MemorySwapMax=0`, and `RuntimeMaxSec`.
 
 Set `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` to reuse an installed VS Code for `npm test` and `npm run test:ui`; omit it to retain automatic download. Run Electron under `xvfb-run -a` when headless. All tests use isolated user profiles. The real Webview test starts a local mock server and uses a fake key in the native password prompt, then verifies query, selection, persistence, both languages and narrow layouts. It never reads personal credentials; model requests use local mock endpoints and no paid services.
 
@@ -164,3 +165,7 @@ Recovery tests use scripted endpoints, forced exits of isolated child processes 
 ## Sidebar regression
 
 `npm run test:ui` runs both-protocol execution/chat regression followed by native sidebar and legacy-tab migration scenarios. Use `node scripts/verify-sidebar.mjs` to run the latter separately. Select an installed editor with `VSCODE_TEST_EXECUTABLE`, or use `VSCODE_TEST_VERSION=1.100.0` for the minimum version. Tests use temporary profiles and workspaces. See [actual sidebar validation](./sidebar-workbench-validation.md).
+
+## Bundled command-line tools
+
+Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).

@@ -1,3 +1,4 @@
+import type { BundledTools } from './bundledTools';
 import type { ProcessIdentity } from './processTree';
 import { randomUUID } from 'node:crypto';
 import { OperationError } from '../shared/errors';
@@ -16,6 +17,7 @@ export class ProjectEnvironment {
     private readonly probe = runProcess,
     private readonly chooseShell = selectShell,
     private readonly onProcess?: (identity: ProcessIdentity) => Promise<void>,
+    private readonly bundledTools?: BundledTools,
   ) {
     this.host = baseEnvironment(host);
     this.rememberSecrets(this.host);
@@ -124,6 +126,11 @@ export class ProjectEnvironment {
       if (/^(BASH_ENV|ENV|SHELLOPTS|BASHOPTS|BASH_FUNC_.*)$/i.test(key)) {
         delete env[key];
       }
+    }
+    if (this.bundledTools) {
+      const bundled = await this.bundledTools.apply(env, signal);
+      env = bundled.env;
+      summary.bundledTools = bundled.tools;
     }
     return { env, summary };
   }

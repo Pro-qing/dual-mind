@@ -45,6 +45,7 @@ npm --version
 command -v node        # a path inside your nvm installation
 npm run check:env
 npm ci
+npm run tools:fetch
 ```
 
 Both nvm commands read `.nvmrc`, which contains `24`. Run `nvm use` again in each new terminal. Avoid Ubuntu 20.04's system Node.js 10.19.0; keep it installed if other software needs it, and select the development version through nvm. Do not replace `/usr/bin/node` or bypass `.npmrc` engine checks with `--force`.
@@ -148,3 +149,7 @@ Both roles now use the [shared shell execution layer](./shell-execution.md), wit
 The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
 
 The play icon with **Continue execution** resumes paused runs and eligible failed/interrupted runs. The fixed recovery notice identifies the role, phase, saved position and any blocking reason, including while evidence is minimized. Recovery checks and cancellable retry waits use host-reported state and request attempts; countdowns run only in the Webview. Restart remains a separate new run. See the [approved recovery design](./recovery-proposal.md) and [recovery behavior](./execution-recovery.md) for journal, process and evidence boundaries.
+
+## Bundled command-line tools
+
+Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).

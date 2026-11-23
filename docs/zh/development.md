@@ -24,6 +24,7 @@ npm --version
 command -v node      # 应指向 nvm 安装目录
 npm run check:env
 npm ci
+npm run tools:fetch
 ```
 
 `.npmrc` 启用了严格引擎检查；安装、综合检查、构建和监听命令前还会运行环境检查。遇到 `EBADENGINE` 时，请加载 nvm 并切换版本，不要用 `--force` 绕过检查或替换系统 Node.js。nvm 的选择对当前终端生效；新终端需要再次执行 `nvm use`。保留本机默认版本的初始化方式见[环境说明](./environment.md#准备开发工具链)；完成项目工作后执行 `nvm use system` 可切回系统 Node.js，切换目录本身不会自动切换版本。
@@ -126,7 +127,7 @@ CI 各组合运行环境及本地存储／React 测试、格式、类型、lint�
 
 ## 限制资源的模型验证
 
-本地测试串行执行，JavaScript 堆上限为 512 MiB，保留单项 30 秒超时（Windows 原生测试为 90 秒）。每次独立运行验证命令：本地检查总内存 1 GiB、独立批次超时 60 秒，包含真实命令超时测试的综合 `npm run check` 总超时 180 秒；Electron 总内存 2 GiB、整体超时 300 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
+本地测试串行执行，JavaScript 堆上限为 256 MiB，保留单项 30 秒超时（Windows 原生测试为 90 秒）。每次独立运行验证命令：本地检查总内存 1 GiB、独立批次超时 60 秒，包含真实命令超时测试的综合 `npm run check` 总超时 420 秒；Electron 总内存 2 GiB、整体超时 300 秒，均禁止使用交换空间。Linux 可通过用户级 systemd 服务的 `MemoryMax`、`MemorySwapMax=0` 和 `RuntimeMaxSec` 强制限制。
 
 设置 `VSCODE_TEST_EXECUTABLE=/usr/share/code/code` 后，`npm test` 与 `npm run test:ui` 复用已安装 VS Code；未设置时保留自动下载。无显示环境使用 `xvfb-run -a`。测试使用隔离用户配置；真实 Webview 测试启动本地模拟服务，在原生密码框输入测试密钥，验证查询、选择、保存重载、中英文及窄窗口布局，不读取个人凭据；模型请求只发往本地模拟端点，不调用付费服务。
 
@@ -164,3 +165,7 @@ VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 ## 侧栏回归
 
 `npm run test:ui` 先运行双协议执行及聊天回归，再运行原生侧栏和旧页签迁移场景；也可使用 `node scripts/verify-sidebar.mjs` 单独验证后者。通过 `VSCODE_TEST_EXECUTABLE` 选择本机版本，或用 `VSCODE_TEST_VERSION=1.100.0` 验证最低版本。测试使用临时用户目录和工作区；真实结果见[侧栏验证](./sidebar-workbench-validation.md)。
+
+## 内置常用命令
+
+Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追加任务进程 PATH。构建前显式运行 `npm run tools:fetch`，缓存完整后构建可离线进行。版本、失败行为、许可与验证见 [内置常用命令](./bundled-tools.md)。

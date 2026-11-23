@@ -23,3 +23,5 @@ Still planned: parallel tasks and automatic editor-context collection. Artifact 
 The design archive contains 37 approved SVG/PNG pairs, including [compact task-list scenes 28–29](./task-home-compact-proposal.md), lifecycle controls and tool-error handling, documenting current uncommitted changes. Artwork remains a design reference, not proof of implementation. Historical [Preview 2](./release-notes-preview-2.md)/[Preview 1](./release-notes.md) and published assets are preserved. Public distribution remains a separate [release workflow](./releasing.md).
 
 [Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+
+- [Bundled command-line tools](./bundled-tools.md): offline CLI fallbacks, system priority and integrity checks.

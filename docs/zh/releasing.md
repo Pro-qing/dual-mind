@@ -87,3 +87,7 @@ Marketplace 展示上传扩展包中的 README，提交或推送 GitHub 文档�
 官方参考：[扩展发布](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)、[扩展清单](https://code.visualstudio.com/api/references/extension-manifest)和 [GitHub 发布文档](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。API 凭据不得写入源码或暴露在命令参数中。
 
 `v0.0.5` 是用户要求的本地源码附注标签，包含侧栏实现、设计目录整理和版本更新；此次不推送标签、安装扩展或创建公开发布。历史 `v0.0.2`／`v0.0.3` 标签和旧 VSIX 保留。公开发布仍需验证精确提交及目标平台 CI，再执行上文分发流程。本次本地范围与实际验证见[0.0.5 版本说明](./release-notes-0.0.5.md)。
+
+## 内置常用命令
+
+Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追加任务进程 PATH。构建前显式运行 `npm run tools:fetch`，缓存完整后构建可离线进行。版本、失败行为、许可与验证见 [内置常用命令](./bundled-tools.md)。

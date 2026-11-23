@@ -170,3 +170,7 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 `src/shared/viewState.ts` accepts only allowlisted display fields, in precedence order: current sidebar, workspace mirror, legacy tab. `view.state` mirrors preferences; `rendered` completes its handshake after saving display state. The old `dualMind.workbench` serializer starts migration without awaiting rendering, avoiding a VS Code restore deadlock. Failure keeps the old tab and retry entry. `navigation.ack` prevents consuming a new-task request twice. Execution protocols and run-record formats are unchanged.
 
 `dualMind.alignPanelCenter` invokes native panel centering only on manual request; it neither saves nor resets sidebar position. The frontend keeps the task chat mounted across Settings visits to retain drafts and reading position. Task-detail expansion uses the existing per-task display preferences.
+
+## Bundled command-line tools
+
+Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).

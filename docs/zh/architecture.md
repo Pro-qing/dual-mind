@@ -170,3 +170,7 @@ Worker 交接当前成果和测试证据；Reviewer 返回审查结论、问题�
 `src/shared/viewState.ts` 只接收白名单显示字段，优先顺序为当前侧栏、本地工作区副本、旧页签。`view.state` 镜像显示偏好；`rendered` 在状态保存成功后完成握手。旧 `dualMind.workbench` 序列化回调启动迁移但不等待渲染，避免 VS Code 恢复死锁；迁移失败保留原页签和重试入口。`navigation.ack` 防止重复消费新建任务请求。协议与运行记录格式未更改。
 
 `dualMind.alignPanelCenter` 仅在手动调用时执行 VS Code 原生面板居中命令，不保存或重置侧栏位置。前端维持任务聊天实例以保留切换设置时的草稿和阅读位置；任务详情展开状态纳入已有任务显示偏好。
+
+## 内置常用命令
+
+Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追加任务进程 PATH。构建前显式运行 `npm run tools:fetch`，缓存完整后构建可离线进行。版本、失败行为、许可与验证见 [内置常用命令](./bundled-tools.md)。

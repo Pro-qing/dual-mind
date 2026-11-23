@@ -109,10 +109,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:check": "node scripts/check-docs.mjs",
-    "check": "npm run check:env && npm run test:env && npm run typecheck && npm run lint && npm run test:local && npm run format:check && npm run docs:check",
+    "check": "npm run check:env && npm run test:env && npm run test:tools && npm run typecheck && npm run lint && npm run test:local && npm run format:check && npm run docs:check",
     "prebuild": "npm run check:env",
-    "build": "npm run typecheck && node scripts/esbuild.mjs",
-    "prewatch": "npm run check:env",
+    "build": "npm run tools:prepare && npm run typecheck && node scripts/esbuild.mjs",
+    "prewatch": "npm run check:env && npm run tools:prepare",
     "watch": "node scripts/esbuild.mjs --watch",
     "watch:types": "node scripts/watch-types.mjs",
     "compile-tests": "tsc -p tests/tsconfig.json",
@@ -126,7 +126,11 @@
     "prewatch:types": "npm run check:env",
     "test:local": "node scripts/test-local.mjs",
     "pretest:ui": "npm run build",
-    "test:ui": "node scripts/verify-ui.mjs"
+    "test:ui": "node scripts/verify-ui.mjs",
+    "tools:fetch": "node scripts/bundled-tools.mjs fetch",
+    "tools:prepare": "node scripts/bundled-tools.mjs prepare",
+    "tools:verify": "node scripts/bundled-tools.mjs verify",
+    "test:tools": "node --max-old-space-size=256 --test --test-concurrency=1 tests/tools.test.cjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -148,7 +152,8 @@
     "playwright-core": "1.65.1",
     "prettier": "3.10.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.73.0"
+    "typescript-eslint": "8.73.0",
+    "yauzl": "3.4.0"
   },
   "overrides": {
     "diff": "^8.0.4",

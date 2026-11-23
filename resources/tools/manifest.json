@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "platform": "linux",
+  "arch": "x64",
+  "tools": [
+    {
+      "name": "rg",
+      "version": "16.0.0",
+      "archive": {
+        "url": "https://github.com/BurntSushi/ripgrep/releases/download/16.0.0/ripgrep-16.0.0-x86_64-unknown-linux-musl.tar.gz",
+        "sha256": "54268ab4643c00a290a29b0086066d64b3f56236dd805ec64629a86f9bd29fd0",
+        "bytes": 2230229,
+        "format": "tar.gz"
+      },
+      "files": [
+        {
+          "path": "linux-x64/rg/LICENSE-MIT",
+          "member": "ripgrep-16.0.0-x86_64-unknown-linux-musl/LICENSE-MIT",
+          "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f",
+          "bytes": 1081,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/rg/UNLICENSE",
+          "member": "ripgrep-16.0.0-x86_64-unknown-linux-musl/UNLICENSE",
+          "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c",
+          "bytes": 1211,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/rg/COPYING",
+          "member": "ripgrep-16.0.0-x86_64-unknown-linux-musl/COPYING",
+          "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
+          "bytes": 126,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/rg/rg",
+          "member": "ripgrep-16.0.0-x86_64-unknown-linux-musl/rg",
+          "sha256": "a60f4ad2206cb0234c077d9789231fd8a0f9895ff2e2dbbb3d2c944dc14b2613",
+          "bytes": 5220648,
+          "executable": true
+        },
+        {
+          "path": "linux-x64/rg/MUSL-COPYRIGHT",
+          "url": "https://git.musl-libc.org/cgit/musl/plain/COPYRIGHT?h=v1.2.5",
+          "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+          "bytes": 6204,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/rg/PCRE2-LICENCE",
+          "url": "https://raw.githubusercontent.com/PCRE2Project/pcre2/pcre2-10.45/LICENCE.md",
+          "sha256": "9cf7ac6976099a1d856826d3ef1b093bd6b84489dc6100628ac79e740cf9885a",
+          "bytes": 3867,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "fd",
+      "version": "10.5.2",
+      "archive": {
+        "url": "https://github.com/sharkdp/fd/releases/download/v10.5.2/fd-v10.5.2-x86_64-unknown-linux-musl.tar.gz",
+        "sha256": "7e2d07fa2b8807642aaec67b7e2972a9fbe4db26fcb340a7372392db42b26694",
+        "bytes": 1798931,
+        "format": "tar.gz"
+      },
+      "files": [
+        {
+          "path": "linux-x64/fd/LICENSE-APACHE",
+          "member": "fd-v10.5.2-x86_64-unknown-linux-musl/LICENSE-APACHE",
+          "sha256": "73c83c60d817e7df1943cb3f0af81e4939a8352c9a96c2fd00451b1116fa635c",
+          "bytes": 10838,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/fd/LICENSE-MIT",
+          "member": "fd-v10.5.2-x86_64-unknown-linux-musl/LICENSE-MIT",
+          "sha256": "322cfc7aa0c774d0eca3b2610f1d414de3ddbd7d8dd4b9dea941a13a6eb07455",
+          "bytes": 1082,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/fd/fd",
+          "member": "fd-v10.5.2-x86_64-unknown-linux-musl/fd",
+          "sha256": "bd664fa3c5c4919234adf2b489c4b7ec47282e8e926c012e3f67112cf9f8c182",
+          "bytes": 4237440,
+          "executable": true
+        },
+        {
+          "path": "linux-x64/fd/MUSL-COPYRIGHT",
+          "url": "https://git.musl-libc.org/cgit/musl/plain/COPYRIGHT?h=v1.2.5",
+          "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+          "bytes": 6204,
+          "executable": false
+        }
+      ]
+    },
+    {
+      "name": "jq",
+      "version": "1.8.2",
+      "archive": {
+        "url": "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64",
+        "sha256": "b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f",
+        "bytes": 2267912,
+        "format": "raw"
+      },
+      "files": [
+        {
+          "path": "linux-x64/jq/jq",
+          "sha256": "b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f",
+          "bytes": 2267912,
+          "executable": true
+        },
+        {
+          "path": "linux-x64/jq/COPYING",
+          "url": "https://raw.githubusercontent.com/jqlang/jq/jq-1.8.2/COPYING",
+          "sha256": "ad2b4a266b2268939c1446979759706077421cf906a203aa188c6f396e8cfd74",
+          "bytes": 7887,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/jq/ONIGURUMA-COPYING",
+          "url": "https://raw.githubusercontent.com/kkos/oniguruma/4ef89209a239c1aea328cf13c05a2807e5c146d1/COPYING",
+          "sha256": "70ba5469ea0bab6e18a32d7009068f996503168d27be57747e08da34337ff26f",
+          "bytes": 1340,
+          "executable": false
+        },
+        {
+          "path": "linux-x64/jq/MUSL-COPYRIGHT",
+          "url": "https://git.musl-libc.org/cgit/musl/plain/COPYRIGHT?h=v1.2.5",
+          "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+          "bytes": 6204,
+          "executable": false
+        }
+      ]
+    }
+  ]
+}
