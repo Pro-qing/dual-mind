@@ -2,6 +2,8 @@
 
 [简体中文](../zh/task-pages-proposal.md) · [Design index](./design.md)
 
+**Local Git archive update (November 23, 2026):** the implementation is committed by feature on local `master`, after the original `v0.0.5` tag. Scenes 28–37 are approved and implemented. Earlier review, uncommitted-state and tag statements below retain their historical context; see the [development log](./development-log.md) for current provenance.
+
 **Status: approved and implemented. Approval date: 2026-11-20.** This delivery adds scenes 8–11 as SVG/PNG pairs and preserves scenes 1–7. Task pages, navigation, and error localization are implemented. The drawings remain static references, not actual execution results.
 
 The agreed interaction uses one VS Code tab for the home and task detail pages. Creating a task opens its detail page in the **Pending** state; the user clicks **Start**. Remove the task “draft” concept from the product interface. Existing defaults, role snapshots, model selection, and Git strategies continue to apply.

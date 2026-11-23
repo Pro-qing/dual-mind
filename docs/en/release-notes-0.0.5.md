@@ -2,6 +2,8 @@
 
 [简体中文](../zh/release-notes-0.0.5.md) · [Documentation](./README.md)
 
+**Local Git archive update (November 23, 2026):** the implementation is committed by feature on local `master`, after the original `v0.0.5` tag. Scenes 28–37 are approved and implemented. Earlier review, uncommitted-state and tag statements below retain their historical context; see the [development log](./development-log.md) for current provenance.
+
 **Status: local source and VSIX, unpublished.** Recorded November 23, 2026; extension ID `Pro-qing.dual-mind`, version `0.0.5`, local annotated tag `v0.0.5`. The tag targets the commit containing the sidebar implementation, archive changes and version update, rather than a preceding commit. This operation does not push the tag, install the extension or publish to Marketplace/GitHub Releases.
 
 ## Included changes

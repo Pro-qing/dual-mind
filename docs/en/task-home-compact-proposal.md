@@ -2,6 +2,8 @@
 
 [简体中文](../zh/task-home-compact-proposal.md) · [Design index](./design.md) · [Usage](./usage.md)
 
+**Local Git archive update (November 23, 2026):** the implementation is committed by feature on local `master`, after the original `v0.0.5` tag. Scenes 28–37 are approved and implemented. Earlier review, uncommitted-state and tag statements below retain their historical context; see the [development log](./development-log.md) for current provenance.
+
 **Approval and implementation update (November 23, 2026):** this round approves the existing frontend and integrates these controls. Earlier pending-review wording below retains its historical context; see the [design index](./design.md) for current totals and status.
 
 **Status: scenes 28–29 await review. Recorded November 23, 2026.** These static drawings document the current uncommitted task-list changes. They belong to the `v0.0.5` development archive, follow the existing `v0.0.5` tag, and are not claimed to be in that tag or an existing VSIX. The 27 approved designs and their approval records remain intact: there are now 29 pairs, including two awaiting review. This delivery adds design assets and documentation while preserving the existing frontend and test edits.

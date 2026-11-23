@@ -19,3 +19,5 @@ The 37 approved pairs are grouped by their development version, with commit prov
 New or revised designs belong in `docs/design/v<major>.<minor>.<patch>/`, with a same-name SVG/PNG pair and an entry in that folder's README. Add a version row here and update both language guides and proposal links. Keep older approved designs in place. `npm run docs:check` validates version directories, local links and all SVG/PNG pairs, including original scenes 1–7.
 
 后续新增或修订稿放入 `docs/design/v<主版本>.<次版本>.<修订号>/`，同名 SVG／PNG 配对，并登记到该目录 README。本索引新增版本行，同步中英文设计说明和提案链接；旧版本已审核原稿继续保留。`npm run docs:check` 检查版本目录、本地链接和全部图稿配对，并确保基础场景 1–7 未缺失。
+
+Local commits after the original version tags are listed in the [0.0.5 provenance](./v0.0.5/README.md) and [development log](../en/development-log.md). / 原版本标签之后的本地提交见 [0.0.5 归属记录](./v0.0.5/README.md)和[开发日志](../zh/development-log.md)。

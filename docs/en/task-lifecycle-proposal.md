@@ -2,6 +2,8 @@
 
 [简体中文](../zh/task-lifecycle-proposal.md) · [Host behavior](./task-lifecycle.md) · [Design index](./design.md)
 
+**Local Git archive update (November 23, 2026):** the implementation is committed by feature on local `master`, after the original `v0.0.5` tag. Scenes 28–37 are approved and implemented. Earlier review, uncommitted-state and tag statements below retain their historical context; see the [development log](./development-log.md) for current provenance.
+
 **Approval and implementation update (November 23, 2026):** this round approves the existing frontend and integrates these controls. Earlier pending-review wording below retains its historical context; see the [design index](./design.md) for current totals and status.
 
 **Scenes 30–34 await visual approval, November 23, 2026.** Host operations, automatic summaries, and tests are implemented; new base, budget, artifact, conflict, and cleanup/restore controls are not connected yet. Following the contribution guide, these reviewable drawings precede integration of new controls. Scenes 1–27 retain approval and 28–29 remain pending: 34 pairs total, 27 approved and seven awaiting review. Version remains 0.0.5.

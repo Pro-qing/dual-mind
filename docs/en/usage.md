@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
 
-**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Home, task detail, and errors
 
@@ -16,7 +16,7 @@ The workbench opens on task home. Open a task to enter its separate detail page.
 
 Application errors follow the interface language, including run failures, check commands, Git, inference, and bridge timeouts. Expand **Original details** for redacted source text when available. Command output and model responses remain verbatim. Old historical errors receive localized context with their original text. Changing language reformats structured errors immediately.
 
-**Current workspace revision (uncommitted):** home rows contain only a name and delete icon; select the name to open detail. Long names use a single-line ellipsis and expose the complete name on hover. Counts remain at the top; requirements, role, branch, rounds, and individual state are available in detail. Deletion requires confirmation, with Stop and delete for active tasks. Example names open detail, while deletion and the page New task button are disabled. [Scenes 28–29](./task-home-compact-proposal.md) are approved and integrated; this note does not claim inclusion in existing tags or installed packages.
+**Locally committed workspace revision:** home rows contain only a name and delete icon; select the name to open detail. Long names use a single-line ellipsis and expose the complete name on hover. Counts remain at the top; requirements, role, branch, rounds, and individual state are available in detail. Deletion requires confirmation, with Stop and delete for active tasks. Example names open detail, while deletion and the page New task button are disabled. [Scenes 28–29](./task-home-compact-proposal.md) are approved and integrated; this note does not claim inclusion in existing tags or installed packages.
 
 ## Requirements
 

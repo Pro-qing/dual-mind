@@ -8,7 +8,9 @@ DualMind is an AI pair-programming extension project for VS Code. It brings task
 
 ## Project status
 
-**Source 0.0.5 · Local version record · Unpublished**
+**Source 0.0.5 · Locally committed · Unpublished**
+
+Local `master` contains compact-home commit `6cdcd94`, lifecycle/tool-recovery commit `2ee08bc`, and bundled-command commit `9c8dcf0`. They follow baseline tag `v0.0.5` at `e4ae328` and have not been pushed. Existing candidates remain unchanged; see the [archive and validation record](./docs/en/development-log.md).
 
 The React workbench supports local tasks, connection settings, Reviewer presets, and English / Simplified Chinese. Source 0.0.5 provides independent role histories, Worker execution, independent Reviewer inspection and verification and an activity-bar entry. Tasks may use dedicated worktrees or directly edit a selected local branch; host artifact integration is implemented, while its new UI controls are integrated. The optional conversation preview is explicitly read-only example content.
 
@@ -42,11 +44,11 @@ Tool errors return to the current role, skip the rest of the batch, and pause af
 
 Independent parallel sessions and automatic editor context remain under development. Host artifact integration is implemented; its controls are integrated.
 
-**New host capabilities:** managed bases, automatic context summaries, explicit commit/merge, and preserved cleanup are implemented in current uncommitted source. New controls implement the approved [scenes 30–34](./docs/en/task-lifecycle-proposal.md) designs; see [behavior and limits](./docs/en/task-lifecycle.md).
+**New host capabilities:** managed bases, automatic context summaries, explicit commit/merge, and preserved cleanup are implemented in locally committed source. New controls implement the approved [scenes 30–34](./docs/en/task-lifecycle-proposal.md) designs; see [behavior and limits](./docs/en/task-lifecycle.md).
 
 ## Interface designs
 
-**Approved designs:** [Compact task-list scenes 28–29](./docs/en/task-home-compact-proposal.md) document current uncommitted home changes. The archive contains 37 approved pairs.
+**Approved designs:** [Compact task-list scenes 28–29](./docs/en/task-home-compact-proposal.md) document the archived compact-home changes. The archive contains 37 approved pairs.
 
 ![Approved DualMind parallel-task design reference](./docs/design/v0.0.1/dual-mind-workbench.png)
 

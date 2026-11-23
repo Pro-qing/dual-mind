@@ -4,7 +4,7 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
 
 **Status: host recovery and approved recovery controls are implemented.** This describes development source, not an installed or published release. Use the play icon with **Continue execution** after resolving a failure, including after reloading VS Code. The notice identifies Worker, Reviewer or System, phase, operation and recovery attempts. Disabled controls include an explanation; uncertain processes can be checked again without bypassing cleanup.
 

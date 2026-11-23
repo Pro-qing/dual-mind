@@ -6,9 +6,9 @@ Scenes 24–27 were approved November 22, 2026. The sidebar was first validated 
 
 Scenes 24–27 remain approved static references with their original filenames, artwork and historical labels. SVG and PNG stay together. / 场景 24–27 仍为已审核静态参考，保留文件名、原图及历史标签，SVG 与 PNG 同目录配对。
 
-**Fourteen pairs: all approved for implementation.** Scenes 28–29 document the uncommitted compact-list changes recorded November 23, 2026; they follow and are not included in the existing `v0.0.5` tag. See the [English proposal](../../en/task-home-compact-proposal.md) / [中文提案](../../zh/task-home-compact-proposal.md).
+**Fourteen pairs: all approved for implementation.** Scenes 28–29 document the compact-list changes recorded November 23, 2026 and now committed locally; they follow and are not included in the existing `v0.0.5` tag. See the [English proposal](../../en/task-home-compact-proposal.md) / [中文提案](../../zh/task-home-compact-proposal.md).
 
-**共 14 组：均已确认实施。** 场景 28–29 对应 2026-11-23 记录的未提交紧凑列表修改，晚于现有 `v0.0.5` 标签，未包含在该标签中。
+**共 14 组：均已确认实施。** 场景 28–29 对应 2026-11-23 记录并已在本地提交的紧凑列表修改，晚于现有 `v0.0.5` 标签，未包含在该标签中。
 
 | Scene / 场景                                        | Editable source / 源文件                               | Preview / 预览                                         |
 | --------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
@@ -34,3 +34,13 @@ Scenes 28–34 were approved and integrated on November 23, 2026; host and UI be
 | 35. Tool and command outcomes / 工具调用与命令结果             | [SVG](./dual-mind-tool-results-proposal.svg)      | [PNG](./dual-mind-tool-results-proposal.png)      |
 | 36. Repeated-error pause and continuation / 重复错误暂停与继续 | [SVG](./dual-mind-tool-pause-proposal.svg)        | [PNG](./dual-mind-tool-pause-proposal.png)        |
 | 37. Historical failures and acceptance / 历史失败与当前验收    | [SVG](./dual-mind-acceptance-errors-proposal.svg) | [PNG](./dual-mind-acceptance-errors-proposal.png) |
+
+## Local commit provenance / 本地提交归属
+
+| Scenes / 场景 | Local source / 本地源码                                    |
+| ------------- | ---------------------------------------------------------- |
+| 24–27         | Original `v0.0.5` tag at `e4ae328` / 原标签                |
+| 28–29         | `6cdcd94` compact task home / 紧凑任务主页                 |
+| 30–37         | `2ee08bc` lifecycle and tool recovery / 生命周期与工具恢复 |
+
+These later commits do not move the original tag or change historical artwork. Existing VSIX candidates were built before this Git archive; their original hashes and validation records remain unchanged. / 后续提交不移动原标签或改写历史图稿。既有 VSIX 候选来自本次 Git 归档之前，原哈希与验证记录保持不变。

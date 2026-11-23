@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current uncommitted feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
 
-**Source version: 0.0.5 · Local source tag `v0.0.5` · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
 
 ## Page state and error compatibility
 
@@ -171,7 +171,7 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 
 UI → host `view.state` mirrors display state; `navigation.ack` consumes a navigation request by ID. `rendered` may include display state; the host saves it before completing initialization and closing a legacy tab. State writes are serialized and callbacks from replaced pages cannot reply to the new page. Retrying `ready` requests a fresh snapshot. Hidden execution remains in the host; reveal refreshes snapshots and paged chat. Execution requests, run records and recovery formats are unchanged.
 
-## Current uncommitted lifecycle interfaces
+## Locally committed lifecycle interfaces
 
 New operations use `execution.request/result`. The host resolves directories and refs, never arbitrary frontend paths. Operation UUIDs support idempotent retry; `token` is the last inspected state token.
 

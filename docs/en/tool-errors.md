@@ -2,7 +2,7 @@
 
 [简体中文](../zh/tool-errors.md) · [UI record](./tool-errors-proposal.md) · [Task lifecycle](./task-lifecycle.md)
 
-**Current uncommitted revision, November 23, 2026; version stays 0.0.5.** This round approves the existing frontend designs and authorizes tool-error handling and frontend integration together. Scenes 28–34 are connected; scenes 35–37 are drawn and implemented under the confirmed plan without another visual approval stop. Historical tags and publication records remain intact.
+**Locally committed revision, November 23, 2026; version stays 0.0.5.** This round approves the existing frontend designs and authorizes tool-error handling and frontend integration together. Scenes 28–34 are connected; scenes 35–37 are drawn and implemented under the confirmed plan without another visual approval stop. Historical tags and publication records remain intact.
 
 ## Three result layers
 
