@@ -346,58 +346,27 @@ function TaskHome({
             </span>
           </div>
           <div className="task-list">
-            {tasks.map((task) => {
-              const run = !preview ? state(task) : undefined;
-              return (
-                <article className="task-item" key={task.id}>
-                  <button
-                    className="task-select"
-                    onClick={() => onSelect(task)}
-                    aria-label={task.name}
-                  >
-                    <strong>{task.name}</strong>
-                    <p className="task-excerpt">{task.requirements}</p>
-                    <span className="task-metadata">
-                      <span className={`role-badge ${task.role.id}`}>{task.role.name}</span>
-                      <span>
-                        {tr(
-                          task.git?.mode === 'current'
-                            ? 'gitCurrent'
-                            : task.git?.mode === 'branch'
-                              ? 'gitBranch'
-                              : 'gitManaged',
-                        )}
-                        {task.git?.mode === 'branch' && `: ${task.git.branch}`}
-                      </span>
-                      <span>
-                        {tr('maximumRounds')} {task.maxRounds}
-                      </span>
-                    </span>
-                  </button>
-                  <span className="task-state status-badge">
-                    {run
-                      ? tr(statusKey(run.status))
-                      : tr(task.status === 'draft' ? 'pendingTask' : task.status)}
-                    {run ? ` · ${run.round}/${run.maxRounds}` : ''}
-                  </span>
-                  <button
-                    onClick={() => onSelect(task)}
-                    aria-label={`${tr('openTask')}: ${task.name}`}
-                  >
-                    {tr('openTask')}
-                  </button>
-                  <button
-                    className="icon-button task-delete"
-                    aria-label={`${tr('deleteTask')}: ${task.name}`}
-                    title={tr(preview ? 'readonly' : 'deleteTask')}
-                    disabled={preview || pending}
-                    onClick={() => onDelete(task as TaskDraft)}
-                  >
-                    <Icon name="trash" />
-                  </button>
-                </article>
-              );
-            })}
+            {tasks.map((task) => (
+              <article className="task-item" key={task.id}>
+                <button
+                  className="task-select"
+                  onClick={() => onSelect(task)}
+                  aria-label={task.name}
+                  title={task.name}
+                >
+                  <strong>{task.name}</strong>
+                </button>
+                <button
+                  className="icon-button task-delete"
+                  aria-label={`${tr('deleteTask')}: ${task.name}`}
+                  title={tr(preview ? 'readonly' : 'deleteTask')}
+                  disabled={preview || pending}
+                  onClick={() => onDelete(task as TaskDraft)}
+                >
+                  <Icon name="trash" />
+                </button>
+              </article>
+            ))}
           </div>
         </>
       ) : (

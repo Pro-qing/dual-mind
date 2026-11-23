@@ -597,7 +597,7 @@ try {
   await click(f, 'View examples');
   await screenshot(page, f, 'en-workbench');
   assert.equal(await f.locator('.task-item').count(), 4);
-  await click(f, 'Open task: Fix retry cancellation');
+  await click(f, 'Fix retry cancellation');
   assert.ok(await f.getByRole('button', { name: 'Start', exact: true }).isDisabled());
   await click(f, 'Exit examples');
   await click(f, 'Settings');
@@ -771,7 +771,7 @@ try {
   await click(f, 'Back to home');
   assert.equal(await f.locator('.agent-grid').count(), 0);
   await screenshot(page, f, 'en-task-home');
-  await click(f, 'Open task: Persistent UI task');
+  await click(f, 'Persistent UI task');
   await screenshot(page, f, 'en-task-detail');
   assert.ok(
     await f
@@ -817,7 +817,7 @@ try {
   assert.equal(await f.locator('.model-bar').count(), 2);
   await click(f, '返回主页');
   await click(f, '查看示例');
-  await click(f, '打开任务: 修复重试取消问题');
+  await click(f, '修复重试取消问题');
   if (await f.locator('details[open]').count()) {
     await f.locator('details summary').click();
   }
@@ -866,7 +866,7 @@ try {
   await click(f, 'View examples');
   await screenshot(page, f, 'en-workbench-narrow');
   await click(f, 'Exit examples');
-  await click(f, 'Open task: Persistent UI task');
+  await click(f, 'Persistent UI task');
   await click(f, 'Edit task');
   const narrowWorker = f.getByRole('combobox', { name: 'Worker Model ID', exact: true });
   const bindingColumns = await f
@@ -1053,7 +1053,7 @@ try {
   await click(f, '最小化证据面板');
   await screenshot(page, f, 'zh-chat-panel-minimized');
   await click(f, '返回主页');
-  await click(f, '打开任务: Persistent UI task');
+  await click(f, 'Persistent UI task');
   await f.locator('.evidence-rail').waitFor();
   assert.equal(await requirementCard.getAttribute('data-expanded'), 'true');
   await requirementCard.getByRole('button', { name: '紧凑显示', exact: true }).click();

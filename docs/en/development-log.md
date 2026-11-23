@@ -2,6 +2,19 @@
 
 [简体中文](../zh/development-log.md) · [Development guide](./development.md)
 
+## 2026-11-23 — Local feature commit archive
+
+- **Scope:** archive existing work locally on `master` after `e4ae328` (`v0.0.5`). Preserve prior tags, other branches/worktrees, artwork and candidate packages; version remains 0.0.5. Intermediate snapshots are assembled outside the working source.
+- **Compact home:** the isolated snapshot passed type checks, five targeted UI tests, documentation and formatting checks under Node.js 24.22.3. Coverage includes full names, deletion cancellation/confirmation, read-only examples and task navigation. The initial auxiliary test runner used an incorrect output directory; after correcting the runner, all five cases passed. No full UI or package rebuild was repeated for this archive.
+
+## 2026-11-23 — Compact task-list design additions (awaiting review)
+
+- **Design delivery:** add scenes 28–29 as 1440 × 900 SVG/PNG pairs under `docs/design/v0.0.5/`, based on the current uncommitted home-list edits. Cover 240/320/480px homes (English at 320px) and four independent crops for long-name hover, keyboard focus, read-only examples, and deletion confirmation. The two new pairs await review; the archive now contains 29 pairs with the original 27 approvals retained. The additions follow the original `v0.0.5` tag and are not claimed to be in that tag or an existing VSIX.
+- **Source mapping:** read the uncommitted diffs in `webview/src/Tasks.tsx`, `webview/src/styles.css`, `tests/local/ui.test.tsx`, and `scripts/verify-ui.mjs`, plus related components. Document the name/delete pair, complete title and accessible name, compact spacing, counts, preview restrictions, detail navigation, and canceled/confirmed deletion from current code. Existing test assertions were reviewed, not executed; this delivery does not further edit those four files.
+- **Documentation search and synchronization:** review root READMEs, the archive and version indexes, bilingual design/old home proposal/documentation indexes, usage, architecture, roadmap, development logs, and Webview notes. Add the [bilingual proposal](./task-home-compact-proposal.md), complete design navigation, synchronize the 29-pair total and pending status, and correct the stale 20-scene usage count. Historical releases, validation records, approval dates, and artwork remain intact.
+- **Artwork inspection:** render with CairoSVG 2.7.1 in an isolated Python environment and local Noto Sans CJK SC fonts. Visually inspect both previews for widths, bilingual text, long-name ellipsis/full hints, focus outlines, disabled example deletion, and dialog boundaries. Rendering dependencies are not added to project dependencies.
+- **Actual validation:** `npm run docs:check`, `npm run format:check`, and `git diff --check` passed under Node.js 24.22.3. Documentation validation covers 87 Markdown files, 984 local links, 35 language pairs, and 29 SVG/PNG pairs. New SVGs pass XML parsing and static-resource constraints; both PNGs are 1440 × 900. SHA-256 verification confirms that all 54 original artwork files and the four source/test files already modified at the start remain byte-for-byte unchanged. This delivery adds only designs and documentation; runtime engineering checks, extension-host tests, real UI regression, and VSIX packaging were not run. No commit, tag change, installation, or release was performed.
+
 ## 2026-11-23 — 0.0.5 source tag and versioned design archives
 
 - **Change:** set the current implementation to requested version 0.0.5, updating the extension manifest, lockfile root versions and current bilingual documentation. Include the preceding native sidebar implementation in the local version commit and create annotated tag `v0.0.5` on that commit. Historical tags are not moved; no push, installation or publication.

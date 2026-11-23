@@ -19,3 +19,7 @@ Still planned: parallel tasks, automatic editor-context collection and explicit 
 The 27 approved SVG/PNG scenes remain design references, not proof of implementation. Historical [Preview 2](./release-notes-preview-2.md)/[Preview 1](./release-notes.md) and published assets are preserved. Public distribution remains a separate [release workflow](./releasing.md).
 
 [Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+
+## Compact task home
+
+Rows contain only a name button and delete icon; title and accessible name retain the full name. Requirements, role, branch, rounds and status remain in details. Read-only examples open details with deletion disabled. Scenes 28–29 are approved and implemented; see the [proposal](./task-home-compact-proposal.md). The archive now contains 29 pairs.

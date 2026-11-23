@@ -66,3 +66,5 @@ See [shell execution and independent verification](./docs/en/shell-execution.md)
 The approved chat controls show current activity and public process, use icon-only message sizing, and preserve per-task minimized evidence preferences. See [the chat revision](./docs/en/chat-progress-proposal.md).
 
 Failure recovery includes per-operation records, continuation of the saved role and bounded retries. [Approved recovery controls](./docs/en/recovery-proposal.md) now provide Continue execution, role/phase notices and retry status. See [behavior and limits](./docs/en/execution-recovery.md).
+
+[Compact task list](./docs/en/task-home-compact-proposal.md): name/delete rows and approved scenes 28–29 are implemented; the archive contains 29 pairs.

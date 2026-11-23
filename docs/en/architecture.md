@@ -166,3 +166,7 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 `src/shared/viewState.ts` accepts only allowlisted display fields, in precedence order: current sidebar, workspace mirror, legacy tab. `view.state` mirrors preferences; `rendered` completes its handshake after saving display state. The old `dualMind.workbench` serializer starts migration without awaiting rendering, avoiding a VS Code restore deadlock. Failure keeps the old tab and retry entry. `navigation.ack` prevents consuming a new-task request twice. Execution protocols and run-record formats are unchanged.
 
 `dualMind.alignPanelCenter` invokes native panel centering only on manual request; it neither saves nor resets sidebar position. The frontend keeps the task chat mounted across Settings visits to retain drafts and reading position. Task-detail expansion uses the existing per-task display preferences.
+
+## Compact task home
+
+Rows contain only a name button and delete icon; title and accessible name retain the full name. Requirements, role, branch, rounds and status remain in details. Read-only examples open details with deletion disabled. Scenes 28–29 are approved and implemented; see the [proposal](./task-home-compact-proposal.md). The archive now contains 29 pairs.

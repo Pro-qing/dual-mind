@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+<title id="title">29. 任务列表交互状态 — 待审核</title>
+<desc id="description">2026-11-23，依据当前工作区尚未提交的紧凑任务列表修改补充。归档于 v0.0.5，晚于原 v0.0.5 标签；待审核。任务、计数与状态均为静态示例，不是运行或验证结果。所有文字及图形均可编辑。</desc>
+<style>text { font-family: "Noto Sans CJK SC", "DejaVu Sans", sans-serif; }</style>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#171a20" stroke="none"/>
+<text x="28" y="37" font-size="23" fill="#e4e8f0" font-weight="700" text-anchor="start">29. 任务列表交互状态</text>
+<text x="28" y="66" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">四个独立局部状态 · 悬停提示与键盘焦点 · 只读示例 · 删除确认</text>
+<text x="1412" y="31" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="end">v0.0.5 修订 · 待审核 · 2026-11-23</text>
+<path d="M28 86H1412" fill="none" stroke="#394352"/>
+<text x="48" y="116" font-size="15" fill="#91bbff" font-weight="700" text-anchor="start">01 / 长名称与悬停提示</text>
+<rect x="48" y="136" width="648" height="182" rx="6" fill="#191c22" stroke="#394352"/>
+<g role="group" aria-label="修复重试取消逻辑并保留最后一次错误信息，覆盖长时间等待、恢复执行、重复取消以及多个连续请求的完整回归场景">
+<rect x="64" y="152" width="616" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="73" y="157" width="562" height="34" rx="5" fill="#314056" stroke="none"/>
+<text x="77" y="179" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">修复重试取消逻辑并保留最后一次错误信息，覆盖长时间等待、恢复执行、重复取消以及多个…</text>
+<path transform="translate(649 166)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+</g>
+<g role="group" aria-label="检查设置保存流程">
+<rect x="64" y="200" width="616" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="77" y="227" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">检查设置保存流程</text>
+<path transform="translate(649 214)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+</g>
+<rect x="76" y="251" width="592" height="49" rx="4" fill="#272d37" stroke="#647184"/>
+<text x="88" y="273" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="start">修复重试取消逻辑并保留最后一次错误信息，覆盖长时间等待、恢复执行、重复取消以及多个连续请求的完</text>
+<text x="88" y="290" font-size="12" fill="#e4e8f0" font-weight="400" text-anchor="start">整回归场景</text>
+<text x="48" y="344" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">长名称只在列表中省略；悬停提示使用完整任务名。</text>
+<text x="48" y="368" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">提示对应现有 title；可访问名称保留全文。提示外观由宿主决定。</text>
+<text x="48" y="395" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">点击名称后，需求、配置与执行信息在该任务详情中查看。</text>
+<text x="744" y="116" font-size="15" fill="#91bbff" font-weight="700" text-anchor="start">02 / 键盘焦点</text>
+<rect x="744" y="136" width="648" height="182" rx="6" fill="#191c22" stroke="#394352"/>
+<g role="group" aria-label="Fix cancellation during delayed provider retries">
+<rect x="760" y="152" width="616" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<rect x="765" y="153" width="570" height="42" rx="7" fill="none" stroke="#91bbff" stroke-width="2"/>
+<text x="773" y="179" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">Fix cancellation during delayed provider retries</text>
+<path transform="translate(1345 166)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+</g>
+<g role="group" aria-label="Audit settings flow">
+<rect x="760" y="200" width="616" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="773" y="227" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">Audit settings flow</text>
+<path transform="translate(1345 214)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+</g>
+<g role="group" aria-label="Extract provider adapter">
+<rect x="760" y="248" width="616" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="773" y="275" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">Extract provider adapter</text>
+<path transform="translate(1345 262)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+</g>
+<text x="744" y="344" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">Tab：任务名称 → 删除图标 → 下一任务名称。</text>
+<text x="744" y="368" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">Enter / Space 打开任务；删除图标是独立按钮。</text>
+<text x="744" y="395" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">焦点轮廓沿用主题颜色：2px 描边，向外偏移 2px。</text>
+<path d="M48 427H1392" fill="none" stroke="#394352"/>
+<text x="48" y="463" font-size="15" fill="#91bbff" font-weight="700" text-anchor="start">03 / 只读示例（提示条与列表局部）</text>
+<rect x="48" y="484" width="648" height="68" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="60" y="496" width="624" height="44" rx="5" fill="#191c22" stroke="#91bbff"/>
+<text x="76" y="523" font-size="12" fill="#91bbff" font-weight="400" text-anchor="start">只读示例 · 不发送请求，不写入任务记录</text>
+<rect x="578" y="501" width="80" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="592" y="523" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">退出示例</text>
+<rect x="48" y="568" width="648" height="204" rx="6" fill="#191c22" stroke="#394352"/>
+<g role="group" aria-label="修复重试取消问题">
+<rect x="60" y="576" width="624" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="73" y="603" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">修复重试取消问题</text>
+<path transform="translate(653 590)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"/>
+</g>
+<g role="group" aria-label="增加导出操作">
+<rect x="60" y="624" width="624" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="73" y="651" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">增加导出操作</text>
+<path transform="translate(653 638)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"/>
+</g>
+<g role="group" aria-label="审查设置流程">
+<rect x="60" y="672" width="624" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="73" y="699" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">审查设置流程</text>
+<path transform="translate(653 686)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"/>
+</g>
+<g role="group" aria-label="提取模型适配模块">
+<rect x="60" y="720" width="624" height="44" rx="5" fill="#20242c" stroke="#394352"/>
+<text x="73" y="747" font-size="13" fill="#e4e8f0" font-weight="700" text-anchor="start">提取模型适配模块</text>
+<path transform="translate(653 734)" d="M3 4h10M6 4V2h4v2M4 4l1 10h6l1-10M7 6v5m2-5v5" fill="none" stroke="#e4e8f0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"/>
+</g>
+<text x="48" y="800" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">名称仍可进入示例详情；删除按钮禁用。</text>
+<text x="48" y="824" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">新建按钮也禁用；退出示例后返回真实任务列表。</text>
+<text x="744" y="463" font-size="15" fill="#91bbff" font-weight="700" text-anchor="start">04 / 删除确认</text>
+<rect x="744" y="484" width="648" height="288" rx="6" fill="#191c22" stroke="#394352"/>
+<rect x="826" y="498" width="484" height="260" rx="8" fill="#20242c" stroke="#efaaaa"/>
+<text x="838" y="532" font-size="22" fill="#e4e8f0" font-weight="700" text-anchor="start">删除任务</text>
+<path transform="translate(1278 517)" d="m3 3 10 10M13 3 3 13" fill="none" stroke="#b1bdce" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M826 554H1310" fill="none" stroke="#394352"/>
+<text x="838" y="579" font-size="14" fill="#e4e8f0" font-weight="700" text-anchor="start">修复重试取消逻辑并保留最后一次错误信息，覆盖长时间等待、恢复执行</text>
+<text x="838" y="600" font-size="14" fill="#e4e8f0" font-weight="700" text-anchor="start">、重复取消以及多个连续请求的完整回归场景</text>
+<text x="838" y="642" font-size="13" fill="#b1bdce" font-weight="400" text-anchor="start">删除此任务及任务记录？工作区文件和其他任务会保留。</text>
+<path d="M826 700H1310" fill="none" stroke="#394352"/>
+<rect x="1166" y="712" width="54" height="34" rx="5" fill="#293443" stroke="#394352"/>
+<text x="1180" y="734" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">取消</text>
+<rect x="1238" y="712" width="54" height="34" rx="5" fill="#793f49" stroke="#a56973"/>
+<text x="1252" y="734" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">删除</text>
+<text x="744" y="800" font-size="13" fill="#e4e8f0" font-weight="400" text-anchor="start">取消保留任务；确认后删除任务记录，工作区文件保留。</text>
+<text x="744" y="824" font-size="12" fill="#b1bdce" font-weight="400" text-anchor="start">活动任务使用“停止并删除”；请求期间确认、取消及关闭均禁用。</text>
+<path d="M28 863H1412" fill="none" stroke="#394352"/>
+<text x="28" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="start">静态示例 · 对应当前未提交修改 · 27 组已审核 + 本次 2 组待审核</text>
+<text x="1412" y="885" font-size="11" fill="#b1bdce" font-weight="400" text-anchor="end">1440 × 900 · 可编辑 SVG · 注释不属于产品界面</text>
+</svg>

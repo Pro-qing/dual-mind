@@ -96,6 +96,52 @@ async function settings() {
   await rtl.screen.findByRole('combobox', { name: 'Settings category' });
 }
 
+function assertNameOnlyRows(count: number) {
+  const rows = document.querySelectorAll<HTMLElement>('.task-home .task-item');
+  assert.equal(rows.length, count);
+  for (const row of rows) {
+    const buttons = rtl.within(row).getAllByRole('button');
+    assert.equal(buttons.length, 2);
+    const name = buttons[0].getAttribute('aria-label');
+    assert.ok(name);
+    assert.equal(row.textContent, name);
+    assert.equal(buttons[0].getAttribute('title'), name);
+    assert.equal(buttons[0].tabIndex, 0);
+    assert.equal(row.querySelector('.task-excerpt, .task-metadata, .task-state'), null);
+  }
+}
+
+test('home shows only names, preserves long names and confirms deletion', async () => {
+  const f = fixture();
+  const name = 'Long task '.repeat(20).trim();
+  for (const taskName of [name, 'Other task', 'Third task']) {
+    await f.store.dispatch({
+      kind: 'task.save',
+      input: taskInput({ name: taskName, requirements: 'Detailed requirements stay in detail' }),
+    });
+  }
+  await mount(f);
+  assertNameOnlyRows(3);
+  click(name);
+  await rtl.screen.findByRole('heading', { name });
+  assert.ok(rtl.screen.getAllByText('Detailed requirements stay in detail').length);
+  rtl.cleanup();
+  await mount(f, { view: 'home' });
+  click(`Delete task: ${name}`);
+  click('Cancel');
+  assertNameOnlyRows(3);
+  assert.equal((await f.store.snapshot()).tasks.length, 3);
+  click(`Delete task: ${name}`);
+  rtl.fireEvent.click(
+    rtl.within(rtl.screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }),
+  );
+  await rtl.waitFor(() => assertNameOnlyRows(2));
+  assert.equal(
+    (await f.store.snapshot()).tasks.some((task) => task.name === name),
+    false,
+  );
+});
+
 test('starts empty; preview is read-only and never writes real tasks', async () => {
   const f = await mount();
   assert.ok(rtl.screen.getByRole('heading', { name: 'No tasks yet' }));
@@ -104,7 +150,8 @@ test('starts empty; preview is read-only and never writes real tasks', async () 
   const del = rtl.screen.getAllByRole('button', { name: /Delete task:/ });
   assert.equal(del.length, 4);
   assert.ok(del.every((button) => (button as HTMLButtonElement).disabled));
-  rtl.fireEvent.click(rtl.screen.getAllByRole('button', { name: /^Open task:/ })[0]);
+  assertNameOnlyRows(4);
+  rtl.fireEvent.click(document.querySelector('.task-select')!);
   const example = document.querySelector<HTMLElement>('[data-message-id="requirements"]')!;
   rtl.fireEvent.click(rtl.within(example).getByRole('button', { name: 'Expand message' }));
   assert.equal(example.dataset.expanded, 'true');
@@ -841,7 +888,7 @@ test('home and task detail are separate, settings return to their origin, and na
   });
   assert.ok(rtl.screen.getByRole('main', { name: 'Home' }));
   assert.equal(document.querySelector('.agent-grid'), null);
-  click('Open task: First task');
+  click('First task');
   await rtl.screen.findByRole('heading', { name: 'First task' });
   assert.deepEqual(navigation, { view: 'task', taskId: first.id });
   assert.equal(document.querySelector('.task-list'), null);
@@ -861,7 +908,7 @@ test('home and task detail are separate, settings return to their origin, and na
     rtl.within(rtl.screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }),
   );
   await rtl.screen.findByRole('main', { name: 'Home' });
-  assert.ok(rtl.screen.getByRole('button', { name: 'Open task: Second task' }));
+  assert.ok(rtl.screen.getByRole('button', { name: 'Second task' }));
   rtl.cleanup();
   await mount(f, { view: 'task', taskId: first.id });
   assert.ok(rtl.screen.getByRole('main', { name: 'Home' }));

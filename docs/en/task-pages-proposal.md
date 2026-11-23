@@ -8,6 +8,8 @@ The agreed interaction uses one VS Code tab for the home and task detail pages. 
 
 Subsequent revision: [task chat and follow-up, scenes 14–17](./task-chat-proposal.md), supersedes this proposal’s two-column detail layout. The descriptions and images below retain the design approved on 2026-11-20. Home navigation, manual start, error compatibility and data rules still apply; see [Usage](./usage.md) for current layout.
 
+Later home revision (November 23, 2026): [compact task-list scenes 28–29](./task-home-compact-proposal.md) document current uncommitted source and await review. Rows show only names and deletion, with single-line ellipsis for long names. Scene 8 and the narrow-window descriptions below retain their original approval context.
+
 ## Previews
 
 Each canvas is 1440 × 900. These proposals use Simplified Chinese for the main interface, with an English error example in scene 11; the implementation displays one language according to its setting. Graphics and text remain editable, with no external images, font downloads, or scripts. Review notes along the bottom are not product content.

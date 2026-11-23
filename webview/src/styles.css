@@ -1398,14 +1398,16 @@ label > textarea {
 }
 .task-home .task-list {
   display: grid;
-  gap: 16px;
+  gap: 4px;
+  margin-top: 0;
 }
 .task-home .task-item {
   display: flex;
-  gap: 18px;
+  gap: 8px;
+  flex-wrap: nowrap;
   align-items: center;
   background: var(--dm-panel);
-  padding: 12px 16px;
+  padding: 4px 8px;
   min-width: 0;
 }
 .task-home .task-select {
@@ -1414,7 +1416,12 @@ label > textarea {
   padding: 4px;
 }
 .task-home .task-select strong {
-  font-size: 17px;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
 }
 .task-home .task-delete {
   position: static;
@@ -1480,19 +1487,6 @@ label > textarea {
   flex: 1;
 }
 @media (max-width: 900px) {
-  .task-home .task-item {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .task-home .task-select {
-    flex-basis: 100%;
-  }
-  .task-home .task-state {
-    max-width: calc(100% - 48px);
-  }
-  .task-home .task-delete {
-    margin-left: auto;
-  }
   .task-controls > .execution-panel {
     flex-basis: 100%;
   }

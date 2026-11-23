@@ -7,3 +7,5 @@ The native sidebar React/TypeScript Webview has separate task home and detail pa
 Settings uses a single column and category/language selectors. Task details collapse independently of run controls. The host mirrors sanitized display preferences and imports legacy editor-tab state only when sidebar state is absent. Hiding/moving the view preserves execution; callbacks target their originating page.
 
 设置使用单列及类别／语言选择器。任务详情折叠不隐藏主要运行控制。宿主镜像经过筛选的显示偏好，仅在缺少侧栏状态时迁移旧页签状态。隐藏或移动视图不停止执行；异步回复绑定来源页面。
+
+Task-home rows use only name and delete controls, preserve full titles/accessibility, and keep detail navigation for read-only examples. / 主页行仅含名称与删除，保留完整提示和可访问名称，只读示例可查看详情。

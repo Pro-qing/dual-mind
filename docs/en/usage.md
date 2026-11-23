@@ -183,3 +183,7 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 ## Sidebar validation
 
 See [sidebar validation](./sidebar-workbench-validation.md) for actual versions, platforms and screenshots, and [the approved proposal](./sidebar-workbench-proposal.md) for scenes 24–27.
+
+## Compact task home
+
+Rows contain only a name button and delete icon; title and accessible name retain the full name. Requirements, role, branch, rounds and status remain in details. Read-only examples open details with deletion disabled. Scenes 28–29 are approved and implemented; see the [proposal](./task-home-compact-proposal.md). The archive now contains 29 pairs.

@@ -66,3 +66,5 @@ React 工作台支持本地任务、连接设置、Reviewer 预设和中英文�
 已审核聊天控件显示当前活动和公开过程，消息缩放仅使用图标，并按任务保留证据最小化偏好。见[聊天修订说明](./docs/zh/chat-progress-proposal.md)。
 
 故障恢复已实现，包括逐操作日志、原角色接续和有限重试；[已审核恢复界面](./docs/zh/recovery-proposal.md)已接入继续执行、角色／阶段提示和重试状态。行为和限制见[恢复说明](./docs/zh/execution-recovery.md)。
+
+[紧凑任务列表](./docs/zh/task-home-compact-proposal.md)：主页仅显示名称与删除，场景 28–29 已审核并实现，设计归档共 29 组。

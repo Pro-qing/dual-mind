@@ -2,7 +2,7 @@
 
 [English](../en/design.md) · [文档索引](./README.md)
 
-[原生侧栏工作台](./sidebar-workbench-proposal.md)场景 24–27 已于 **2026-11-22 审核通过**，2026-11-23 接入源码。完整工作台由主侧栏或辅助侧栏承载，提供紧凑导航、可折叠任务详情和手动“终端仅占编辑器区域”操作。旧页签仅用于迁移；现有 27 组审核记录和历史设计保留。
+[原生侧栏工作台](./sidebar-workbench-proposal.md)场景 24–27 已于 **2026-11-22 审核通过**，2026-11-23 接入源码。完整工作台由主侧栏或辅助侧栏承载，提供紧凑导航、可折叠任务详情和手动“终端仅占编辑器区域”操作。旧页签仅用于迁移；现有 29 组审核记录和历史设计保留。
 
 **新增已审核修订：**[过程提示、紧凑聊天与最小化](./chat-progress-proposal.md)提供场景 18–20。2026-11-22 已审核通过，并要求缩放按钮仅显示图标；已实现。原 17 组审核记录保留，图中仍为静态示例。
 
@@ -13,13 +13,13 @@
 
 **当前源码版本：0.0.5 · 本地源码标签 `v0.0.5` · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
-**当前共有 27 组已审核 SVG／PNG。** 场景 1–7 记录原工作台与模型选择，8–11 为任务页面修订，12–13 为方案与验收循环，14–17 为任务聊天与持续追问，18–20 为过程提示及紧凑聊天控件，21–23 为故障恢复，24–27 为原生侧栏。原图及历史审核标签保持原样，图中内容均为示例。当前源码已接入模型查询、单任务执行、审查循环、聊天和独立证据面板；专用 worktree 成果应用与并行执行仍待实现。已发布的 0.0.1 保留历史行为，当前操作见[使用说明](./usage.md)。
+**当前共有 29 组已审核 SVG／PNG。** 场景 1–7 记录原工作台与模型选择，8–11 为任务页面修订，12–13 为方案与验收循环，14–17 为任务聊天与持续追问，18–20 为过程提示及紧凑聊天控件，21–23 为故障恢复，24–27 为原生侧栏。原图及历史审核标签保持原样，图中内容均为示例。当前源码已接入模型查询、单任务执行、审查循环、聊天和独立证据面板；专用 worktree 成果应用与并行执行仍待实现。已发布的 0.0.1 保留历史行为，当前操作见[使用说明](./usage.md)。
 
 每张画布均为 **1440 × 900**，采用贴近 VS Code 的深色配色，使用可编辑的 SVG 文字与矢量元素。早期场景使用英文标签，后续修订以简体中文为主，各组均有中英双语说明。SVG 没有内嵌图片、脚本、外部字体或外部资源，PNG 为渲染预览。
 
 ## 按版本查找
 
-[设计归档总索引](../design/README.md)列出版本、场景和数量。0.0.1 对应场景 1–5，0.0.2 对应 6–7，0.0.3 对应 8–17，0.0.4 对应 18–23，0.0.5 对应 24–27；每个目录都有同名 SVG／PNG 和 README。目录按开发版本归属，不是每个初始标签的完整快照：场景 8–17 是初始 `v0.0.3` 标签之后的同版本修订；侧栏由此前 0.0.4 候选包的开发记录归入正式的 0.0.5 源码里程碑。历史图稿内容和标签不改写。
+[设计归档总索引](../design/README.md)列出版本、场景和数量。0.0.1 对应场景 1–5，0.0.2 对应 6–7，0.0.3 对应 8–17，0.0.4 对应 18–23，0.0.5 对应 24–29；每个目录都有同名 SVG／PNG 和 README。目录按开发版本归属，不是每个初始标签的完整快照：场景 8–17 是初始 `v0.0.3` 标签之后的同版本修订；侧栏由此前 0.0.4 候选包的开发记录归入正式的 0.0.5 源码里程碑。历史图稿内容和标签不改写。
 
 ## 设计稿导航
 
@@ -157,7 +157,7 @@
 
 ## 审核与实现门槛
 
-所有者已批准现有 27 组设计，后续界面变更按[贡献指南](../../CONTRIBUTING.zh.md)提供新的 SVG 提案并经明确审核后实现。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
+所有者已批准现有 29 组设计，后续界面变更按[贡献指南](../../CONTRIBUTING.zh.md)提供新的 SVG 提案并经明确审核后实现。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
 
 已实现模块职责见[架构说明](./architecture.md)，任务关联和配置边界见[通信协议](./protocol.md)。其中记录已实现的设置／执行消息、角色交接与文件访问边界。
 
@@ -173,7 +173,7 @@ npm run docs:check
 npm run format:check
 ```
 
-逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对（当前为 27 组），要求原始基础场景 1–7 齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。更新设计或文档不代表已重建或替换公开 VSIX。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。
+逐张按原尺寸检查裁切、缺字、遮挡和对齐。文档检查脚本扫描全部 SVG／PNG 配对（当前为 29 组），要求原始基础场景 1–7 齐全，并检查画布尺寸、可访问的标题／描述、可编辑文字、静态矢量约束及 PNG 尺寸。更新设计或文档不代表已重建或替换公开 VSIX。布局仍需渲染和目视检查。CairoSVG 是可选设计工具，不属于扩展运行时或标准构建依赖。
 
 ## 开发分支的执行界面
 
@@ -181,12 +181,25 @@ npm run format:check
 
 ## 新增已审核设计：2026-11-22
 
-| 场景                           | 源文件                                                             | 预览                                                               |
-| ------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| 18. Public process / 公开过程  | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)       |
-| 19. Minimized panel / 最小化   | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)      | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)      |
-| 20. Narrow messages / 窄屏消息 | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg) | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png) |
+| 场景                           | 源文件                                                                | 预览                                                                  |
+| ------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 18. Public process / 公开过程  | [SVG](../design/v0.0.4/dual-mind-chat-progress-proposal.svg)          | [PNG](../design/v0.0.4/dual-mind-chat-progress-proposal.png)          |
+| 19. Minimized panel / 最小化   | [SVG](../design/v0.0.4/dual-mind-chat-minimized-proposal.svg)         | [PNG](../design/v0.0.4/dual-mind-chat-minimized-proposal.png)         |
+| 20. Narrow messages / 窄屏消息 | [SVG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.svg)    | [PNG](../design/v0.0.4/dual-mind-chat-compact-narrow-proposal.png)    |
+| 21. 故障与继续执行             | [SVG](../design/v0.0.4/dual-mind-recovery-failure-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-failure-proposal.png)       |
+| 22. 恢复状态与重试             | [SVG](../design/v0.0.4/dual-mind-recovery-running-proposal.svg)       | [PNG](../design/v0.0.4/dual-mind-recovery-running-proposal.png)       |
+| 23. 窄窗口恢复                 | [SVG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.svg)        | [PNG](../design/v0.0.4/dual-mind-recovery-narrow-proposal.png)        |
+| 24. 原生主侧栏                 | [SVG](../design/v0.0.5/dual-mind-sidebar-left-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-sidebar-left-proposal.png)           |
+| 25. 原生辅助侧栏               | [SVG](../design/v0.0.5/dual-mind-sidebar-right-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-right-proposal.png)          |
+| 26. 侧栏宽度                   | [SVG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.svg)         | [PNG](../design/v0.0.5/dual-mind-sidebar-widths-proposal.png)         |
+| 27. 侧栏表单与证据             | [SVG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.svg)          | [PNG](../design/v0.0.5/dual-mind-sidebar-forms-proposal.png)          |
+| 28. 紧凑任务主页（已审核）     | [SVG](../design/v0.0.5/dual-mind-task-home-compact-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-task-home-compact-proposal.png)      |
+| 29. 任务列表交互（已审核）     | [SVG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.svg) | [PNG](../design/v0.0.5/dual-mind-task-home-interactions-proposal.png) |
 
 ## 已审核：恢复执行
 
 原 20 组设计保留。新增[场景 21–23](./recovery-proposal.md)已审核并接入故障、恢复检查、有限重试及窄屏提示；设计稿中的任务和计数保持静态示例。
+
+## 紧凑主页修订
+
+场景 28–29 已审核并接入，保留原图及历史审核标签；布局与交互见[中英文提案](./task-home-compact-proposal.md)。
