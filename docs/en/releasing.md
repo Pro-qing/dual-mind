@@ -2,7 +2,23 @@
 
 [简体中文](../zh/releasing.md) · [Documentation](./README.md)
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
+
+## Local 0.0.6 delivery
+
+This round organizes the existing product introduction, local Python support and complete feature set into three bilingual commits, setting the project version to 0.0.6. Build a separate package from the final clean commit with documentation links pinned to `v0.0.6`, then create the local annotated tag on that same commit after package verification. Preserve earlier versions, artwork, task worktrees and packages.
+
+Deliver `release/dual-mind-0.0.6.vsix`, `release/dual-mind-0.0.6.vsix.sha256` and `release/dual-mind-0.0.6-build.json`. The build record captures the exact commit, source/package hashes, environment, executed checks and omissions. Like the artifact, it is ignored by Git so final package hashes do not require editing tagged source. The bilingual [version notes](./release-notes-0.0.6.md) can supply publication text.
+
+This delivery commits, tags and packages locally, without pushing, installing or publishing. The maintainer later pushes `master`, checks CI for that exact commit, then pushes `v0.0.6`; packaged documentation links resolve once the tag is available remotely. Confirm that the tag, build record and CI identify one commit before uploading the same verified VSIX to both services. If source changes are needed, validate and prepare the corresponding artifact again; do not describe an earlier package as built from a later commit.
+
+Verify the delivered package from the project root:
+
+```bash
+(cd release && sha256sum --check dual-mind-0.0.6.vsix.sha256)
+```
+
+See the [version notes](./release-notes-0.0.6.md) for local checks and reused UI evidence. Remote CI, isolated installation and publication require their own recorded outcomes. The general workflow and historical records follow.
 
 ## Historical 0.0.1 publication
 
@@ -30,7 +46,7 @@ Both previews are already published. Keep their tags and attachments intact; the
 
 ## Icon and package inputs
 
-The original 1408 × 768 JPEG is archived unchanged at `resources/branding/dual-mind.jpeg`. The packaged PNG uses its centered crop `(320, 0, 1088, 768)`, reduced to 256 × 256 with Lanczos. The image is not stretched. `.vscodeignore` allows `resources/icon.png` while excluding the source JPEG and other resource-maintenance files. Approved interface SVG/PNG designs remain in the package.
+The original 1408 × 768 JPEG is archived unchanged at `resources/branding/dual-mind.jpeg`. The packaged PNG uses its centered crop `(320, 0, 1088, 768)`, reduced to 256 × 256 with Lanczos. The image is not stretched. `.vscodeignore` allows the icon, activity-bar SVG, bundled-tool manifest and `resources/screenshots/dualmind-workbench.png`, while excluding the source JPEG and resource-maintenance files. All 37 approved interface SVG/PNG pairs remain in the package. See [asset provenance](../../resources/README.md) for the actual interface screenshot.
 
 ## Prepare the next version
 
@@ -42,6 +58,7 @@ The original 1408 × 768 JPEG is archived unchanged at `resources/branding/dual-
 ```bash
 nvm use
 npm ci
+npm run tools:fetch
 npm run check
 VSCODE_TEST_VERSION=1.100.0 npm test
 VSCODE_TEST_VERSION=stable npm test
@@ -66,9 +83,9 @@ From the clean checkout of the new tag, load nvm and install locked dependencies
 )
 ```
 
-`npm run package` rebuilds the extension host and Webview. `DUAL_MIND_RELEASE_REF` fixes packaged README/changelog links to the new tag. The output is `release/dual-mind-<version>.vsix`; running packaging again for that version overwrites the local file. Keep release candidates and downloaded verification copies in separate locations. Generated bundles, screenshots, VSIX files and checksum files remain ignored by Git.
+`npm run package` rebuilds the extension host and Webview. `DUAL_MIND_RELEASE_REF` fixes packaged README/changelog links to the new tag. The output is `release/dual-mind-<version>.vsix`; running packaging again for that version overwrites the local file. Keep release candidates and downloaded verification copies in separate locations. Generated bundles, validation screenshots, VSIX files and checksum files remain ignored by Git; the product image `resources/screenshots/dualmind-workbench.png` is tracked and included in the package.
 
-Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all 27 approved SVG/PNG pairs in version directories. The source JPEG, development sources, tests, credentials and source maps must be absent.
+Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all 37 approved SVG/PNG pairs in their version directories, the product screenshot, and rg/fd/jq executables with upstream licenses. The source JPEG, development sources, tests, credentials and source maps must be absent.
 
 Install the package in an isolated user profile/extensions directory. Verify the icon, identity/version, workbench, both languages, task creation/saving and reload recovery. Keep only the intended extension identity enabled in that profile.
 
@@ -86,8 +103,12 @@ Marketplace displays the README from the uploaded extension package. Committing 
 
 Official references: [Publishing extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension), [Extension manifest](https://code.visualstudio.com/api/references/extension-manifest), and [GitHub releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository). API credentials must not be stored in source files or exposed in command arguments.
 
-`v0.0.5` is the requested local annotated source tag, containing sidebar implementation, design reorganization and version metadata. This operation does not push tags, install the extension or publish a release. Historical `v0.0.2`/`v0.0.3` tags and older VSIX files are retained. Public distribution still requires the exact-commit and target-platform CI checks above. See the [0.0.5 version notes](./release-notes-0.0.5.md) for this local operation and its actual validation.
+**Historical record (November 23, 2026):** `v0.0.5` is the local annotated source tag created then, containing sidebar implementation, design reorganization and version metadata. That operation did not push tags, install the extension or publish a release. Historical `v0.0.2`/`v0.0.3` tags and older VSIX files are retained. Public distribution still requires the exact-commit and target-platform CI checks above. See the [0.0.5 version notes](./release-notes-0.0.5.md) for that local operation and its actual validation.
 
 ## Bundled command-line tools
 
 Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).
+
+## Local Python
+
+0.0.6 discovers existing Python 2.7/3 and project environments for both roles to invoke through commands. Python is neither shipped in the VSIX nor downloaded at installation or runtime; see [Local Python](./local-python.md).

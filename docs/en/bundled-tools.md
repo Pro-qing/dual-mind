@@ -2,7 +2,7 @@
 
 [简体中文](../zh/bundled-tools.md) · [Documentation](./README.md)
 
-DualMind 0.0.5 includes offline Linux x64 copies of `rg` 16.0.0, `fd` 10.5.2 and `jq` 1.8.2 for text search, file discovery and JSON processing. The supported baseline is Ubuntu 20.04+ amd64; other platforms continue using system commands. Actual validation is recorded in the [development log](./development-log.md).
+DualMind 0.0.6 includes offline Linux x64 copies of `rg` 16.0.0, `fd` 10.5.2 and `jq` 1.8.2 for text search, file discovery and JSON processing. The supported baseline is Ubuntu 20.04+ amd64; other platforms continue using system commands. Actual validation is recorded in the [development log](./development-log.md).
 
 ## Use in tasks
 

@@ -2,9 +2,9 @@
 
 [English](../en/execution-recovery.md) · [使用说明](./usage.md) · [已审核界面](./recovery-proposal.md)
 
-[工具错误处理与前端统一接入](./tool-errors.md)已按本轮确认实现：结果分层、批次失败跳过、三次重复暂停及完整生命周期页面。
+[工具错误处理与前端统一接入](./tool-errors.md)已实现：结果分层、批次失败跳过、三次重复暂停及完整生命周期页面。
 
-**已归档的本地功能修订：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及工具错误处理的宿主与前端已接入；[场景 30–34](./task-lifecycle-proposal.md)本轮已审核，新结果界面见[场景 35–37](./tool-errors-proposal.md)。保留版本 0.0.5 与既有标签。
+**当前功能：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及[工具错误处理](./tool-errors.md)的宿主与前端均已纳入 0.0.6。[场景 30–34](./task-lifecycle-proposal.md)与[场景 35–37](./tool-errors-proposal.md)保留原审核和实现记录。
 
 **状态：宿主恢复与已审核恢复界面均已实现。** 本文描述开发源码，不表示已经安装或发布。修复故障后点击带播放图标的**继续执行**，也适用于 VS Code 重载后。提示显示 Worker、Reviewer 或系统、阶段、操作和恢复次数；不可恢复时给出原因，未知进程允许重新检查但不能绕过清理。
 

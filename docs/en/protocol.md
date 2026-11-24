@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
 ## Page state and error compatibility
 

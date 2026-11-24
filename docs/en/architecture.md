@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
 ## Page navigation and structured errors
 
@@ -164,7 +164,7 @@ The play icon with **Continue execution** resumes paused runs and eligible faile
 
 ## Native sidebar lifecycle
 
-[Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+[Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. The original 27 design approvals and historical artwork are preserved.
 `src/core/viewChannel.ts` binds handshake, timeout and replies to each page. Callbacks verify page identity before sending; late replies cannot reach a replacement view. Initialization retry creates a new channel, visibility changes refresh snapshots, and chat reloads from paged records. `retainContextWhenHidden` retains hidden pages; recreation restores navigation/chat preferences from Webview state and the workspace display-state mirror.
 
 `src/shared/viewState.ts` accepts only allowlisted display fields, in precedence order: current sidebar, workspace mirror, legacy tab. `view.state` mirrors preferences; `rendered` completes its handshake after saving display state. The old `dualMind.workbench` serializer starts migration without awaiting rendering, avoiding a VS Code restore deadlock. Failure keeps the old tab and retry entry. `navigation.ack` prevents consuming a new-task request twice. Execution protocols and run-record formats are unchanged.

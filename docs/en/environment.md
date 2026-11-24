@@ -2,7 +2,7 @@
 
 [简体中文](../zh/environment.md) · [Documentation](./README.md)
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
 ## Supported baseline
 

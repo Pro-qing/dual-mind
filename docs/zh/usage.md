@@ -2,11 +2,11 @@
 
 [English](../en/usage.md) · [文档索引](./README.md)
 
-[工具错误处理与前端统一接入](./tool-errors.md)已按本轮确认实现：结果分层、批次失败跳过、三次重复暂停及完整生命周期页面。
+[工具错误处理与前端统一接入](./tool-errors.md)已实现：结果分层、批次失败跳过、三次重复暂停及完整生命周期页面。
 
-**已归档的本地功能修订：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及工具错误处理的宿主与前端已接入；[场景 30–34](./task-lifecycle-proposal.md)本轮已审核，新结果界面见[场景 35–37](./tool-errors-proposal.md)。保留版本 0.0.5 与既有标签。
+**当前功能：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及[工具错误处理](./tool-errors.md)的宿主与前端均已纳入 0.0.6。[场景 30–34](./task-lifecycle-proposal.md)与[场景 35–37](./tool-errors-proposal.md)保留原审核和实现记录。
 
-**当前源码版本：0.0.5 · 基线标签 `v0.0.5`（早于后续功能提交） · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
+**当前源码版本：0.0.6 · 本地版本已准备，尚未公开发布。** 记录日期：2026-11-24；本地附注标签 `v0.0.6` 对应本次完整源码，推送和发布由维护者另行执行。当前能力、验证与制品见[0.0.6 版本说明](./release-notes-0.0.6.md)，历史版本记录保留原意。
 
 ## 主页、任务详情与错误信息
 
@@ -16,7 +16,7 @@
 
 应用产生的错误随界面语言显示，包括运行失败、检查命令错误、Git 操作、模型请求和桥接超时。必要时展开“原始详情”查看脱敏后的原文；外部命令输出和模型回答不自动翻译。旧历史错误保留原文，并提供本地化说明。切换语言会更新结构化错误的提示。
 
-**已归档的本地源码修订：**主页任务行仅显示名称和删除图标，点击名称进入详情；长名称单行省略，悬停可查看全文。顶部数量继续保留，需求、角色、分支、轮次和逐项状态在详情中查看。删除先确认，活动任务使用“停止并删除”；示例中的名称可打开详情，删除与页面新建按钮禁用。对应[场景 28–29](./task-home-compact-proposal.md)已审核并接入，此说明不表示已有标签或安装包已包含修改。
+**紧凑任务主页：**任务行仅显示名称和删除图标，点击名称进入详情；长名称单行省略，悬停可查看全文。顶部数量继续保留，需求、角色、分支、轮次和逐项状态在详情中查看。删除先确认，活动任务使用“停止并删除”；示例中的名称可打开详情，删除与页面新建按钮禁用。对应[场景 28–29](./task-home-compact-proposal.md)已审核并接入，相关实现随 0.0.6 本地包提供，历史安装包的能力以其版本为准。
 
 ## 运行要求
 
@@ -24,7 +24,7 @@
 
 ## 从 Marketplace 安装
 
-[Visual Studio Marketplace 上的 DualMind](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) 已于 **2026-11-18** 公开，Publisher 为 **Pro-qing**，扩展标识为 **Pro-qing.dual-mind**，版本为 **0.0.1**。在扩展面板（`Ctrl+Shift+X`）搜索 `@id:Pro-qing.dual-mind`，确认发布者和图标后点击**安装**。也可执行：
+[Visual Studio Marketplace 上的 DualMind](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) 在 **2026-11-18** 的历史发布记录中上架版本为 **0.0.1**，Publisher 为 **Pro-qing**，扩展标识为 **Pro-qing.dual-mind**；当前商店可用版本以安装页为准。在扩展面板（`Ctrl+Shift+X`）搜索 `@id:Pro-qing.dual-mind`，确认发布者和图标后点击**安装**。也可执行：
 
 ```bash
 code --install-extension Pro-qing.dual-mind
@@ -33,6 +33,17 @@ code --install-extension Pro-qing.dual-mind
 如果安装过旧开发身份，请先按下方 Preview 1 切换说明处理，再打开新工作台。
 
 Preview 标记表示扩展仍处于早期开发阶段。当前使用 Marketplace 普通发布通道，无需选择预发布通道。该扩展 ID 后续公开更新会递增扩展版本，用户可通过 VS Code 正常更新扩展；GitHub 同步保留对应版本的 VSIX 和校验文件。
+
+## 安装本地 0.0.6 包
+
+本地交付文件为 `release/dual-mind-0.0.6.vsix`，配套同名 `.vsix.sha256` 和构建记录；它尚未上传 Marketplace 或 GitHub Release。在项目根目录手动执行：
+
+```bash
+(cd release && sha256sum --check dual-mind-0.0.6.vsix.sha256)
+code --install-extension ./release/dual-mind-0.0.6.vsix
+```
+
+校验成功后再安装，也可使用 **Extensions: Install from VSIX...**。本轮交付不会自动安装；现有扩展身份仍为 `Pro-qing.dual-mind`。本版本功能与验证见[版本说明](./release-notes-0.0.6.md)，以下保留此前公开包的下载方法。
 
 ## 下载、校验和安装 VSIX
 

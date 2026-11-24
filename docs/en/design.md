@@ -2,11 +2,11 @@
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
-**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Approved new designs:** [Compact task list](./task-home-compact-proposal.md), scenes 28–29, covers 240/320/480px homes, long names, keyboard focus, read-only examples, and deletion confirmation. These drawings document changes recorded November 23, 2026 and now archived on local `master`, in the 0.0.5 archive after the existing tag.
+**Approved new designs:** [Compact task list](./task-home-compact-proposal.md), scenes 28–29, covers 240/320/480px homes, long names, keyboard focus, read-only examples, and deletion confirmation. These drawings document changes recorded November 23, 2026 and now archived on local `master`, in the 0.0.5 development archive after the original `v0.0.5` tag and retained in full in 0.0.6.
 
-[Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+[Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. The original 27 design approvals and historical artwork are preserved.
 
 **New approved revision:** [Activity, compact chat and minimization](./chat-progress-proposal.md), scenes 18–20. Approved November 22, 2026 with icon-only sizing buttons; implemented. The 17 earlier approvals remain intact. These remain static design references.
 
@@ -15,7 +15,7 @@
 **New approved revision:** [Dual-agent planning and acceptance](./execution-cycle-proposal.md), approved 2026-11-20; implemented; see [validation coverage](./execution-cycle-validation.md).
 **Approved and implemented revision:** [Task home, detail, and errors](./task-pages-proposal.md) adds scenes 8–11 for separate home/detail pages, manual start after creation, and consistent bilingual errors. Scenes 8–11 were approved on 2026-11-20 and implemented; scenes 1–7 and their historical descriptions below are preserved.
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
 **There are currently 37 SVG/PNG pairs: 37 approved.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, 14–17 task chat and follow-up, 18–20 activity and compact-chat controls, 21–23 failure recovery, and 24–27 the native sidebar. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; artifact integration has host support with UI integrated; parallel execution remains planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
 

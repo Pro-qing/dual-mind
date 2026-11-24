@@ -2,7 +2,7 @@
 
 [English](../en/bundled-tools.md) · [文档索引](./README.md)
 
-DualMind 0.0.5 随 VSIX 离线携带 Linux x64 的 `rg` 16.0.0、`fd` 10.5.2 和 `jq` 1.8.2，用于文本搜索、文件查找和 JSON 处理。支持基线为 Ubuntu 20.04+ amd64；其他平台继续使用系统命令。实际验证结果见[开发日志](./development-log.md)。
+DualMind 0.0.6 随 VSIX 离线携带 Linux x64 的 `rg` 16.0.0、`fd` 10.5.2 和 `jq` 1.8.2，用于文本搜索、文件查找和 JSON 处理。支持基线为 Ubuntu 20.04+ amd64；其他平台继续使用系统命令。实际验证结果见[开发日志](./development-log.md)。
 
 ## 任务中的使用
 

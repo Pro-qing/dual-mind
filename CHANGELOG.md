@@ -2,6 +2,14 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.6 — Complete task workflow and local Python (locally prepared, unpublished, 2026-11-24)
+
+- Include changes after the original `v0.0.5` tag: compact task home, worktree bases, automatic context summaries and user-controlled artifact commits, merges, preservation, cleanup and restoration, with frontend integration.
+- Separate tool execution and command outcomes; reject invalid batches, skip tails after failure, pause after three failures without progress, and retain evidence, budgets and recovery boundaries.
+- Bundle offline Linux x64 rg/fd/jq fallbacks with system priority. Discover existing Python 2.7/3 and project environments for both roles without bundling or installing Python.
+- Refocus README and extension descriptions on the product, adding an actual read-only example screenshot while preserving 37 design pairs and historical approvals.
+- Update version metadata, current bilingual documentation and release navigation; organize local commits, annotated `v0.0.6` and a separate VSIX. See [0.0.6 notes](./docs/en/release-notes-0.0.6.md) for actual checks, artifacts and omissions. No push, installation or publication in this round.
+
 ## 0.0.5 — Native sidebar and versioned designs (local, unpublished, 2026-11-23)
 
 - Host the full workbench in the native VS Code Primary/Secondary Side Bar, with compact layouts, manual terminal centering, view recreation and legacy-tab migration. Execution remains independent of the page.

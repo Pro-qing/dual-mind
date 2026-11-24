@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
 ## Home, task detail, and errors
 
@@ -16,7 +16,7 @@ The workbench opens on task home. Open a task to enter its separate detail page.
 
 Application errors follow the interface language, including run failures, check commands, Git, inference, and bridge timeouts. Expand **Original details** for redacted source text when available. Command output and model responses remain verbatim. Old historical errors receive localized context with their original text. Changing language reformats structured errors immediately.
 
-**Locally committed workspace revision:** home rows contain only a name and delete icon; select the name to open detail. Long names use a single-line ellipsis and expose the complete name on hover. Counts remain at the top; requirements, role, branch, rounds, and individual state are available in detail. Deletion requires confirmation, with Stop and delete for active tasks. Example names open detail, while deletion and the page New task button are disabled. [Scenes 28–29](./task-home-compact-proposal.md) are approved and integrated; this note does not claim inclusion in existing tags or installed packages.
+**Compact task home:** home rows contain only a name and delete icon; select the name to open detail. Long names use a single-line ellipsis and expose the complete name on hover. Counts remain at the top; requirements, role, branch, rounds, and individual state are available in detail. Deletion requires confirmation, with Stop and delete for active tasks. Example names open detail, while deletion and the page New task button are disabled. [Scenes 28–29](./task-home-compact-proposal.md) are approved and integrated; these features ship in the local 0.0.6 package, while earlier installed packages retain their own capabilities.
 
 ## Requirements
 
@@ -24,7 +24,7 @@ The supported baseline is **Ubuntu 20.04+, x86_64/amd64, and VS Code 1.100.0+**.
 
 ## Install from Marketplace
 
-[DualMind on the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) has been public since **2026-11-18**, with Publisher **Pro-qing**, extension ID **Pro-qing.dual-mind**, and version **0.0.1**. Open Extensions (`Ctrl+Shift+X`), search `@id:Pro-qing.dual-mind`, verify the publisher and icon, then select **Install**. Alternatively:
+[DualMind on the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Pro-qing.dual-mind) was recorded as published on **2026-11-18** at version **0.0.1**, with Publisher **Pro-qing** and extension ID **Pro-qing.dual-mind**; check the installation page for the currently available version. Open Extensions (`Ctrl+Shift+X`), search `@id:Pro-qing.dual-mind`, verify the publisher and icon, then select **Install**. Alternatively:
 
 ```bash
 code --install-extension Pro-qing.dual-mind
@@ -33,6 +33,17 @@ code --install-extension Pro-qing.dual-mind
 If you installed the old development identity, follow the Preview 1 switching instructions below before opening the new workbench.
 
 The Preview label identifies this extension's early development stage. It uses the regular Marketplace channel; selecting a pre-release channel is not required. Future published updates under the same ID will use higher extension versions and can be installed through VS Code's normal extension update flow. GitHub releases retain the corresponding VSIX and checksum.
+
+## Install the local 0.0.6 package
+
+The local delivery is `release/dual-mind-0.0.6.vsix`, accompanied by its `.vsix.sha256` and build record. It has not been uploaded to Marketplace or GitHub Releases. From the project root, run manually:
+
+```bash
+(cd release && sha256sum --check dual-mind-0.0.6.vsix.sha256)
+code --install-extension ./release/dual-mind-0.0.6.vsix
+```
+
+Install only after verification succeeds, or use **Extensions: Install from VSIX...**. This delivery does not install automatically; the extension remains `Pro-qing.dual-mind`. See the [version notes](./release-notes-0.0.6.md) for capabilities and validation. The following section retains the earlier public package's download instructions.
 
 ## Download, verify, and install a VSIX
 

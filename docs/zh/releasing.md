@@ -2,7 +2,23 @@
 
 [English](../en/releasing.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.5 · 基线标签 `v0.0.5`（早于后续功能提交） · 尚未发布。** 记录日期：2026-11-23。包含原生侧栏工作台，设计稿按版本归档；本地提交、标签和 VSIX 不表示已推送远端或发布 Marketplace／GitHub Release。旧版本记录保持原样。详见[0.0.5 版本说明](./release-notes-0.0.5.md)。
+**当前源码版本：0.0.6 · 本地版本已准备，尚未公开发布。** 记录日期：2026-11-24；本地附注标签 `v0.0.6` 对应本次完整源码，推送和发布由维护者另行执行。当前能力、验证与制品见[0.0.6 版本说明](./release-notes-0.0.6.md)，历史版本记录保留原意。
+
+## 0.0.6 本地交付
+
+本轮将已有产品介绍、本机 Python 支持和完整功能整理为三个双语提交，更新项目版本为 0.0.6。由最终干净提交构建独立包，文档链接固定到 `v0.0.6`；包检查成功后在同一提交创建本地附注标签。现有版本、图稿、任务工作树及旧包保留。
+
+交付 `release/dual-mind-0.0.6.vsix`、`release/dual-mind-0.0.6.vsix.sha256` 和 `release/dual-mind-0.0.6-build.json`。构建记录保存精确提交、源码／包摘要、执行环境、实际检查及未运行项；它与制品均由 Git 忽略，避免将最终包摘要回写到已打标签源码。双语[版本说明](./release-notes-0.0.6.md)可作为发布文案。
+
+本轮仅本地提交、打标签和打包，不推送、安装或公开发布。维护者后续先推送 `master` 并核对该精确提交的 CI，再推送 `v0.0.6`；远端可访问标签后，包内文档链接才可解析。确认标签、构建记录与 CI 指向同一提交后，两端上传同一个已校验 VSIX。若需修改源码，应重新验证并准备对应制品，不把旧包冒称为新提交的构建。
+
+在项目根目录核对交付包：
+
+```bash
+(cd release && sha256sum --check dual-mind-0.0.6.vsix.sha256)
+```
+
+本机验证与此前界面证据的复用范围见[版本说明](./release-notes-0.0.6.md)；远端 CI、隔离安装及公开发布仍须分别记录结果。以下通用发布流程与历史记录保留。
 
 ## 0.0.1 历史发布记录
 
@@ -30,7 +46,7 @@
 
 ## 图标与打包输入
 
-原始 1408 × 768 JPEG 原样归档至 `resources/branding/dual-mind.jpeg`。随包 PNG 使用中央裁剪区域 `(320, 0, 1088, 768)`，以 Lanczos 缩小为 256 × 256，不拉伸图案。`.vscodeignore` 放行 `resources/icon.png`，排除源 JPEG 及其他资源维护文件。已审核 SVG／PNG 界面设计继续随包保留。
+原始 1408 × 768 JPEG 原样归档至 `resources/branding/dual-mind.jpeg`。随包 PNG 使用中央裁剪区域 `(320, 0, 1088, 768)`，以 Lanczos 缩小为 256 × 256，不拉伸图案。`.vscodeignore` 放行图标、活动栏 SVG、内置工具清单及 `resources/screenshots/dualmind-workbench.png`，排除源 JPEG 及资源维护文件。37 组已审核 SVG／PNG 界面设计继续随包保留，原始界面截图来源见[资源说明](../../resources/README.md)。
 
 ## 准备下一版本
 
@@ -42,6 +58,7 @@
 ```bash
 nvm use
 npm ci
+npm run tools:fetch
 npm run check
 VSCODE_TEST_VERSION=1.100.0 npm test
 VSCODE_TEST_VERSION=stable npm test
@@ -66,9 +83,9 @@ VSCODE_TEST_VERSION=stable npm test
 )
 ```
 
-`npm run package` 会重建扩展宿主与 Webview，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签。产物路径为 `release/dual-mind-<version>.vsix`，再次打包同一版本会覆盖本地文件；候选包和重新下载的验证副本应分别存放。构建产物、截图、VSIX 和校验文件继续由 Git 忽略。
+`npm run package` 会重建扩展宿主与 Webview，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签。产物路径为 `release/dual-mind-<version>.vsix`，再次打包同一版本会覆盖本地文件；候选包和重新下载的验证副本应分别存放。构建产物、验证截图、VSIX 和校验文件继续由 Git 忽略；用于产品介绍的 `resources/screenshots/dualmind-workbench.png` 已提交并随包提供。
 
-检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及按版本目录组织的全部 27 组已审核 SVG／PNG；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
+检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及按版本目录组织的全部 37 组已审核 SVG／PNG、产品截图及 rg／fd／jq 可执行文件与上游许可证；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
 
 在隔离用户配置／扩展目录中安装包，验证图标、身份／版本、工作台、两种语言、任务创建／保存及重载恢复。该配置只启用目标扩展身份。
 
@@ -86,8 +103,12 @@ Marketplace 展示上传扩展包中的 README，提交或推送 GitHub 文档�
 
 官方参考：[扩展发布](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)、[扩展清单](https://code.visualstudio.com/api/references/extension-manifest)和 [GitHub 发布文档](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。API 凭据不得写入源码或暴露在命令参数中。
 
-`v0.0.5` 是用户要求的本地源码附注标签，包含侧栏实现、设计目录整理和版本更新；此次不推送标签、安装扩展或创建公开发布。历史 `v0.0.2`／`v0.0.3` 标签和旧 VSIX 保留。公开发布仍需验证精确提交及目标平台 CI，再执行上文分发流程。本次本地范围与实际验证见[0.0.5 版本说明](./release-notes-0.0.5.md)。
+**历史记录（2026-11-23）：** `v0.0.5` 是当时创建的本地源码附注标签，包含侧栏实现、设计目录整理和版本更新；当时未推送标签、安装扩展或创建公开发布。历史 `v0.0.2`／`v0.0.3` 标签和旧 VSIX 保留。公开发布仍需验证精确提交及目标平台 CI，再执行上文分发流程。当时的本地范围与实际验证见[0.0.5 版本说明](./release-notes-0.0.5.md)。
 
 ## 内置常用命令
 
 Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追加任务进程 PATH。构建前显式运行 `npm run tools:fetch`，缓存完整后构建可离线进行。版本、失败行为、许可与验证见 [内置常用命令](./bundled-tools.md)。
+
+## 本机 Python
+
+0.0.6 自动发现本机已有 Python 2.7／3 和项目环境，供两个角色通过命令调用。Python 不随 VSIX 分发，也不会在安装或运行时下载；详见[本机 Python](./local-python.md)。

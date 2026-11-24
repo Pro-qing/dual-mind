@@ -4,24 +4,27 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
-| Version           | Status                                          | Delivered scope                                                                          |
-| ----------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 0.0.1 Preview 1/2 | Historical public releases                      | Local workbench, settings, role presets, languages and read-only examples                |
-| 0.0.2             | Local source version, unpublished               | Model discovery, separate defaults, role data isolation and Git preparation              |
-| 0.0.3             | Previous local source version, unpublished      | Dual-protocol streamed execution, review loops, activity bar and three branch strategies |
-| 0.0.4             | Earlier local source and VSIX, unpublished      | Universal shell, independent Reviewer verification, process display and recovery         |
-| 0.0.5             | Current local source, VSIX and tag, unpublished | Native sidebar, legacy-tab migration, terminal separation and versioned designs          |
+| Version           | Status                                          | Delivered scope                                                                                  |
+| ----------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 0.0.1 Preview 1/2 | Historical public releases                      | Local workbench, settings, role presets, languages and read-only examples                        |
+| 0.0.2             | Local source version, unpublished               | Model discovery, separate defaults, role data isolation and Git preparation                      |
+| 0.0.3             | Previous local source version, unpublished      | Dual-protocol streamed execution, review loops, activity bar and three branch strategies         |
+| 0.0.4             | Earlier local source and VSIX, unpublished      | Universal shell, independent Reviewer verification, process display and recovery                 |
+| 0.0.5             | Earlier local source, VSIX and tag, unpublished | Native sidebar, legacy-tab migration, terminal separation and versioned designs                  |
+| 0.0.6             | Current local version prepared, unpublished     | Compact home, worktree artifacts, context summaries, tool recovery, bundled CLI and local Python |
 
-0.0.5 includes Reviewer planning, autonomous Worker implementation and verification, independent Reviewer verification, acceptance and revised plans, pause/continue/stop, reload interruption, diff preview and local branch selection. Task chat supports read-only questions, queued messages during execution and continued changes. One task runs per workspace. Direct modes modify the opened project; start/restart requires a clean directory, while chat continuation retains the bound directory and uncommitted artifacts and obtains fresh evidence.
+0.0.6 includes Reviewer planning, autonomous Worker implementation and verification, independent Reviewer verification, acceptance and revised plans, pause/continue/stop, reload interruption, diff preview and local branch selection. Task chat supports read-only questions, queued messages during execution and continued changes. One task runs per workspace. Direct modes modify the opened project; start/restart requires a clean directory, while chat continuation retains the bound directory and uncommitted artifacts and obtains fresh evidence.
 
 Still planned: parallel tasks and automatic editor-context collection. Artifact host operations and UI are integrated. Approval never automatically commits, merges or pushes.
 
 The design archive contains 37 approved SVG/PNG pairs, including [compact task-list scenes 28–29](./task-home-compact-proposal.md), lifecycle controls and tool-error handling, documenting changes now archived on local `master`. Artwork remains a design reference, not proof of implementation. Historical [Preview 2](./release-notes-preview-2.md)/[Preview 1](./release-notes.md) and published assets are preserved. Public distribution remains a separate [release workflow](./releasing.md).
 
-[Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+[Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. The original 27 design approvals and historical artwork are preserved.
 
 - [Bundled command-line tools](./bundled-tools.md): offline CLI fallbacks, system priority and integrity checks.
+
+- [Local Python](./local-python.md): discover existing Python 2.7/3 and project environments without bundling or installing an interpreter.

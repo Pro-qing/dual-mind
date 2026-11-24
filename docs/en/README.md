@@ -4,11 +4,11 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Locally committed feature revision:** host support for [worktrees, context summaries, and artifacts](./task-lifecycle.md) is implemented. [Scenes 30–34](./task-lifecycle-proposal.md) are approved and connected; [scenes 35–37](./tool-errors-proposal.md) cover the new tool-result UI. Version 0.0.5 and existing tags are retained.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
 [Compact task-list designs](./task-home-compact-proposal.md): scenes 28–29 are approved and implemented and document the home-layout and interaction changes now archived on local `master`.
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
 | Guide                                                   | Contents                                                                                |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -40,7 +40,8 @@ The [development log](./development-log.md) records code/documentation review, d
 
 ## Local source versions
 
-- [0.0.5](./release-notes-0.0.5.md): current native sidebar workbench, versioned designs and local tag.
+- [0.0.6](./release-notes-0.0.6.md): current complete feature set, local Python support, product introduction and local delivery record.
+- [0.0.5](./release-notes-0.0.5.md): earlier native sidebar workbench, versioned designs and local tag.
 - [0.0.4](./release-notes-0.0.4.md): earlier local source and VSIX, unpublished.
 - [0.0.3](./release-notes-0.0.3.md): previous local source version, unpublished.
 - [0.0.2](./release-notes-0.0.2.md): model discovery, settings and Git preparation foundations.
@@ -50,7 +51,7 @@ The [development log](./development-log.md) records code/documentation review, d
 - [Failure recovery](./execution-recovery.md): host implementation, public context, process and evidence limits.
 - [Recovery UI proposal](./recovery-proposal.md): scenes 21–23, approved and integrated on 2026-11-22.
 
-- [Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. All 27 design approvals and historical artwork are preserved.
+- [Native sidebar workbench](./sidebar-workbench-proposal.md) scenes 24–27 were **approved on November 22, 2026** and implemented on November 23. The complete workbench uses the Primary or Secondary Side Bar, compact navigation, collapsible task details and manual **Keep Terminal in Editor Area**. Old editor tabs are retained only for migration. The original 27 design approvals and historical artwork are preserved.
 - [Sidebar validation](./sidebar-workbench-validation.md): real VS Code, legacy-tab migration, widths and terminal layout.
 
 - [Tool errors](./tool-errors.md): outcomes, repeated-error pauses, skipped batches and acceptance boundaries.

@@ -2,7 +2,7 @@
 
 [简体中文](../zh/development.md) · [Documentation](./README.md)
 
-**Source version: 0.0.5 · Baseline tag `v0.0.5` (before these later commits) · Unpublished.** Recorded November 23, 2026. Includes the native sidebar workbench and versioned design archives. A local commit, tag and VSIX do not imply a remote push or Marketplace/GitHub publication. Earlier version records remain unchanged. See the [0.0.5 version notes](./release-notes-0.0.5.md).
+**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
 
 ## Environment
 
@@ -111,7 +111,7 @@ CI runs environment and local store/React tests, formatting, types, lint, docume
 
 Local tests use serial workers and a 256 MiB JavaScript heap per test process. On a constrained host, run checks and GUI suites separately; observe the entire process tree, available memory, swap and elapsed time, and stop the test if the host loses its reserve. A JavaScript heap cap alone does not bound Electron memory. `DUAL_MIND_RESOURCE_UI=1` adds renderer/heap limits and disables unrelated extensions in GUI fixtures; `DUAL_MIND_SKIP_NATIVE_UI=1` runs the Webview suite alone so `node scripts/verify-sidebar.mjs` can follow separately. These flags do not impose an OS memory quota.
 
-Set `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.5-tool-errors-ui.vsix` when running `npm run package` to keep a separate candidate without replacing the default package. Packaging does not install or publish the extension.
+Set `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.6-candidate.vsix` when running `npm run package` to keep a separate candidate without replacing the default package. Packaging does not install or publish the extension.
 
 ## Troubleshooting
 

@@ -2,7 +2,7 @@
 
 [简体中文](../zh/task-lifecycle.md) · [UI proposal](./task-lifecycle-proposal.md) · [Protocol](./protocol.md)
 
-**Locally committed revision, November 23, 2026; version remains 0.0.5.** Managed bases, automatic context summaries, and artifact operations now have both host and frontend support. Scenes 28–34 were approved in this round; settings, commit/merge/cleanup and restoration controls are connected. [Tool-error handling](./tool-errors.md) is integrated too. Original tags and releases remain intact.
+**Current version: 0.0.6.** These features were implemented and archived during 0.0.5 development on November 23, 2026, and are included in [0.0.6](./release-notes-0.0.6.md). Managed bases, automatic context summaries, and artifact operations now have both host and frontend support. Scenes 28–34 were approved during that implementation round; settings, commit/merge/cleanup and restoration controls are connected. [Tool-error handling](./tool-errors.md) is integrated too. Original tags and releases remain intact.
 
 The work-preservation approach was informed by The Pair 3.0.4 at local commit `dace8ea`; implementation uses DualMind's TypeScript services without copying Rust source. Semantic summarization is new here, rather than The Pair's fixed history-window trimming.
 
