@@ -35,3 +35,7 @@ Worker 实施方案并验证修改。Reviewer 在规划和答疑阶段可探查�
 ## 内置常用命令
 
 Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追加任务进程 PATH。构建前显式运行 `npm run tools:fetch`，缓存完整后构建可离线进行。版本、失败行为、许可与验证见 [内置常用命令](./bundled-tools.md)。
+
+## 本机 Python
+
+任务准备及恢复会自动识别本机 Python 2.7／3 和常见项目环境，并把经过验证的调用路径与版本提供给 Worker、Reviewer。沿用 `run_command`，不随包携带或安装 Python，不改全局环境。发现顺序、预算与故障边界见[本机 Python 说明](./local-python.md)。

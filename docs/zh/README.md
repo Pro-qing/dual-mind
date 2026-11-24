@@ -57,3 +57,5 @@
 - [工具错误界面](./tool-errors-proposal.md)：场景 35–37，按本轮确认实施。
 
 - [内置常用命令](./bundled-tools.md): 随包离线命令、系统优先与完整性校验。
+
+- [本机 Python](./local-python.md)：自动发现已有 Python 2.7／3 与项目环境，沿用命令工具执行脚本。

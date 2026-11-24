@@ -1,3 +1,4 @@
+import { PythonDiscovery } from '../../src/execution/python';
 import { BundledTools } from '../../src/execution/bundledTools';
 import { realpath } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
@@ -61,6 +62,7 @@ async function setup(
     shutdownFailure?: boolean;
     realCommands?: boolean;
     bundledTools?: boolean;
+    python?: PythonDiscovery;
     badArguments?: 'once' | 'always' | 'json';
     streamSecret?: string;
     reviewerCommands?: boolean;
@@ -677,6 +679,13 @@ async function setup(
     runner,
     undefined,
     options.bundledTools ? new BundledTools(resolve('dist/tools')) : undefined,
+    options.python ??
+      (options.bundledTools
+        ? new PythonDiscovery()
+        : Object.assign(new PythonDiscovery(), {
+            // Unrelated execution tests must not depend on installed host interpreters.
+            discover: async () => ({ complete: true, interpreters: [] }),
+          })),
   );
   f.ports.assertMutable = (action) => service.assertMutable(action);
   cleanup.service = service;
@@ -2068,8 +2077,197 @@ for (const flip of [false, true]) {
       const text = JSON.stringify(request.body);
       assert.match(text, /bundledTools/);
       assert.match(text, /System commands have priority/);
+      assert.match(text, /Local Python discovery/);
+      assert.match(text, /invocation path/);
+      assert.match(text, /interpreters/);
       assert.match(text, /search_status/);
       assert.ok(!text.includes('test-secret-worker'));
     }
   });
 }
+
+for (const flip of [false, true]) {
+  test(`local Python identity is isolated from public evidence and missing Python is nonfatal (flip=${flip})`, async (t) => {
+    const python = new PythonDiscovery();
+    let discovered = 0;
+    python.discover = async (_directory, _env, signal, observer) => {
+      assert.equal(signal.aborted, false);
+      await observer!.check();
+      const candidate = {
+        path: '/fixture/python-secret',
+        source: 'path' as const,
+        label: 'python3',
+      };
+      const operation = await observer!.start(candidate);
+      const result = { ...candidate, status: 'unavailable' as const, reason: 'missing' as const };
+      await operation.finish(result);
+      discovered++;
+      return { complete: true, interpreters: [result] };
+    };
+    const h = await setup(t, { flip, readingOnly: true, python });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+    const run = h.records.runs[0];
+    assert.equal(run.status, 'completed', run.error);
+    assert.equal(discovered, 1);
+    assert.equal(run.environment?.python?.interpreters[0].reason, 'missing');
+    assert.equal(h.commands(), 0);
+    const saved = await h.records.recovery(run.id).load();
+    const probes = saved!.operations.filter((op) => op.name === 'Discover local Python');
+    assert.equal(probes.length, 1);
+    assert.equal(probes[0].kind, 'environment');
+    assert.equal(probes[0].status, 'failed');
+    assert.equal(probes[0].cleanup, 'confirmed');
+    assert.ok(!(await h.records.history(run.id)).some((e) => e.detail?.type === 'command'));
+    for (const agent of ['worker', 'reviewer']) {
+      const request = h.captured.find((c) => c.agent === agent)!;
+      assert.match(JSON.stringify(request.body), /Local Python discovery/);
+      assert.match(JSON.stringify(request.body), /python-secret/);
+      assert.match(JSON.stringify(request.body), /tasks without Python can continue/);
+    }
+    assert.ok(Object.values(saved!.state.budgets).every((b) => (b.calls ?? 0) < 10));
+  });
+}
+
+test('Python discovery failure on persistence or unconfirmed cleanup stops before inference', async (t) => {
+  for (const kind of ['persistence', 'unknown', 'trust'] as const) {
+    const python = new PythonDiscovery();
+    python.discover = async (_directory, _env, _signal, observer) => {
+      await observer!.check();
+      const candidate = { path: '/fixture/python', source: 'path' as const, label: 'python3' };
+      const operation = await observer!.start(candidate);
+      const fatal =
+        kind === 'unknown'
+          ? new CommandShutdownError()
+          : new OperationError(kind === 'trust' ? 'workspaceUntrusted' : 'persistenceFailed');
+      await operation.finish({ ...candidate, status: 'unavailable' }, fatal);
+      throw fatal;
+    };
+    const h = await setup(t, { readingOnly: true, python });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+    assert.equal(h.records.runs[0].status, 'failed');
+    assert.equal(h.captured.length, 0);
+    const saved = await h.records.recovery(h.records.runs[0].id).load();
+    const probe = saved!.operations.find((op) => op.name === 'Discover local Python')!;
+    assert.equal(probe.cleanup, kind === 'unknown' ? 'unconfirmed' : 'confirmed');
+    assert.equal(probe.status, kind === 'unknown' ? 'unknown' : 'failed');
+    if (kind === 'unknown') {
+      await assert.rejects(h.service.request({ kind: 'start', taskId: h.task.id }), {
+        code: 'shutdownUnconfirmed',
+      });
+    }
+    await h.service.shutdown();
+  }
+});
+
+test('Python recovery refreshes identity while keeping business budgets and completed file work', async (t) => {
+  const python = new PythonDiscovery();
+  let discoveries = 0;
+  python.discover = async (_directory, _env, _signal, observer) => {
+    await observer!.check();
+    const candidate = {
+      path: '/fixture/env/bin/python',
+      source: 'project' as const,
+      label: '.venv',
+    };
+    const op = await observer!.start(candidate);
+    const item = {
+      ...candidate,
+      status: 'available' as const,
+      major: 3 as const,
+      version: `3.12.${++discoveries}`,
+      implementation: 'cpython',
+    };
+    await op.finish(item);
+    return { complete: true, interpreters: [item] };
+  };
+  const failure = { agent: 'worker' as const, at: 2, enabled: true };
+  const h = await setup(t, { failure, readingOnly: true, python });
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => h.records.runs[0].status === 'failed');
+  await h.service.shutdown();
+  const original = h.records.runs[0],
+    saved = await h.records.recovery(original.id).load();
+  assert.equal(original.environment?.python?.interpreters[0].version, '3.12.1');
+  const beforeBudgets = structuredClone(saved!.state.budgets);
+  const count = h.captured.length;
+  const records = new RunRecords(h.f.workspace, () => h.storage);
+  const service = new ExecutionService(
+    h.f.store,
+    h.workspaces,
+    records,
+    h.runner,
+    undefined,
+    undefined,
+    python,
+  );
+  t.after(() => service.shutdown());
+  await service.ready;
+  failure.enabled = false;
+  await service.request({ kind: 'resume', runId: original.id });
+  await waitUntil(() => terminalStatuses.includes(records.runs[0].status));
+  assert.equal(records.runs[0].status, 'completed', records.runs[0].error);
+  assert.equal(records.runs[0].environment?.python?.interpreters[0].version, '3.12.2');
+  assert.match(JSON.stringify(h.captured[count].body), /3\.12\.2/);
+  const after = await records.recovery(original.id).load();
+  assert.equal(
+    after!.operations.filter((op) => op.name === 'write_file' && op.status === 'succeeded').length,
+    1,
+  );
+  assert.equal(after!.operations.filter((op) => op.name === 'Discover local Python').length, 2);
+  for (const [key, previous] of Object.entries(beforeBudgets)) {
+    assert.ok(after!.state.budgets[key].turn >= previous.turn);
+    assert.ok((after!.state.budgets[key].calls ?? 0) >= (previous.calls ?? 0));
+  }
+});
+
+test('Python probe journal write failure prevents model requests and records a persistence failure', async (t) => {
+  const python = new PythonDiscovery();
+  python.discover = async (_directory, _env, _signal, observer) => {
+    await breakJournal();
+    await observer!.start({ path: '/fixture/python', source: 'path', label: 'python3' });
+    throw new Error('A failed operation write must not start a probe');
+  };
+  const h = await setup(t, { readingOnly: true, python });
+  const breakJournal = async () => {
+    const run = h.records.runs[0];
+    const journal = join(h.storage, 'recovery', `${run.id}.journal`);
+    await rm(journal);
+    await mkdir(journal);
+  };
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+  assert.equal(h.records.runs[0].status, 'failed');
+  assert.equal(h.records.runs[0].fault?.code, 'persistenceFailed');
+  assert.equal(h.captured.length, 0);
+});
+
+test('Python unknown-process lock survives a simultaneous probe-journal failure', async (t) => {
+  const python = new PythonDiscovery();
+  python.discover = async (_directory, _env, _signal, observer) => {
+    const op = await observer!.start({ path: '/fixture/python', source: 'path', label: 'python3' });
+    await breakJournal();
+    await assert.rejects(
+      op.onProcess({ platform: 'linux', pid: 2147483647, created: 'nonexistent-test-process' }),
+    );
+    await op.finish(
+      { path: '/fixture/python', source: 'path', label: 'python3', status: 'unavailable' },
+      new CommandShutdownError(),
+    );
+    throw new Error('Unknown process must stop the run');
+  };
+  const h = await setup(t, { readingOnly: true, python });
+  const breakJournal = async () => {
+    const journal = join(h.storage, 'recovery', `${h.records.runs[0].id}.journal`);
+    await rm(journal);
+    await mkdir(journal);
+  };
+  await h.service.request({ kind: 'start', taskId: h.task.id });
+  await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+  assert.equal(h.records.runs[0].fault?.code, 'persistenceFailed');
+  assert.equal(h.captured.length, 0);
+  await assert.rejects(h.service.request({ kind: 'start', taskId: h.task.id }), {
+    code: 'shutdownUnconfirmed',
+  });
+});

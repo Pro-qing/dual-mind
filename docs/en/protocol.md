@@ -202,3 +202,9 @@ Commands add optional `stdout`, `stderr`, `durationMs`, `termination`, and `actu
 ## Bundled tool environment summary
 
 The optional `ExecutionEnvironmentSummary.bundledTools?` array contains `name` (`rg`/`fd`/`jq`), bundled `version`, `status` (`available`/`unavailable`) and optional `reason` (`unsupportedPlatform`, `unconfigured`, `missing`, `integrity`, `architecture`, `permission`, `unreadable`). This describes fallbacks, not actual PATH selection. Older snapshots remain valid without the field. Raw environment values are not persisted; recovery reconstructs the current environment. Model tools and command result protocols are unchanged. See [bundled commands](./bundled-tools.md).
+
+## Local Python identity summary
+
+Optional `ExecutionEnvironmentSummary.python?` contains `complete` and `interpreters`. Each candidate retains `path` (invocation path), `source` (`project`/`virtualenv`/`conda`/`path`), `label`, and `status` (`available`/`unavailable`/`skipped`). Success adds `major`, `version`, `implementation`, and reported `executable`. Unavailable candidates use `reason`: `missing`, `permission`, `startFailed`, `timeout`, `outputLimit`, `probeFailed`, `invalidResponse`, `unsupportedVersion` or `budget`. `complete: false` means discovery is incomplete, not that omitted interpreters are absent. Older snapshots remain valid without this optional field.
+
+Each probe reuses a separate `environment` recovery operation; no model tool or Webview request is added. Its result contains only redacted identity/status, without raw stdout/stderr. An internal `runProcess` output-limit option caps probes at 4 KiB; ordinary commands retain the shared 2 MiB limit. Discovery is neither third-party package verification nor acceptance evidence. See [local Python](./local-python.md).

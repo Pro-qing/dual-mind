@@ -203,3 +203,7 @@ Tool failures, skipped/rejected calls and unknown results have separate labels. 
 ## Bundled command-line tools
 
 Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands have priority; only task subprocess PATH is extended. Explicitly run `npm run tools:fetch` before building; valid caches support offline builds. Versions, failures, licenses and validation are documented in [Bundled command-line tools](./bundled-tools.md).
+
+## Local Python
+
+Preparation and recovery identify local Python 2.7/3 and common project environments, supplying verified invocation paths and versions to Worker and Reviewer. Execution retains `run_command`, without bundling/installing Python or changing global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.

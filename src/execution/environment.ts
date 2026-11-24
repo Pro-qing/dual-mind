@@ -1,3 +1,4 @@
+import { PythonDiscovery, type PythonProbeObserver } from './python';
 import type { BundledTools } from './bundledTools';
 import type { ProcessIdentity } from './processTree';
 import { randomUUID } from 'node:crypto';
@@ -6,7 +7,7 @@ import type { ResolvedExecutionEnvironment } from '../shared/environment';
 import { baseEnvironment, CommandShutdownError, runProcess } from './commands';
 import { selectShell, shellInvocation } from './shell';
 
-/** One environment snapshot per run; no language-specific discovery or activation. */
+/** One environment snapshot per run; interpreter discovery never activates an environment. */
 export class ProjectEnvironment {
   private readonly host: Record<string, string>;
   private readonly secrets = new Set<string>();
@@ -18,6 +19,8 @@ export class ProjectEnvironment {
     private readonly chooseShell = selectShell,
     private readonly onProcess?: (identity: ProcessIdentity) => Promise<void>,
     private readonly bundledTools?: BundledTools,
+    private readonly python = new PythonDiscovery(),
+    private readonly pythonObserver?: PythonProbeObserver,
   ) {
     this.host = baseEnvironment(host);
     this.rememberSecrets(this.host);
@@ -132,6 +135,7 @@ export class ProjectEnvironment {
       env = bundled.env;
       summary.bundledTools = bundled.tools;
     }
+    summary.python = await this.python.discover(directory, env, signal, this.pythonObserver);
     return { env, summary };
   }
 }

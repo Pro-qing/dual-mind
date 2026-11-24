@@ -99,6 +99,8 @@ export async function runProcess(
   signal: AbortSignal,
   options: {
     env: Record<string, string>;
+    /** Internal probes can reduce the shared stdout/stderr cap; business commands keep 2 MiB. */
+    maxOutputBytes?: number;
     output?: (text: string) => void;
     windowsVerbatimArguments?: boolean;
     onProcess?: (identity: ProcessIdentity) => Promise<void>;
@@ -109,6 +111,14 @@ export async function runProcess(
   }
   if (!['linux', 'darwin', 'win32'].includes(process.platform)) {
     throw new OperationError('commandPlatformUnsupported');
+  }
+  const maxOutputBytes = options.maxOutputBytes ?? 2 * 1024 * 1024;
+  if (
+    !Number.isSafeInteger(maxOutputBytes) ||
+    maxOutputBytes < 1 ||
+    maxOutputBytes > 2 * 1024 * 1024
+  ) {
+    throw new RangeError('Invalid process output limit');
   }
   const since = Date.now();
   return new Promise((resolve, reject) => {
@@ -246,7 +256,7 @@ export async function runProcess(
           return;
         }
         bytes += chunk.byteLength;
-        if (bytes > 2 * 1024 * 1024) {
+        if (bytes > maxOutputBytes) {
           reason ||= 'outputLimit';
           stop();
           return;

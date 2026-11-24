@@ -54,3 +54,5 @@ Runtime uses extension resources without the development cache. Existing Git, sh
 ## Validation resources
 
 Validation uses small temporary repositories, controlled PATH values and local mock models, without uninstalling or modifying host commands. Comprehensive checks, extension-host tests and packaging run sequentially with one CPU, low priority, a 256 MiB test heap and process-tree resource monitoring. Test limits do not establish a product command sandbox or fixed memory quota.
+
+Python uses existing local environments; see [local Python](./local-python.md). It is separate from the bundled rg/fd/jq assets.

@@ -202,3 +202,9 @@ UI → 宿主 `view.state` 镜像显示状态，`navigation.ack` 使用导航请
 ## 内置工具环境摘要
 
 `ExecutionEnvironmentSummary.bundledTools?` 是可选数组，项包含 `name`（`rg`／`fd`／`jq`）、内置 `version`、`status`（`available`／`unavailable`）及可选 `reason`（`unsupportedPlatform`、`unconfigured`、`missing`、`integrity`、`architecture`、`permission`、`unreadable`）。它描述备用工具，不是 PATH 实际选择结果；旧快照缺失该字段时保持兼容。环境值不持久化，恢复重建当前运行环境，模型工具和命令结果协议保持不变。详见[内置命令](./bundled-tools.md)。
+
+## 本机 Python 身份摘要
+
+`ExecutionEnvironmentSummary.python?` 包含 `complete` 和 `interpreters`。每个候选保留 `path`（调用路径）、`source`（`project`／`virtualenv`／`conda`／`path`）、`label`、`status`（`available`／`unavailable`／`skipped`）。成功时附加 `major`、`version`、`implementation` 和解释器报告的 `executable`；不可用时用 `reason` 记录 `missing`、`permission`、`startFailed`、`timeout`、`outputLimit`、`probeFailed`、`invalidResponse`、`unsupportedVersion` 或 `budget`。`complete: false` 表示发现未完成，不能据此认定未列出的解释器不存在。旧快照没有该字段时兼容读取。
+
+每个探测复用独立的 `environment` 恢复操作类型，不新增模型工具或 Webview 请求。其 `result` 仅含脱敏身份／状态，原始 stdout／stderr 不入日志。内部 `runProcess` 可选输出上限用于将探测限制为 4 KiB；普通命令仍采用共享 2 MiB 上限。发现结果不是第三方包可用性或业务验收证据。详见[本机 Python](./local-python.md)。
