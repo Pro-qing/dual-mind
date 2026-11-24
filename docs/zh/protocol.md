@@ -4,9 +4,9 @@
 
 [工具错误处理与前端统一接入](./tool-errors.md)已实现：结果分层、批次失败跳过、三次重复暂停及完整生命周期页面。
 
-**当前功能：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及[工具错误处理](./tool-errors.md)的宿主与前端均已纳入 0.0.6。[场景 30–34](./task-lifecycle-proposal.md)与[场景 35–37](./tool-errors-proposal.md)保留原审核和实现记录。
+**当前功能：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及[工具错误处理](./tool-errors.md)的宿主与前端自 0.0.6 起提供。[场景 30–34](./task-lifecycle-proposal.md)与[场景 35–37](./tool-errors-proposal.md)保留原审核和实现记录。
 
-**当前源码版本：0.0.6 · 本地版本已准备，尚未公开发布。** 记录日期：2026-11-24；本地附注标签 `v0.0.6` 对应本次完整源码，推送和发布由维护者另行执行。当前能力、验证与制品见[0.0.6 版本说明](./release-notes-0.0.6.md)，历史版本记录保留原意。
+**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
 
 ## 页面状态与错误兼容
 
@@ -121,6 +121,8 @@ ExecutionConfig 新增可选 customCommandsEnabled；缺省按原命令数组是
 TaskPlan 包含宿主分配的 version、objective、requirements、steps、criteria 和 revisionReason。每个验收项包含稳定 id、description、verification（command／reading）、evidence 及 reason；reading 必须说明原因。方案最多 40 个步骤和 40 个验收项。修订必须说明原因并保留已有验收 ID 与验证方式。
 
 Worker 的 finish_work 包含 summary、completedSteps、逐验收项 evidence（criterionId、commandIds、evidence）及 unresolved；宿主补充 planVersion 和 revision。Reviewer 的 submit_review 包含 verdict、summary、逐项 acceptance（带 passed），拒绝必须有 nextPlan。审批须覆盖全部验收项，实际证据和附加检查必须有效；不能以模型提供的成功字符串替代真实命令记录。
+
+`unresolved` 专用于阻断事项，范围说明放入 summary／evidence。`evidenceInvalid.params.reason` 标识具体验收失败原因，可携带验收项／命令 ID 及预期／实际值；消息封装和存储版本保持兼容，旧错误继续可读。模型／工具计数不设累计上限，恢复时保留。存在未完成且被跟踪的子进程时，命令返回 `backgroundIncomplete`，保留 `actualExitCode`，不能作为成功验证。
 
 run_command 接收 name、command（shell 文本）、可选 cwd（默认 dot）、purpose（prepare／verify／explore）、criterionIds 和可选 timeoutSeconds（默认 180）。规划／答疑仅允许 explore。宿主填写证据 ID、agent、phase、planVersion（尚无方案时为 0），并记录 shell、指纹、输出及结果。Reviewer 可引用自己在验收阶段生成的 verify 记录。旧预设保留 program／args，缺少 agent 的历史命令按 Worker 解释。read_command_output 继续分页读取完整脱敏输出。见[通用 shell 执行](./shell-execution.md)。
 

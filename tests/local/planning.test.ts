@@ -1,3 +1,15 @@
+import {
+  OperationError,
+  redactError,
+  toAppError,
+  formatError,
+  errorMessages,
+} from '../../src/shared/errors';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ExecutionEvidenceItem } from '../../webview/src/Execution';
+import { UIContext, type UIContextValue } from '../../webview/src/context';
+import type { RunEvent } from '../../src/shared/execution';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -360,4 +372,228 @@ test('Reviewer can supply independent verification while stale, failed and unsub
     );
     assert.ok(!definitions.some((d) => ['write_file', 'delete_file'].includes(d.name)));
   }
+});
+
+test('acceptance diagnostics identify blockers without weakening approval', () => {
+  const commands = new Map([[command.id, command]]);
+  const reject = (work: WorkSubmission, reason: string) =>
+    assert.throws(
+      () => validateReview(review, plan, work, commands, 'current', [], false),
+      (error: unknown) => error instanceof OperationError && error.params?.reason === reason,
+    );
+  reject({ ...submission, unresolved: ['Optional browser tests were not run'] }, 'unresolved');
+  validateReview(
+    review,
+    plan,
+    { ...submission, summary: 'Optional browser tests were not run' },
+    commands,
+    'current',
+    [],
+    false,
+  );
+  reject({ ...submission, revision: 'old' }, 'submissionRevision');
+  for (const [reason, patch] of [
+    ['commandFailed', { ok: false, exitCode: 1 }],
+    ['commandPlan', { planVersion: 0 }],
+    ['commandRevision', { after: 'old' }],
+    ['commandPurpose', { purpose: 'explore' }],
+    ['commandCriterion', { criterionIds: [] }],
+  ] as [string, Partial<CommandEvidence>][]) {
+    assert.throws(
+      () =>
+        validateReview(
+          review,
+          plan,
+          submission,
+          new Map([[command.id, { ...command, ...patch }]]),
+          'current',
+          [],
+          false,
+        ),
+      (error: unknown) =>
+        error instanceof OperationError &&
+        error.params?.reason === reason &&
+        error.params.commandId === command.id &&
+        error.params.criterionId === 'cancel',
+    );
+  }
+  assert.throws(
+    () => validateReview(review, plan, submission, new Map(), 'current', [], false),
+    (error: unknown) =>
+      error instanceof OperationError && error.params?.reason === 'commandMissing',
+  );
+  assert.throws(
+    () =>
+      validateReview(
+        review,
+        plan,
+        submission,
+        new Map([...commands, ['new', { ...command, id: 'new', ok: false }]]),
+        'current',
+        [],
+        false,
+      ),
+    (error: unknown) =>
+      error instanceof OperationError &&
+      error.params?.reason === 'latestVerification' &&
+      error.params.commandId === 'new',
+  );
+});
+
+test('validation fault survives persisted outcome and actual Debug rendering in both languages', () => {
+  let fault;
+  try {
+    validateReview(
+      review,
+      plan,
+      { ...submission, unresolved: ['Optional browser tests not run; Bearer private-token'] },
+      new Map([[command.id, command]]),
+      'current',
+      [],
+      false,
+    );
+    assert.fail('must reject');
+  } catch (error) {
+    fault = redactError(toAppError(error));
+  }
+  const event = JSON.parse(
+    JSON.stringify({
+      kind: 'tool',
+      text: 'submit_review',
+      tool: {
+        tool: 'submit_review',
+        operationId: 'op',
+        callId: 'call',
+        requestId: 'req',
+        execution: 'executed',
+        status: 'failed',
+        fault,
+      },
+    }),
+  ) as RunEvent;
+  for (const locale of ['en', 'zh-CN'] as const) {
+    const html = renderToStaticMarkup(
+      createElement(
+        UIContext.Provider,
+        {
+          value: { snapshot: { locale } } as UIContextValue,
+        },
+        createElement(ExecutionEvidenceItem, { event }),
+      ),
+    );
+    assert.match(html, /Optional browser tests not run/);
+    assert.match(html, /redacted/);
+    assert.doesNotMatch(html, /private-token/);
+    assert.match(html, locale === 'en' ? /blocked by unresolved/ : /未解决事项阻止验收通过/);
+    assert.match(html, /data-outcome="failed"/);
+  }
+  assert.equal(formatError('en', { code: 'evidenceInvalid' }), errorMessages.evidenceInvalid[0]);
+  assert.ok(
+    String(
+      redactError({ code: 'evidenceInvalid', params: { blockers: 'x'.repeat(13000) } }).params
+        ?.blockers,
+    ).length <= 12000,
+  );
+});
+
+test('remaining acceptance diagnostics distinguish coverage, sources, latest citations and reading evidence', () => {
+  const commands = new Map([[command.id, command]]);
+  const rejects = (action: () => unknown, reason: string) =>
+    assert.throws(
+      action,
+      (error: unknown) =>
+        error instanceof OperationError &&
+        error.code === 'evidenceInvalid' &&
+        error.params?.reason === reason,
+    );
+  rejects(() => validateSubmission({ ...submission, evidence: [] }, plan, commands), 'coverage');
+  rejects(() => validateSubmission(submission, plan, new Map()), 'commandMissing');
+  rejects(
+    () =>
+      validateSubmission(submission, plan, new Map([[command.id, { ...command, planVersion: 0 }]])),
+    'commandPlan',
+  );
+  rejects(
+    () =>
+      validateReview(
+        review,
+        plan,
+        submission,
+        commands,
+        'current',
+        [{ ...command, id: 'additional', ok: false }],
+        false,
+      ),
+    'additionalCheck',
+  );
+  rejects(
+    () =>
+      validateReview(
+        { ...review, acceptance: [{ ...review.acceptance[0], commandIds: [] }] },
+        plan,
+        submission,
+        commands,
+        'current',
+        [],
+        false,
+      ),
+    'commandRequired',
+  );
+  rejects(
+    () =>
+      validateReview(
+        review,
+        plan,
+        { ...submission, evidence: [{ ...submission.evidence[0], commandIds: [] }] },
+        commands,
+        'current',
+        [],
+        false,
+      ),
+    'commandSource',
+  );
+  rejects(
+    () =>
+      validateReview(
+        review,
+        plan,
+        submission,
+        new Map([...commands, ['new', { ...command, id: 'new' }]]),
+        'current',
+        [],
+        false,
+      ),
+    'latestVerification',
+  );
+  const reading = validatePlan({
+    ...input,
+    criteria: [{ ...input.criteria[0], verification: 'reading', reason: 'Read artifact' }],
+  });
+  rejects(
+    () =>
+      validateReview(
+        { ...review, acceptance: [{ ...review.acceptance[0], evidence: ' ' }] },
+        reading,
+        submission,
+        commands,
+        'current',
+        [],
+        false,
+      ),
+    'readingRequired',
+  );
+  validateReview(
+    {
+      ...review,
+      verdict: 'changes_requested',
+      acceptance: [{ ...review.acceptance[0], passed: false }],
+      nextPlan: { ...input, revisionReason: 'Fix blockers' },
+    },
+    plan,
+    { ...submission, unresolved: ['Real blocker'] },
+    commands,
+    'current',
+    [],
+    false,
+  );
 });

@@ -1,4 +1,4 @@
-import { OperationError } from '../shared/errors';
+import { OperationError, type EvidenceFailureReason } from '../shared/errors';
 import type {
   Agent,
   PlanInput,
@@ -58,7 +58,7 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
     {
       name: 'run_command',
       description:
-        'Execute a task-related command in the host-selected shell. Each call is independent; combine activation and work in this call. Prepare project dependencies as needed; do not install user or system toolchains. Verification must reference current command criteria. cwd is relative to the task, defaults to dot. Timeout defaults to 180 seconds. Commands run as the user, without an OS sandbox.',
+        'Execute a task-related command in the host-selected shell. Each call is independent; combine activation and work in this call. Wait for foreground completion; surviving background children are stopped and the command fails. Prepare project dependencies as needed; do not install user or system toolchains. Verification must reference current command criteria. cwd is relative to the task, defaults to dot. Timeout defaults to 180 seconds. Commands run as the user, without an OS sandbox.',
       parameters: object(
         {
           name: { ...nonempty, maxLength: 200 },
@@ -190,7 +190,7 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
     {
       name: 'finish_work',
       description:
-        'Submit artifacts for Reviewer acceptance, not task completion. Cover all current criteria and reference host command IDs. State unresolved work honestly.',
+        'Submit artifacts for Reviewer acceptance, not task completion. Cover all current criteria and reference host command IDs. unresolved must contain only blockers to completion; put scope notes and omitted optional checks in summary/evidence. Never omit real blockers.',
       parameters: object({
         summary: nonempty,
         completedSteps: array(nonempty),
@@ -382,15 +382,22 @@ export function validateSubmission(
   plan: TaskPlan,
   commands: Map<string, CommandEvidence>,
 ) {
-  if (
-    !covers(plan, submission.evidence) ||
-    submission.evidence.some((e) =>
-      e.commandIds.some(
-        (id) => !commands.has(id) || commands.get(id)!.planVersion !== plan.version,
-      ),
-    )
-  ) {
-    throw new OperationError('evidenceInvalid');
+  if (!covers(plan, submission.evidence)) {
+    throw new OperationError('evidenceInvalid', { reason: 'coverage' });
+  }
+  for (const e of submission.evidence) {
+    for (const id of e.commandIds) {
+      const c = commands.get(id);
+      if (!c || c.planVersion !== plan.version) {
+        throw new OperationError('evidenceInvalid', {
+          reason: c ? 'commandPlan' : 'commandMissing',
+          criterionId: e.criterionId,
+          commandId: id,
+          expected: plan.version,
+          actual: c?.planVersion ?? 'missing',
+        });
+      }
+    }
   }
 }
 export function validateReview(
@@ -429,13 +436,43 @@ export function validateReview(
     c.planVersion === plan.version &&
     c.before === revision &&
     c.after === revision;
-  if (
-    review.verdict === 'approve' &&
-    (submission.unresolved.length ||
-      submission.revision !== revision ||
-      additional.some((c) => !success(c)))
-  ) {
-    throw new OperationError('evidenceInvalid');
+  const reject = (
+    reason: EvidenceFailureReason,
+    params: Record<string, string | number> = {},
+  ): never => {
+    throw new OperationError('evidenceInvalid', { reason, ...params });
+  };
+  const checkCommand = (c: CommandEvidence | undefined, commandId: string, criterionId: string) => {
+    const context = { commandId, criterionId };
+    if (!c) {
+      return reject('commandMissing', context);
+    }
+    if (!c.ok || c.exitCode !== 0 || c.reason || c.fault) {
+      return reject('commandFailed', context);
+    }
+    if (c.planVersion !== plan.version) {
+      return reject('commandPlan', { ...context, expected: plan.version, actual: c.planVersion });
+    }
+    if (c.before !== revision || c.after !== revision) {
+      return reject('commandRevision', {
+        ...context,
+        expected: revision,
+        actual: `${c.before} → ${c.after}`,
+      });
+    }
+  };
+  if (review.verdict === 'approve') {
+    if (submission.unresolved.length) {
+      reject('unresolved', { blockers: submission.unresolved.join('\n') });
+    }
+    if (submission.revision !== revision) {
+      reject('submissionRevision', { expected: revision, actual: submission.revision });
+    }
+    for (const c of additional) {
+      if (!success(c)) {
+        reject('additionalCheck', { commandId: c.id });
+      }
+    }
   }
   for (const criterion of plan.criteria) {
     const e = review.acceptance.find((e) => e.criterionId === criterion.id)!;
@@ -443,24 +480,34 @@ export function validateReview(
       continue;
     }
     if (submission.revision !== revision) {
-      throw new OperationError('evidenceInvalid');
+      reject('submissionRevision', {
+        criterionId: criterion.id,
+        expected: revision,
+        actual: submission.revision,
+      });
     }
     const work = submission.evidence.find((e) => e.criterionId === criterion.id)!;
-    if (
-      criterion.verification === 'command' &&
-      (!e.commandIds.length ||
-        e.commandIds.some((id) => {
-          const c = commands.get(id);
-          return (
-            (!work.commandIds.includes(id) &&
-              !(c?.agent === 'reviewer' && c.phase === 'reviewer')) ||
-            !success(c) ||
-            c!.purpose !== 'verify' ||
-            !c!.criterionIds.includes(criterion.id)
-          );
-        }))
-    ) {
-      throw new OperationError('evidenceInvalid');
+    if (criterion.verification === 'command') {
+      if (!e.commandIds.length) {
+        reject('commandRequired', { criterionId: criterion.id });
+      }
+      for (const id of e.commandIds) {
+        const c = commands.get(id);
+        checkCommand(c, id, criterion.id);
+        const context = { criterionId: criterion.id, commandId: id };
+        if (
+          !work?.commandIds.includes(id) &&
+          !(c?.agent === 'reviewer' && c.phase === 'reviewer')
+        ) {
+          reject('commandSource', context);
+        }
+        if (c!.purpose !== 'verify') {
+          reject('commandPurpose', { ...context, actual: c!.purpose });
+        }
+        if (!c!.criterionIds.includes(criterion.id)) {
+          reject('commandCriterion', context);
+        }
+      }
     }
     if (criterion.verification === 'command') {
       const latest = [...commands.values()]
@@ -472,11 +519,14 @@ export function validateReview(
         )
         .at(-1);
       if (!latest || !success(latest) || !e.commandIds.includes(latest.id)) {
-        throw new OperationError('evidenceInvalid');
+        reject('latestVerification', {
+          criterionId: criterion.id,
+          commandId: latest?.id ?? 'missing',
+        });
       }
     }
     if (criterion.verification === 'reading' && !e.evidence.trim()) {
-      throw new OperationError('evidenceInvalid');
+      reject('readingRequired', { criterionId: criterion.id });
     }
   }
 }

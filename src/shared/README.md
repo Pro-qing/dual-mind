@@ -12,4 +12,4 @@ TaskMessage and conversation/evidence pages support durable follow-up across exe
 
 `artifacts.ts` 定义显式 Git 生命周期操作和保存成果；`context.ts` 定义角色预算及持久化摘要检查点。
 
-Tool outcomes now distinguish execution, failure, rejection, skipped calls and unknown effects; repeated failures pause without resetting total budgets. / 工具结果区分执行、失败、拒绝、跳过及未知副作用；重复失败暂停不重置总预算。
+Tool outcomes now distinguish execution, failure, rejection, skipped calls and unknown effects; repeated failures pause while retaining diagnostic counts, without cumulative model/tool call limits. / 工具结果区分执行、失败、拒绝、跳过及未知副作用；重复失败暂停时保留诊断计数，模型／工具调用不设累计次数上限。

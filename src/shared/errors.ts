@@ -2,6 +2,10 @@ import { t } from './i18n';
 import { modelErrorCodes, type ErrorCode, type Locale, type ModelErrorCode } from './model';
 
 export const errorMessages = {
+  commandBackgroundIncomplete: [
+    'The parent command exited while child processes were still running. They were stopped; completion was not verified. Run the command in the foreground and wait for its final result.',
+    '父命令退出时仍有子进程运行，已将其停止，无法确认工作完成。请在前台运行命令并等待最终结果。',
+  ],
   toolFileMissing: [
     'The requested file does not exist. Inspect the available paths and correct this call.',
     '请求的文件不存在，请检查可用路径并修正调用。',
@@ -424,6 +428,51 @@ export const faultCodes: readonly FaultCode[] = [
   ...(Object.keys(errorMessages) as (keyof typeof errorMessages)[]),
 ];
 const knownCodes = new Set<string>(faultCodes);
+export const evidenceReasons = {
+  coverage: [
+    'Submission must cover every current criterion exactly once.',
+    '提交必须逐一覆盖当前全部验收项。',
+  ],
+  unresolved: [
+    'Completion is blocked by unresolved items: {blockers}',
+    '未解决事项阻止验收通过：{blockers}',
+  ],
+  submissionRevision: [
+    'Submission revision differs: expected {expected}, actual {actual}.',
+    '提交成果版本不一致：预期 {expected}，实际 {actual}。',
+  ],
+  additionalCheck: [
+    'Additional check failed or is stale: {commandId}.',
+    '附加检查失败或已过期：{commandId}。',
+  ],
+  commandMissing: ['Command record is missing.', '命令记录缺失。'],
+  commandFailed: ['Command did not succeed.', '命令未成功。'],
+  commandPlan: [
+    'Command plan differs: expected {expected}, actual {actual}.',
+    '命令计划版本不一致：预期 {expected}，实际 {actual}。',
+  ],
+  commandRevision: [
+    'Command artifact differs: expected {expected}, actual {actual}.',
+    '命令成果版本不一致：预期 {expected}，实际 {actual}。',
+  ],
+  commandRequired: ['Command evidence is required.', '缺少命令证据引用。'],
+  commandSource: [
+    'Command is neither submitted Worker evidence nor Reviewer verification.',
+    '命令既非 Worker 提交证据，也非 Reviewer 验证。',
+  ],
+  commandPurpose: [
+    'Command purpose must be verify; actual {actual}.',
+    '命令用途必须是 verify，实际为 {actual}。',
+  ],
+  commandCriterion: ['Command is not associated with this criterion.', '命令未关联此验收项。'],
+  latestVerification: [
+    'Latest verification failed, is stale, or was not cited.',
+    '最新验证失败、已过期或未被引用。',
+  ],
+  readingRequired: ['Reading evidence explanation is required.', '缺少阅读验收说明。'],
+} as const;
+export type EvidenceFailureReason = keyof typeof evidenceReasons;
+
 export function formatError(locale: Locale, fault: AppError): string {
   if (!knownCodes.has(fault.code)) {
     return t(locale, 'executionError');
@@ -431,7 +480,16 @@ export function formatError(locale: Locale, fault: AppError): string {
   const template = Object.hasOwn(errorMessages, fault.code)
     ? errorMessages[fault.code as keyof typeof errorMessages][locale === 'zh-CN' ? 1 : 0]
     : t(locale, fault.code as ErrorCode | ModelErrorCode);
-  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+  const reason =
+    fault.code === 'evidenceInvalid' &&
+    typeof fault.params?.reason === 'string' &&
+    Object.hasOwn(evidenceReasons, fault.params.reason)
+      ? evidenceReasons[fault.params.reason as EvidenceFailureReason][locale === 'zh-CN' ? 1 : 0]
+      : undefined;
+  const diagnostic = reason
+    ? `${reason}${fault.params?.criterionId ? ' [criterionId: {criterionId}]' : ''}${fault.params?.commandId ? ' [commandId: {commandId}]' : ''}`
+    : template;
+  return diagnostic.replace(/\{(\w+)\}/g, (match, key: string) =>
     String(fault.params?.[key] ?? match),
   );
 }

@@ -4,7 +4,7 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
 **Status: host recovery and approved recovery controls are implemented.** This describes development source, not an installed or published release. Use the play icon with **Continue execution** after resolving a failure, including after reloading VS Code. The notice identifies Worker, Reviewer or System, phase, operation and recovery attempts. Disabled controls include an explanation; uncertain processes can be checked again without bypassing cleanup.
 
@@ -12,7 +12,7 @@
 
 Model and system failures retain the responsible role, phase and operation. Recovery keeps the run ID, directory, plan and work round while reading current task endpoint, credential and model bindings. Requirements, role instructions, command presets and round limits remain frozen to the run. Reviewer independently verifies; Worker changes source. Host preparation failures are identified separately from model failures.
 
-Closing or reloading the extension marks unfinished runs `interrupted`; neither models nor commands restart automatically. Only the latest, unsuperseded run of a task is eligible. Explicit stops, exhausted limits and legacy runs without recovery data cannot bypass these rules. Restart creates a new run; task deletion removes its recovery files. Messages sent during failures remain queued: Reviewer answers or revises the plan before returning to the saved position.
+Closing or reloading the extension marks unfinished runs `interrupted`; neither models nor commands restart automatically. Only the latest, unsuperseded run of a task is eligible. Explicit stops, exhausted review rounds, history/correction limits and legacy runs without recovery data cannot bypass these rules. Runs stopped by the old `toolTurnLimit` or `toolCallLimit` can be continued manually after upgrading, provided the latest run has valid recovery data. Historical counters above 20/200 remain readable; counters are retained without a storage-format migration. Restart creates a new run; task deletion removes its recovery files. Messages sent during failures remain queued: Reviewer answers or revises the plan before returning to the saved position.
 
 Recovery resumes role phases and recorded operation boundaries, not operating-system process internals. Existing file changes remain. Arbitrary shell commands have neither transactions nor an exactly-once guarantee. The executor does not replay a completed operation ID; a new model call can still cause a similar side effect.
 

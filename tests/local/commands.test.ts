@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { realpath } from 'node:fs/promises';
 import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
@@ -6,7 +7,7 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { PresetCommand } from '../../src/shared/execution';
-import { groupAlive, windowsProcesses } from '../../src/execution/processTree';
+import { groupAlive, windowsProcesses, processIdentity } from '../../src/execution/processTree';
 import { selectShell } from '../../src/execution/shell';
 import { baseEnvironment } from '../../src/execution/commands';
 import { errorText, toAppError } from '../../src/shared/errors';
@@ -189,14 +190,17 @@ test('stopping kills resistant children even if their parent exits first', async
 });
 
 for (const inheritedPipes of [true, false]) {
-  test(`successful parent cleans up surviving children (inherited pipes=${inheritedPipes})`, async (t) => {
+  test(`parent exit with surviving children fails after cleanup (inherited pipes=${inheritedPipes})`, async (t) => {
     const h = await fixture(t);
     const result = await h.run(`
       const {spawn} = require('node:child_process');
       const child = spawn(process.execPath, ['-e', 'setInterval(()=>{},1000)'], {stdio:${inheritedPipes ? "'inherit'" : "'ignore'"}});
       console.log(child.pid); child.unref();
     `);
-    assert.equal(result.ok, true, result.output);
+    assert.equal(result.ok, false, result.output);
+    assert.equal(result.reason, 'backgroundIncomplete');
+    assert.equal(result.termination, 'backgroundIncomplete');
+    assert.equal(result.actualExitCode, 0);
     await assertDead(Number(result.output.trim()));
   });
 }
@@ -325,5 +329,42 @@ test(
     const failure = await run('exit /b 7');
     assert.equal(failure.ok, false);
     assert.equal(failure.exitCode, 7);
+  },
+);
+
+test('foreground parent waits for child completion and preserves its result', async (t) => {
+  const h = await fixture(t);
+  for (const code of [0, 7]) {
+    const result = await h.run(`
+      const {spawn} = require('node:child_process');
+      const child = spawn(process.execPath, ['-e', 'setTimeout(()=>process.exit(${code}),80)'], {stdio:'inherit'});
+      child.on('exit', code => process.exit(code));
+    `);
+    assert.equal(result.ok, code === 0);
+    assert.equal(result.actualExitCode, code);
+    assert.equal(result.termination, 'exited');
+    assert.equal(result.reason, undefined);
+  }
+});
+
+test(
+  'Linux identity probe tolerates a process disappearing during stat read without hiding access errors',
+  { skip: process.platform !== 'linux' },
+  async (t) => {
+    const fs = createRequire(__filename)('node:fs/promises') as typeof import('node:fs/promises');
+    for (const code of ['ENOENT', 'ESRCH', 'EACCES']) {
+      const probe = t.mock.method(fs, 'readFile', async () => {
+        throw Object.assign(new Error('process stat fixture'), { code });
+      });
+      try {
+        if (code === 'EACCES') {
+          await assert.rejects(processIdentity(123), { code });
+        } else {
+          assert.equal(await processIdentity(123), undefined);
+        }
+      } finally {
+        probe.mock.restore();
+      }
+    }
   },
 );

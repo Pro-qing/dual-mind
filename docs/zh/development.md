@@ -2,7 +2,7 @@
 
 [English](../en/development.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.6 · 本地版本已准备，尚未公开发布。** 记录日期：2026-11-24；本地附注标签 `v0.0.6` 对应本次完整源码，推送和发布由维护者另行执行。当前能力、验证与制品见[0.0.6 版本说明](./release-notes-0.0.6.md)，历史版本记录保留原意。
+**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
 
 ## 开发环境
 
@@ -111,7 +111,7 @@ CI 各组合运行环境及本地存储／React 测试、格式、类型、lint�
 
 本地测试使用串行工作进程，每个测试进程的 JavaScript 堆限制为 256 MiB。资源有限时，将工程检查与各图形套件分别运行；监测完整进程树、主机可用内存、交换空间和耗时，主机余量不足时停止测试。仅限制 JavaScript 堆不能限制 Electron 总内存。`DUAL_MIND_RESOURCE_UI=1` 为图形测试增加渲染进程／堆限制并禁用无关扩展；`DUAL_MIND_SKIP_NATIVE_UI=1` 只运行 Webview 套件，随后可单独执行 `node scripts/verify-sidebar.mjs`。这些开关本身不提供操作系统级内存配额。
 
-运行 `npm run package` 时设置 `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.6-candidate.vsix`，可生成独立候选包并保留默认安装包。打包不会自动安装或发布。
+运行 `npm run package` 时设置 `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.7-candidate.vsix`，可生成独立候选包并保留默认安装包。打包不会自动安装或发布。
 
 ## 常见问题
 
@@ -169,3 +169,7 @@ VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 ## 内置常用命令
 
 Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追加任务进程 PATH。构建前显式运行 `npm run tools:fetch`，缓存完整后构建可离线进行。版本、失败行为、许可与验证见 [内置常用命令](./bundled-tools.md)。
+
+## 持续执行修复验证
+
+本地套件运行前需准备并核验内置工具缓存，独立工作树也一样：执行 `npm run tools:prepare` 与 `npm run tools:verify`。源码检出不复制被忽略的缓存。测试使用本地模型端点，无需个人凭据或付费推理。回归覆盖两种协议超过旧调用次数、恢复不重放、结构化验收错误、脱敏及后台命令清理。检查必须在前台执行并记录最终退出状态；后台启动及空输出文件不能计为验证通过。

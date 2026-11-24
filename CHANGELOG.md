@@ -2,6 +2,13 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.7 — Execution continuity and acceptance diagnostics (local, unpublished, 2026-11-24)
+
+- Remove cumulative model/tool call limits, retain counters, and allow manual recovery of runs stopped by the old limits.
+- Explain acceptance blockers, clarify `unresolved`, and preserve evidence checks and legacy error records.
+- Reject command success when tracked children remain after parent exit; keep actual exit codes and process cleanup.
+- See [0.0.7 notes](docs/en/release-notes-0.0.7.md) for validation and local installation artifacts.
+
 ## 0.0.6 — Complete task workflow and local Python (locally prepared, unpublished, 2026-11-24)
 
 - Include changes after the original `v0.0.5` tag: compact task home, worktree bases, automatic context summaries and user-controlled artifact commits, merges, preservation, cleanup and restoration, with frontend integration.

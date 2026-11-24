@@ -2,13 +2,19 @@
 
 [简体中文](../zh/tool-errors.md) · [UI record](./tool-errors-proposal.md) · [Task lifecycle](./task-lifecycle.md)
 
-**Current version: 0.0.6.** Implemented and archived during 0.0.5 development on November 23, 2026; now included in [0.0.6](./release-notes-0.0.6.md). That round approved the existing frontend designs and authorized tool-error handling and frontend integration together. Scenes 28–34 are connected; scenes 35–37 are drawn and implemented under the confirmed plan without another visual approval stop. Historical tags and publication records remain intact.
+**Current version: 0.0.7.** Implemented and archived during 0.0.5 development on November 23, 2026; available since [0.0.6](./release-notes-0.0.6.md). That round approved the existing frontend designs and authorized tool-error handling and frontend integration together. Scenes 28–34 are connected; scenes 35–37 are drawn and implemented under the confirmed plan without another visual approval stop. Historical tags and publication records remain intact.
 
 ## Three result layers
 
 Ordinary failures return to the current Worker/Reviewer without immediately changing roles or automatically rerunning commands. Tool status distinguishes `succeeded`, `failed`, `rejected`, `skipped`, `cancelled`, and `unknown`; `execution` separately indicates not started, executed, or uncertain effects. Command `ok` still means command success, distinct from a tool returning normally or a task passing acceptance.
 
 Results carry call, host operation and request IDs, structured faults, linked commands, and skip causes. Large-result excerpts preserve status, exit information and operation references; `read_operation` retains full access. Commands record stdout, stderr, duration, exit code and termination while preserving combined output. Missing historical fields are not invented. Channels share the existing 2 MiB capture budget. Redaction happens in the host; if combined output contains sensitive data, separate channels are conservatively withheld in favor of redacted combined output, preventing cross-channel credential fragments from resurfacing.
+
+## Acceptance diagnostics
+
+`evidenceInvalid` retains compatibility with old records. New errors add a typed `reason` and, when relevant, `criterionId`, `commandId` and expected/actual versions. Reasons distinguish coverage, unresolved blockers, stale submissions, additional checks, missing/failed/stale commands, incorrect source/purpose/criterion links, latest verification and missing reading explanations. Tool feedback, recovery records and Debug use the same redacted diagnostic; unknown reasons fall back to the legacy generic message.
+
+`unresolved` contains only issues that block completion. Put scope notes and omitted optional checks in `summary` or `evidence`; failed or missing required checks remain blockers. No blocker is automatically cleared. A failed `submit_review` marked “executed” means the host processed and refused the submission, not that acceptance passed.
 
 ## Batches and permissions
 
@@ -20,7 +26,7 @@ Missing files, invalid paths, ordinary permission errors, launch failures, nonze
 
 Failure identity includes role/phase, tool, effective arguments, fault/exit reason and workspace fingerprint, excluding command display names. The third matching failure without progress pauses the run; unrelated read-only diagnostics do not reset counts. A successful identical call or changed arguments/relevant state starts a new failure count. Three consecutive rejected batches also pause.
 
-Pause reasons, counts and batch results persist in recovery. Users can inspect failures, add feedback and explicitly continue; continuation opens a correction window without resetting total budgets. A phase allows 20 business model exchanges and 200 tool calls. Rejected/skipped calls in admitted batches count too; batches beyond the remaining budget do not execute. Summarization and reload/recovery neither reset totals nor replay completed tools.
+Pause reasons, counts and batch results persist in recovery. Users can inspect failures, add feedback and explicitly continue; continuation opens a correction window while retaining diagnostic counts. There is no cumulative limit on model exchanges or tool calls. Rejected/skipped calls remain counted. Summarization and reload/recovery retain counts and never replay completed tools. Task review-round, timeout, context and history limits remain independent.
 
 Compound commands retain native shell semantics: no injected `set -e` or pipefail, automatic splitting, or invented subcommand exit codes. Default timeout remains 180 seconds, accepting 10–900. The model decides how to adjust tools, arguments or the plan from explicit results.
 

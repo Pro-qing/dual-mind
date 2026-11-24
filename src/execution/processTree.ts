@@ -144,18 +144,25 @@ export class ProcessTree {
   dispose() {
     clearInterval(this.timer);
   }
-  async stop(closed: () => boolean) {
+  async stop(
+    closed: () => boolean,
+    parentExited = false,
+  ): Promise<{ backgroundIncomplete: boolean }> {
     this.dispose();
     const start = Date.now();
+    let backgroundIncomplete = false;
     if (process.platform === 'win32') {
       // Query again after killing: taskkill success alone is not proof of termination.
       while (Date.now() - start < 15000) {
         const alive = await this.scan(Math.min(5000, Math.max(1, 15000 - (Date.now() - start))));
+        if (parentExited && alive.some((row) => row.pid !== this.pid)) {
+          backgroundIncomplete = true;
+        }
         if (!alive.length && closed()) {
           if (this.failed) {
             throw new CommandShutdownError();
           }
-          return;
+          return { backgroundIncomplete };
         }
         for (const row of alive) {
           const remaining = 15000 - (Date.now() - start);
@@ -171,6 +178,8 @@ export class ProcessTree {
         await delay(50);
       }
     } else {
+      // Observe survivors before signalling; cleanup success is not command success.
+      backgroundIncomplete = parentExited && (await groupAlive(this.pid));
       signalGroup(this.pid, 'SIGTERM');
       let forced = false;
       while (Date.now() - start < 10000) {
@@ -179,7 +188,7 @@ export class ProcessTree {
           forced = true;
         }
         if (!(await groupAlive(this.pid)) && closed()) {
-          return;
+          return { backgroundIncomplete };
         }
         await delay(25);
       }
@@ -219,7 +228,8 @@ export async function processIdentity(pid: number): Promise<ProcessIdentity | un
         boot: (await readFile('/proc/sys/kernel/random/boot_id', 'utf8')).trim(),
       };
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      // A short-lived process can disappear after opening /proc/<pid>/stat.
+      if (['ENOENT', 'ESRCH'].includes((error as NodeJS.ErrnoException).code ?? '')) {
         return undefined;
       }
       throw error;

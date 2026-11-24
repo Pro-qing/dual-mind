@@ -188,3 +188,23 @@ test(
     assert.equal(await groupAlive(child.pid!), false);
   },
 );
+
+test('recovery retains counters above legacy limits and rejects invalid counters', async (t) => {
+  const folder = await mkdtemp(join(tmpdir(), 'dualmind-counts-'));
+  t.after(() => rm(folder, { recursive: true, force: true }));
+  const { id, state } = await data();
+  state.turn = 321;
+  state.budgets = { worker: { turn: 321, calls: 4321, corrections: 0 } };
+  await new RecoveryStore(folder, id).state(state);
+  assert.deepEqual((await new RecoveryStore(folder, id).load())?.state.budgets, state.budgets);
+  for (const invalid of [-1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+    for (const field of ['turn', 'calls'] as const) {
+      const sample = await data();
+      sample.state.budgets.worker = { turn: 21, calls: 201, corrections: 0, [field]: invalid };
+      await new RecoveryStore(folder, sample.id).state(sample.state);
+      await assert.rejects(new RecoveryStore(folder, sample.id).load(), {
+        code: 'recoveryInvalid',
+      });
+    }
+  }
+});

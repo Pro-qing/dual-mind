@@ -2,7 +2,7 @@
 
 [简体中文](../zh/design.md) · [Documentation](./README.md)
 
-**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
 **Approved new designs:** [Compact task list](./task-home-compact-proposal.md), scenes 28–29, covers 240/320/480px homes, long names, keyboard focus, read-only examples, and deletion confirmation. These drawings document changes recorded November 23, 2026 and now archived on local `master`, in the 0.0.5 development archive after the original `v0.0.5` tag and retained in full in 0.0.6.
 
@@ -15,7 +15,7 @@
 **New approved revision:** [Dual-agent planning and acceptance](./execution-cycle-proposal.md), approved 2026-11-20; implemented; see [validation coverage](./execution-cycle-validation.md).
 **Approved and implemented revision:** [Task home, detail, and errors](./task-pages-proposal.md) adds scenes 8–11 for separate home/detail pages, manual start after creation, and consistent bilingual errors. Scenes 8–11 were approved on 2026-11-20 and implemented; scenes 1–7 and their historical descriptions below are preserved.
 
-**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
+**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
 
 **There are currently 37 SVG/PNG pairs: 37 approved.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, 14–17 task chat and follow-up, 18–20 activity and compact-chat controls, 21–23 failure recovery, and 24–27 the native sidebar. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; artifact integration has host support with UI integrated; parallel execution remains planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
 

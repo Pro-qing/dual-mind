@@ -26,6 +26,8 @@ Cancellation, timeout, excessive output and normal parent exit clean up remainin
 
 Native tests exercise shell syntax, Unicode paths, environment snapshots, exit status, limits, cancellation and remaining children. Protocol integration tests cover both model protocols, Reviewer exploration and independent verification, failed review checks, source changes, legacy presets and old evidence. Linux tests run locally; CI adds full checks, extension-host tests and packaging on macOS and Windows. The execution surface still requires a trusted, single local file workspace; this change makes no new Remote SSH/WSL support claim.
 
+If the parent exits while tracked child processes are still alive, cleanup completes before returning `ok: false`, `termination: backgroundIncomplete` and a localized `commandBackgroundIncomplete` error. The actual parent exit code is preserved, even when it is zero. Cancellation, timeout and output-limit reasons take precedence; unconfirmed cleanup remains fatal. Run verification in the foreground or explicitly wait for all children and propagate their exit status. A background launch is not verification evidence. This detection shares the process-tracking boundaries above and does not claim to detect escaped processes.
+
 ## Failure recovery
 
 The host now persists role, phase, operation outcomes and execution position. Failed and reloaded runs resume with current model connections while preserving the plan, work round and uncommitted files. The read-only `read_operation` tool exposes older operations independently of the latest 80 UI events. Ordinary tool failures still return to the model. Transient model failures before a valid stream event allow at most three requests sharing a 120-second budget, including waits; authentication, quota and protocol failures do not retry automatically.
@@ -39,3 +41,5 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 ## Local Python
 
 Preparation and recovery identify local Python 2.7/3 and common project environments, supplying verified invocation paths and versions to Worker and Reviewer. Execution retains `run_command`, without bundling/installing Python or changing global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
+
+On Linux a very short process may exit between opening and reading `/proc/<pid>/stat`. `ENOENT` and `ESRCH` both mean the identity is no longer available, rather than a persistence failure. Process-group cleanup must still be confirmed; permission errors and real cleanup failures remain errors.

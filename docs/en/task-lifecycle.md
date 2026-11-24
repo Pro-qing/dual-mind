@@ -2,7 +2,7 @@
 
 [简体中文](../zh/task-lifecycle.md) · [UI proposal](./task-lifecycle-proposal.md) · [Protocol](./protocol.md)
 
-**Current version: 0.0.6.** These features were implemented and archived during 0.0.5 development on November 23, 2026, and are included in [0.0.6](./release-notes-0.0.6.md). Managed bases, automatic context summaries, and artifact operations now have both host and frontend support. Scenes 28–34 were approved during that implementation round; settings, commit/merge/cleanup and restoration controls are connected. [Tool-error handling](./tool-errors.md) is integrated too. Original tags and releases remain intact.
+**Current version: 0.0.7.** These features were implemented and archived during 0.0.5 development on November 23, 2026, and have been available since [0.0.6](./release-notes-0.0.6.md). Managed bases, automatic context summaries, and artifact operations now have both host and frontend support. Scenes 28–34 were approved during that implementation round; settings, commit/merge/cleanup and restoration controls are connected. [Tool-error handling](./tool-errors.md) is integrated too. Original tags and releases remain intact.
 
 The work-preservation approach was informed by The Pair 3.0.4 at local commit `dace8ea`; implementation uses DualMind's TypeScript services without copying Rust source. Semantic summarization is new here, rather than The Pair's fixed history-window trimming.
 
@@ -40,7 +40,7 @@ Use the current role's endpoint/model with only the internal `submit_context_sum
 
 Chunk old history on UTF-8 code-point boundaries, with at most eight summary requests per compaction and a 12 KiB summary limit. Tool results over 12,000 bytes become excerpts with operation IDs; `read_operation` retains paged full access. Public conversation, command output, and acceptance records are not deleted by compaction.
 
-Recognized HTTP/stream context errors halve that role's effective budget and trigger another compaction, at most twice for one business request. No reduction, oversized fixed instructions, summary failure, or persistence failure stops advancement and retains recoverable records. Summaries do not spend work rounds or reset tool, correction, or transport retry budgets. Existing limits of 20 business model turns per phase and 64 MiB execution records still apply independently.
+Recognized HTTP/stream context errors halve that role's effective budget and trigger another compaction, at most twice for one business request. No reduction, oversized fixed instructions, summary failure, or persistence failure stops advancement and retains recoverable records. Summaries do not spend work rounds or reset tool, correction, or transport retry budgets. Model/tool call counts are diagnostic counters, without cumulative limits. The 64 MiB execution-record limit still applies independently.
 
 ## Three different recovery records
 

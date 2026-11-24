@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
+**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
 
 ## Home, task detail, and errors
 
@@ -218,3 +218,7 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 ## Local Python
 
 Preparation and recovery identify local Python 2.7/3 and common project environments, supplying verified invocation paths and versions to Worker and Reviewer. Execution retains `run_command`, without bundling/installing Python or changing global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
+
+## Continued execution and acceptance diagnostics
+
+Model exchanges and tool calls have no cumulative count limit. The task's configured maximum review rounds, repeated-error pause, timeout, context and log limits remain effective. After upgrading, use **Continue execution** for a latest run stopped by an old call limit when its recovery data is valid; upgrading alone never resumes a task. Debug shows specific acceptance blockers. Run required verification commands in the foreground and wait for completion. See [tool errors](./tool-errors.md), [recovery](./execution-recovery.md) and [shell execution](./shell-execution.md).

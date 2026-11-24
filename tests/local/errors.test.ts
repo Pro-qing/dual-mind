@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   errorMessages,
+  evidenceReasons,
   formatError,
   errorText,
   OperationError,
@@ -101,4 +102,34 @@ test('previous systemd errors remain readable after the runner change', () => {
   assert.match(errorText('en', toAppError(stored)), /User systemd/);
   assert.match(errorText('zh-CN', toAppError(stored)), /用户级 systemd/);
   assert.match(errorText('zh-CN', toAppError(stored)), /Historical probe result/);
+});
+
+test('evidence reasons are bilingual, preserve literal fields and fall back for unknown legacy reasons', () => {
+  for (const [reason, translations] of Object.entries(evidenceReasons)) {
+    const tokens = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+    assert.deepEqual(tokens(translations[0]), tokens(translations[1]), reason);
+    assert.match(translations[1], /[\u4e00-\u9fff]/, reason);
+    for (const locale of ['en', 'zh-CN'] as const) {
+      const rendered = formatError(locale, {
+        code: 'evidenceInvalid',
+        params: {
+          reason,
+          criterionId: 'criterion-$&',
+          commandId: 'cmd-$&',
+          expected: 2,
+          actual: 1,
+          blockers: 'Required test failed',
+        },
+      });
+      assert.match(rendered, /criterion-\$&/);
+      assert.match(rendered, /cmd-\$&/);
+      assert.doesNotMatch(rendered, /\{\w+\}/);
+    }
+  }
+  for (const reason of ['futureReason', '__proto__', 'constructor']) {
+    assert.equal(
+      formatError('en', { code: 'evidenceInvalid', params: { reason } }),
+      errorMessages.evidenceInvalid[0],
+    );
+  }
 });

@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
+**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
 
 ## Page state and error compatibility
 
@@ -121,6 +121,8 @@ ExecutionConfig adds optional customCommandsEnabled. When absent it is normalize
 TaskPlan contains host-assigned version, objective, requirements, steps, criteria and revisionReason. Criteria have stable id, description, verification (command/reading), evidence and reason; reading requires a reason. Plans allow up to 40 steps and 40 criteria. Revisions must explain changes and retain existing criterion IDs and verification methods.
 
 Worker finish_work includes summary, completedSteps, per-criterion evidence (criterionId, commandIds, evidence) and unresolved; the host adds planVersion and revision. Reviewer submit_review includes verdict, summary and per-criterion acceptance with passed. Rejection requires nextPlan. Approval covers every criterion and requires valid actual evidence and additional checks; model-written success claims cannot replace host records.
+
+`unresolved` is reserved for blockers; scope notes belong in summary/evidence. `evidenceInvalid.params.reason` identifies the validation reason with optional criterion/command IDs and expected/actual values. No message envelope or storage version changes. Legacy errors remain readable. Model/tool counters have no cumulative count limit; recovery retains them. Commands with unfinished tracked children return `backgroundIncomplete`, preserve `actualExitCode`, and cannot be accepted as successful verification.
 
 run_command accepts name, command (shell text), optional cwd (default dot), purpose (prepare/verify/explore), criterionIds and optional timeoutSeconds (default 180). Planning/answering allow explore only. The host assigns evidence ID, agent, phase and planVersion (0 before planning), with shell metadata, fingerprints, output and result. Reviewer may cite its own acceptance-stage verify records. Saved presets keep program/args; old missing agent fields mean Worker. read_command_output continues paginating full redacted output. See [Shell execution](./shell-execution.md).
 

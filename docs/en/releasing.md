@@ -2,9 +2,15 @@
 
 [简体中文](../zh/releasing.md) · [Documentation](./README.md)
 
-**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
+**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
 
-## Local 0.0.6 delivery
+## 0.0.7 local delivery
+
+After repair validation, update the source version to 0.0.7 and validate the final files. Archive a bilingual local commit and annotated `v0.0.7` tag, then build from that clean commit with `DUAL_MIND_RELEASE_REF=v0.0.7 npm run package`. Deliver `release/dual-mind-0.0.7.vsix`, its `.vsix.sha256` and `dual-mind-0.0.7-build.json`. The build record identifies the exact commit, source/package hashes, toolchain, checks and limitations. Verify the package in isolated editor user/extension directories. Old packages and task worktrees remain intact.
+
+The maintainer handles pushing and publication. Packaged links pinned to `v0.0.7` become available after that tag is pushed. Do not treat local package preparation as public release. Actual checks are recorded in the [development log](./development-log.md) and [0.0.7 notes](./release-notes-0.0.7.md).
+
+## Historical local 0.0.6 delivery
 
 This round organizes the existing product introduction, local Python support and complete feature set into three bilingual commits, setting the project version to 0.0.6. Build a separate package from the final clean commit with documentation links pinned to `v0.0.6`, then create the local annotated tag on that same commit after package verification. Preserve earlier versions, artwork, task worktrees and packages.
 

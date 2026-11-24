@@ -143,6 +143,7 @@ export async function runProcess(
       exitSignal: string | null = null,
       bytes = 0,
       reason: string | undefined;
+    let parentExited = false;
     let closed = false,
       settled = false,
       exitCode: number | null = null;
@@ -190,7 +191,10 @@ export async function runProcess(
       }
       stopping = (async () => {
         if (await spawned) {
-          await tree!.stop(() => closed);
+          const cleanup = await tree!.stop(() => closed, parentExited);
+          if (cleanup.backgroundIncomplete) {
+            reason ||= 'backgroundIncomplete';
+          }
           await identitySaved;
         }
       })();
@@ -227,6 +231,7 @@ export async function runProcess(
       finish(launchError(error, command));
     });
     child.once('exit', (code, signal) => {
+      parentExited = true;
       exitSignal = signal;
       exitCode = code;
       stop();

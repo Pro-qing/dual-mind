@@ -4,9 +4,9 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
+**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
 
 ## Page navigation and structured errors
 
@@ -88,7 +88,7 @@ The host execution service owns one active run per workspace, independently of t
 
 Run summaries/configuration use independent workspace storage; public event history is journaled outside the repository and paged in groups of 80. Streaming UI updates are batched at 100 ms. Host restarts mark unfinished runs interrupted and never replay tool calls. API credentials remain in SecretStorage and active host memory. Histories, handoffs and command output must not expose them. The activity bar has one `dualMind.tasks` view backed by `WebviewViewProvider`. The host owns execution; disposing a view releases only page messaging and listeners.
 
-Inference requests have a 120-second deadline, 8 MiB response limit and 512 KiB serialized-request guard. Independent role budgets and automatic summaries are described in [task lifecycle](./task-lifecycle.md). Each role/phase allows 20 business model turns; compaction does not reset that budget. Public run history remains bounded at 64 MiB. Automatic original-workspace application, automatic Git commits/merges and concurrent task execution remain outside this milestone.
+Inference requests have a 120-second deadline, 8 MiB response limit and 512 KiB serialized-request guard. Independent role budgets and automatic summaries are described in [task lifecycle](./task-lifecycle.md). Model exchanges and tool calls have no cumulative count limit. Counts persist across compaction and recovery for diagnostics; task review-round limits, repeated-failure pauses and request limits still apply. Public run history remains bounded at 64 MiB. Automatic original-workspace application, automatic Git commits/merges and concurrent task execution remain outside this milestone.
 
 ## Role isolation: data and execution boundaries
 
@@ -126,7 +126,7 @@ Models derive plans from requirements and relevant files; there is no language/p
 
 The host records actual command arguments, relative task directory, plan version, round, exit status, before/after artifact fingerprints and output. Full redacted output is stored in paged events; models read it using read_command_output pagination, so a shortened excerpt is not represented as complete evidence. Only genuine successful verification for the current plan/artifact version and criterion can pass. A newer failure for a criterion prevents reuse of its older success. Enabled additional custom checks are mandatory after every submission; legacy nonempty configurations stay enabled and disabled values are retained.
 
-Reading review requires a reason for no command and concrete findings. Command-free tasks can complete independently. Commands require no systemd/cgroup probe and receive no memory or swap quota from the extension. Directory resolution rejects absolute paths, traversal and symlinks, but commands run with the user's permissions and this is not an OS sandbox. Each phase allows 20 model turns; command and error evidence retains output, history and redaction limits. Revisions retain acceptance IDs and verification methods to avoid silently weakening acceptance.
+Reading review requires a reason for no command and concrete findings. Command-free tasks can complete independently. Commands require no systemd/cgroup probe and receive no memory or swap quota from the extension. Directory resolution rejects absolute paths, traversal and symlinks, but commands run with the user's permissions and this is not an OS sandbox. Phases have no cumulative model/tool call limit; command and error evidence retains output, history and redaction limits. Revisions retain acceptance IDs and verification methods to avoid silently weakening acceptance.
 
 Cancellation, timeout, output overflow and parent exit all trigger process cleanup before the final fingerprint. Linux/macOS use process groups; Windows uses process ancestry, creation times and system tree termination. Unconfirmed cleanup blocks new runs. Limits and tracking boundaries are documented in [Shell execution](./shell-execution.md#lifecycle-and-validation).
 

@@ -169,7 +169,7 @@ export class ExecutionService {
     await this.records.save();
   }
   private recoverySummary(state: RecoveryState, status = state.summary.status) {
-    const prohibited = ['toolTurnLimit', 'toolCallLimit', 'toolCorrectionLimit', 'historyLimit'];
+    const prohibited = ['toolCorrectionLimit', 'historyLimit'];
     return {
       generation: state.generation,
       attempts: state.summary.recovery?.attempts ?? 0,
@@ -1446,7 +1446,9 @@ export class ExecutionService {
               ? 'commandOutputLimit'
               : result.reason === 'stopped'
                 ? 'commandStopped'
-                : 'commandFailed',
+                : result.reason === 'backgroundIncomplete'
+                  ? 'commandBackgroundIncomplete'
+                  : 'commandFailed',
         params: { name: command.name, exitCode: result.exitCode },
       });
     }
@@ -1744,13 +1746,13 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
       a.histories.worker = [
         {
           role: 'system',
-          content: `You are Worker. Execute the current Reviewer plan; do not declare overall task completion. Inspect files, prepare project dependencies as needed, implement and verify. Choose concrete commands using run_command, not a hardcoded project preset. Each command has a fresh process: cd/export/activation in a previous command does not persist. Tool argument errors reject the entire batch: fix the indicated fields and resend the required calls; never assume skipped calls executed. Do not install system toolchains, escalate privileges, commit, switch branches or push. For verify commands supply relevant criterionIds. After changing artifacts rerun verification. finish_work submits honest evidence and unresolved work for Reviewer acceptance. Additional user checks: ${JSON.stringify(a.config.customCommandsEnabled ? a.config.checks : [])}.\n${common}`,
+          content: `You are Worker. Execute the current Reviewer plan; do not declare overall task completion. Inspect files, prepare project dependencies as needed, implement and verify. Choose concrete commands using run_command, not a hardcoded project preset. Run verification in the foreground and wait for its final exit; a background launch is not verification. Each command has a fresh process: cd/export/activation in a previous command does not persist. Tool argument errors reject the entire batch: fix the indicated fields and resend the required calls; never assume skipped calls executed. Do not install system toolchains, escalate privileges, commit, switch branches or push. For verify commands supply relevant criterionIds. After changing artifacts rerun verification. finish_work submits honest evidence for Reviewer acceptance. unresolved contains only blockers to completion; scope notes and optional checks not run belong in summary/evidence. Never hide real blockers. Additional user checks: ${JSON.stringify(a.config.customCommandsEnabled ? a.config.checks : [])}.\n${common}`,
         },
       ];
       a.histories.reviewer = [
         {
           role: 'system',
-          content: `You are Reviewer. During initial planning decompose the user request into an executable plan for Worker using submit_plan. Read relevant project files; do not audit unrelated project areas. Specify objectives, implementation steps and stable acceptance IDs. Use command verification where needed, reading review only with a reason and concrete evidence requirements. Worker implements source changes. You may independently explore with run_command during planning and answering; during acceptance you may also prepare project dependencies, build and test. Do not modify source files or use commands to implement fixes; request Worker changes instead. Reference the host IDs of your own verify commands or Worker evidence. Verification requires current command criterionIds. A newer failed check cannot be overridden by an older success. After Worker submits, inspect actual artifacts and host evidence. Use submit_review to approve all requirements or issue changes_requested with a complete nextPlan. Retain existing acceptance IDs and verification methods, explain revisions, and include outstanding goals. Never accept missing, failed, stale or invented evidence, pending user feedback or unresolved work. When the user_messages handoff arrives, handle questions or ambiguity with submit_answer after relevant inspection; this is a reply, never acceptance. For requested changes inspect the current files and differences, then submit_plan for Worker. During an active execution retain existing acceptance IDs and explain revisions. Never ignore queued modification requests.\nTask-specific review focus:\n${a.input.task.role.instructions}\n${common}`,
+          content: `You are Reviewer. During initial planning decompose the user request into an executable plan for Worker using submit_plan. Read relevant project files; do not audit unrelated project areas. Specify objectives, implementation steps and stable acceptance IDs. Use command verification where needed, reading review only with a reason and concrete evidence requirements. Worker implements source changes. You may independently explore with run_command during planning and answering; during acceptance you may also prepare project dependencies, build and test. Do not modify source files or use commands to implement fixes; request Worker changes instead. Reference the host IDs of your own verify commands or Worker evidence. Verification requires current command criterionIds. A newer failed check cannot be overridden by an older success. After Worker submits, inspect actual artifacts and host evidence. Use submit_review to approve all requirements or issue changes_requested with a complete nextPlan. Retain existing acceptance IDs and verification methods, explain revisions, and include outstanding goals. Never accept missing, failed, stale or invented evidence, pending user feedback or unresolved blockers. Scope notes and optional checks not run belong in summary/evidence, not unresolved. When the user_messages handoff arrives, handle questions or ambiguity with submit_answer after relevant inspection; this is a reply, never acceptance. For requested changes inspect the current files and differences, then submit_plan for Worker. During an active execution retain existing acceptance IDs and explain revisions. Never ignore queued modification requests.\nTask-specific review focus:\n${a.input.task.role.instructions}\n${common}`,
         },
       ];
       a.contexts = {
@@ -2357,7 +2359,7 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
     a.recovery.agent = agent;
     await this.persist(a);
     let workerFeedback = '';
-    while (budget.turn < 20) {
+    while (true) {
       if (
         agent === 'worker' &&
         a.feedback.length &&
@@ -2552,10 +2554,7 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
             : agent === 'worker'
               ? 'finish_work'
               : 'submit_review';
-      const budgetExceeded = (budget.calls ?? 0) + turn.calls.length > 200;
-      if (!budgetExceeded) {
-        budget.calls = (budget.calls ?? 0) + turn.calls.length;
-      }
+      budget.calls = (budget.calls ?? 0) + turn.calls.length;
       const finals = turn.calls.filter((call) =>
         ['submit_plan', 'submit_answer', 'finish_work', 'submit_review'].includes(call.name),
       );
@@ -2565,9 +2564,6 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
       const batch = turn.calls.map((call) => {
         let args: Record<string, unknown> | undefined, fault: AppError | undefined;
         try {
-          if (budgetExceeded) {
-            throw new OperationError('toolCallLimit');
-          }
           args = validateTool(call, definitions);
           if (invalidOrder && finals.includes(call)) {
             throw new OperationError('completionOrder');
@@ -2646,9 +2642,6 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
         }
         a.recovery.corrections = budget.corrections;
         await this.persist(a);
-        if (budgetExceeded) {
-          throw new OperationError('toolCallLimit');
-        }
         if (budget.corrections >= 3) {
           await this.pauseForTools(a, phase, budgetKey, rejected.operation, 'toolBatchRejected');
         }
@@ -2845,7 +2838,6 @@ User requirements:\n${a.input.task.requirements}\nScope work to this task and ne
         await this.pauseForTools(a, phase, budgetKey, pauseOperation, 'repeatedToolFailure');
       }
     }
-    throw new OperationError('toolTurnLimit');
   }
   private async tool(
     a: Active,

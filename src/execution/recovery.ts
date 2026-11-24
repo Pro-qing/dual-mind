@@ -182,7 +182,6 @@ export class RecoveryStore {
           value.cursor.index < 0 ||
           !Number.isSafeInteger(value.turn) ||
           value.turn < 0 ||
-          value.turn > 20 ||
           !Number.isSafeInteger(value.corrections) ||
           value.corrections < 0 ||
           typeof value.task.requirements !== 'string' ||
@@ -199,12 +198,11 @@ export class RecoveryStore {
               !budget ||
               !Number.isSafeInteger(budget.turn) ||
               budget.turn < 0 ||
-              budget.turn > 20 ||
               !Number.isSafeInteger(budget.corrections) ||
               budget.corrections < 0 ||
               budget.corrections > 3 ||
               (budget.calls !== undefined &&
-                (!Number.isSafeInteger(budget.calls) || budget.calls < 0 || budget.calls > 200)),
+                (!Number.isSafeInteger(budget.calls) || budget.calls < 0)),
           ) ||
           !Array.isArray(value.handling) ||
           !Array.isArray(value.feedback)

@@ -39,10 +39,13 @@ async function setup(
   t: TestContext,
   options: {
     toolBehavior?: {
-      mode: 'file' | 'command' | 'order' | 'unknown' | 'calls';
+      mode: 'file' | 'command' | 'order' | 'unknown';
       enabled: boolean;
       agent?: 'worker' | 'reviewer';
     };
+    longExchange?: { agent: 'worker' | 'reviewer'; turns: number; calls: number; holdAt?: number };
+    backgroundCommand?: boolean;
+    unresolvedSubmission?: boolean;
     splitCommandOutput?: boolean;
     contextOverflow?: { once: boolean; summaryFailure?: boolean; large: boolean };
     git?: import('../../src/shared/model').GitStrategy;
@@ -277,6 +280,7 @@ async function setup(
       const preparing = options.autonomous && options.flip && count === 1;
       const workerStep =
         count -
+        (options.longExchange?.agent === 'worker' ? options.longExchange.turns : 0) -
         (options.autonomous && options.flip ? 1 : 0) -
         (options.badArguments && options.badArguments !== 'always' && count > 1 ? 1 : 0);
       const step = options.autonomous ? (workerStep - 1) % 3 : (workerStep - 1) % 2;
@@ -392,7 +396,9 @@ async function setup(
                                   name: 'Verify artifact',
                                   command: options.realCommands
                                     ? nodeCommand(
-                                        'if(require("node:fs").readFileSync("file.txt","utf8")!=="fixed")process.exit(1)',
+                                        options.backgroundCommand
+                                          ? 'const c=require("node:child_process").spawn(process.execPath,["-e","setInterval(()=>{},1000)"],{stdio:"ignore"}); c.unref()'
+                                          : 'if(require("node:fs").readFileSync("file.txt","utf8")!=="fixed")process.exit(1)',
                                       )
                                     : 'test-double',
                                   purpose: 'verify',
@@ -411,7 +417,9 @@ async function setup(
                                       evidence: 'Read file.txt and the recorded result',
                                     },
                                   ],
-                                  unresolved: [],
+                                  unresolved: options.unresolvedSubmission
+                                    ? ['Required check failed; test-secret-worker']
+                                    : [],
                                 }),
                               }
                         : {
@@ -448,13 +456,7 @@ async function setup(
           : [{ id, ...call }];
       if (options.toolBehavior?.enabled && agent === (options.toolBehavior.agent ?? 'worker')) {
         const mode = options.toolBehavior.mode;
-        if (mode === 'calls') {
-          batch = Array.from({ length: 100 }, (_, index) => ({
-            id: `${id}-${index}`,
-            name: 'read_file',
-            arguments: '{"path":"budget-missing.txt"}',
-          }));
-        } else if (mode === 'unknown') {
+        if (mode === 'unknown') {
           batch = [
             { id, name: 'nonexistent_tool', arguments: '{}' },
             {
@@ -503,6 +505,17 @@ async function setup(
               : { id: `${id}-read`, name: 'list_files', arguments: '{}' },
           ];
         }
+      }
+      if (
+        options.longExchange &&
+        agent === options.longExchange.agent &&
+        count <= options.longExchange.turns
+      ) {
+        batch = Array.from({ length: options.longExchange.calls }, (_, index) => ({
+          id: `${id}-read-${index}`,
+          name: 'read_file',
+          arguments: '{"path":"file.txt"}',
+        }));
       }
       const publicText =
         options.contextOverflow?.large && agent === 'worker' && count === 1
@@ -570,7 +583,10 @@ async function setup(
         );
       };
       if (
-        (options.slow ||
+        ((options.longExchange &&
+          agent === options.longExchange.agent &&
+          count === options.longExchange.holdAt) ||
+          options.slow ||
           (options.slowWorker && agent === 'worker') ||
           (options.holdReview && agent === 'reviewer' && !planning)) &&
         !release
@@ -672,6 +688,14 @@ async function setup(
     },
   };
   const records = new RunRecords(f.workspace, () => storage);
+  const python =
+    options.python ??
+    (options.bundledTools
+      ? new PythonDiscovery()
+      : Object.assign(new PythonDiscovery(), {
+          // Unrelated execution tests must not depend on installed host interpreters.
+          discover: async () => ({ complete: true, interpreters: [] }),
+        }));
   const service = new ExecutionService(
     f.store,
     workspaces,
@@ -679,13 +703,7 @@ async function setup(
     runner,
     undefined,
     options.bundledTools ? new BundledTools(resolve('dist/tools')) : undefined,
-    options.python ??
-      (options.bundledTools
-        ? new PythonDiscovery()
-        : Object.assign(new PythonDiscovery(), {
-            // Unrelated execution tests must not depend on installed host interpreters.
-            discover: async () => ({ complete: true, interpreters: [] }),
-          })),
+    python,
   );
   f.ports.assertMutable = (action) => service.assertMutable(action);
   cleanup.service = service;
@@ -713,6 +731,7 @@ async function setup(
     storage,
     workspaces,
     runner,
+    python,
     git,
     service,
     records,
@@ -1509,6 +1528,8 @@ for (const flip of [false, true]) {
         records,
         h.runner,
         new Inference(),
+        undefined,
+        h.python,
       );
       t.after(() => service.shutdown());
       await service.ready;
@@ -1676,7 +1697,15 @@ test('uncertain command process blocks recovery and prevents new work from start
     time: '',
   });
   const records = new RunRecords(h.f.workspace, () => h.storage);
-  const service = new ExecutionService(h.f.store, h.workspaces, records, h.runner);
+  const service = new ExecutionService(
+    h.f.store,
+    h.workspaces,
+    records,
+    h.runner,
+    undefined,
+    undefined,
+    h.python,
+  );
   t.after(() => service.shutdown());
   await service.ready;
   const count = h.captured.length;
@@ -1836,7 +1865,15 @@ test('host reload restores a persisted role summary and does not replay earlier 
   assert.ok(checkpoint);
   await h.service.shutdown();
   const records = new RunRecords(h.f.workspace, () => h.storage);
-  const service = new ExecutionService(h.f.store, h.workspaces, records, h.runner);
+  const service = new ExecutionService(
+    h.f.store,
+    h.workspaces,
+    records,
+    h.runner,
+    undefined,
+    undefined,
+    h.python,
+  );
   t.after(() => service.shutdown());
   await service.ready;
   failure.enabled = false;
@@ -2000,20 +2037,101 @@ for (const flip of [false, true]) {
     });
   }
 }
-test('200-call budget is durable and an oversized next batch has no tool effects', async (t) => {
-  const h = await setup(t, { readingOnly: true, toolBehavior: { mode: 'calls', enabled: true } });
-  await h.service.request({ kind: 'start', taskId: h.task.id });
-  await waitUntil(() => h.records.runs[0].status === 'failed', 30000);
-  const run = h.records.runs[0];
-  assert.equal(run.fault?.code, 'toolCallLimit');
-  const saved = await h.records.recovery(run.id).load();
-  const calls = saved!.operations.filter((op) => op.kind === 'tool' && op.agent === 'worker');
-  assert.equal(calls.filter((op) => op.status === 'failed').length, 2);
-  assert.equal(calls.filter((op) => op.status === 'skipped').length, 198);
-  assert.equal(calls.filter((op) => op.status === 'rejected').length, 100);
-  assert.ok(Object.values(saved!.state.budgets).some((budget) => budget.calls === 200));
-  assert.equal(run.recovery?.available, false);
-});
+for (const flip of [false, true]) {
+  for (const agent of ['worker', 'reviewer'] as const) {
+    test(
+      `exchanges exceed legacy model/tool limits and complete (${agent}, flip=${flip})`,
+      { timeout: 90000 },
+      async (t) => {
+        const h = await setup(t, {
+          flip,
+          readingOnly: true,
+          longExchange: { agent, turns: 21, calls: agent === 'worker' ? 10 : 1 },
+        });
+        await h.service.request({ kind: 'start', taskId: h.task.id });
+        await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status), 85000);
+        const run = h.records.runs[0];
+        assert.equal(run.status, 'completed', run.error);
+        const saved = await h.records.recovery(run.id).load();
+        assert.ok(Object.values(saved!.state.budgets).some((b) => b.turn > 20));
+        if (agent === 'worker') {
+          assert.ok(Object.values(saved!.state.budgets).some((b) => b.calls! > 200));
+        }
+        assert.equal(await readFile(join(run.directory!, 'file.txt'), 'utf8'), 'fixed');
+      },
+    );
+  }
+  test(
+    `pause/resume and stop work beyond 20 exchanges (flip=${flip})`,
+    { timeout: 90000 },
+    async (t) => {
+      const h = await setup(t, {
+        flip,
+        readingOnly: true,
+        longExchange: { agent: 'worker', turns: 22, calls: 1, holdAt: 22 },
+      });
+      await h.service.request({ kind: 'start', taskId: h.task.id });
+      await waitUntil(() => h.hasRequest(), 80000);
+      const run = h.records.runs[0];
+      await h.service.request({ kind: 'pause', runId: run.id });
+      h.release();
+      await waitUntil(() => run.status === 'paused');
+      assert.ok(
+        Object.values((await h.records.recovery(run.id).load())!.state.budgets).some(
+          (b) => b.turn > 20,
+        ),
+      );
+      await h.service.request({ kind: 'resume', runId: run.id });
+      await h.service.request({ kind: 'stop', runId: run.id });
+      assert.equal(run.status, 'stopped');
+      assert.equal(h.service.snapshot().activity, undefined);
+    },
+  );
+  for (const legacyCode of ['toolTurnLimit', 'toolCallLimit'] as const) {
+    test(`legacy ${legacyCode} resumes beyond old counters without replay (flip=${flip})`, async (t) => {
+      const failure = { agent: 'worker' as const, at: 2, enabled: true };
+      const h = await setup(t, { flip, failure, readingOnly: true });
+      await h.service.request({ kind: 'start', taskId: h.task.id });
+      await waitUntil(() => h.records.runs[0].status === 'failed');
+      await h.service.shutdown();
+      const run = h.records.runs[0];
+      const journal = h.records.recovery(run.id);
+      const saved = (await journal.load())!;
+      saved.state.summary.fault = { code: legacyCode };
+      saved.state.turn = 20;
+      saved.state.budgets['1:1:worker:'] = { turn: 20, calls: 200, corrections: 0 };
+      await journal.state(saved.state);
+      const records = new RunRecords(h.f.workspace, () => h.storage);
+      const service = new ExecutionService(
+        h.f.store,
+        h.workspaces,
+        records,
+        h.runner,
+        undefined,
+        undefined,
+        h.python,
+      );
+      t.after(() => service.shutdown());
+      await service.ready;
+      assert.equal(records.runs[0].recovery?.available, true);
+      assert.equal(records.runs[0].recovery?.blocked, undefined);
+      failure.enabled = false;
+      await service.request({ kind: 'resume', runId: run.id });
+      await waitUntil(() => terminalStatuses.includes(records.runs[0].status));
+      assert.equal(records.runs[0].status, 'completed', records.runs[0].error);
+      const resumed = (await records.recovery(run.id).load())!;
+      assert.ok(resumed.state.budgets['1:1:worker:'].turn > 20);
+      assert.ok(resumed.state.budgets['1:1:worker:'].calls! > 200);
+      assert.equal(
+        resumed.operations.filter(
+          (op) => op.kind === 'tool' && op.name === 'write_file' && op.status === 'succeeded',
+        ).length,
+        1,
+      );
+      assert.equal(records.runs[0].directory, run.directory);
+    });
+  }
+}
 
 for (const flip of [false, true]) {
   test(`Reviewer repeated file failures pause in planning without executing skipped diagnostics (flip=${flip})`, async (t) => {
@@ -2271,3 +2389,57 @@ test('Python unknown-process lock survives a simultaneous probe-journal failure'
     code: 'shutdownUnconfirmed',
   });
 });
+
+for (const flip of [false, true]) {
+  test(`unresolved diagnosis reaches model feedback and durable tool outcomes (flip=${flip})`, async (t) => {
+    const h = await setup(t, {
+      flip,
+      readingOnly: true,
+      approve: true,
+      unresolvedSubmission: true,
+    });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+    const run = h.records.runs[0];
+    assert.equal(run.status, 'roundLimit');
+    const saved = (await h.records.recovery(run.id).load())!;
+    const refused = saved.operations.find(
+      (op) => op.name === 'submit_review' && op.status === 'failed',
+    );
+    assert.equal(refused?.outcome?.fault?.params?.reason, 'unresolved');
+    assert.match(String(refused?.outcome?.fault?.params?.blockers), /Required check failed/);
+    assert.ok(!JSON.stringify(saved).includes('test-secret-worker'));
+    const feedback = h.captured
+      .filter((r) => r.agent === 'reviewer')
+      .map((r) => JSON.stringify(r.body))
+      .join('\n');
+    assert.match(feedback, /Completion is blocked by unresolved items/);
+    assert.ok(!feedback.includes('test-secret-worker'));
+  });
+  test(`background launch cannot supply successful verification (flip=${flip})`, async (t) => {
+    const h = await setup(t, {
+      flip,
+      autonomous: true,
+      realCommands: true,
+      approve: true,
+      fixedInitially: true,
+      backgroundCommand: true,
+    });
+    await h.service.request({ kind: 'start', taskId: h.task.id });
+    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
+    const run = h.records.runs[0];
+    assert.notEqual(run.status, 'completed');
+    const events = await h.records.history(
+      run.id,
+      Number.MAX_SAFE_INTEGER,
+      Number.MAX_SAFE_INTEGER,
+    );
+    const commands = events.flatMap((e) =>
+      e.detail?.type === 'command' ? [e.detail.command] : [],
+    );
+    const background = commands.find((c) => c.reason === 'backgroundIncomplete');
+    assert.equal(background?.ok, false);
+    assert.equal(background?.actualExitCode, 0);
+    assert.equal(background?.fault?.code, 'commandBackgroundIncomplete');
+  });
+}

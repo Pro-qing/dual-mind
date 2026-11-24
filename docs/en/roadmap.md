@@ -4,18 +4,19 @@
 
 [Tool-error handling and frontend integration](./tool-errors.md) now implements explicit outcomes, skipped batch tails, repeated-error pauses, and lifecycle controls.
 
-**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), are included in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
+**Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.6 · Local version prepared; not publicly released.** Recorded November 24, 2026. Local annotated tag `v0.0.6` identifies this complete source; the maintainer handles pushing and publication separately. See the [0.0.6 version notes](./release-notes-0.0.6.md) for capabilities, validation and artifacts. Historical version records retain their original meaning.
+**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
 
-| Version           | Status                                          | Delivered scope                                                                                  |
-| ----------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 0.0.1 Preview 1/2 | Historical public releases                      | Local workbench, settings, role presets, languages and read-only examples                        |
-| 0.0.2             | Local source version, unpublished               | Model discovery, separate defaults, role data isolation and Git preparation                      |
-| 0.0.3             | Previous local source version, unpublished      | Dual-protocol streamed execution, review loops, activity bar and three branch strategies         |
-| 0.0.4             | Earlier local source and VSIX, unpublished      | Universal shell, independent Reviewer verification, process display and recovery                 |
-| 0.0.5             | Earlier local source, VSIX and tag, unpublished | Native sidebar, legacy-tab migration, terminal separation and versioned designs                  |
-| 0.0.6             | Current local version prepared, unpublished     | Compact home, worktree artifacts, context summaries, tool recovery, bundled CLI and local Python |
+| Version           | Status                                          | Delivered scope                                                                                            |
+| ----------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 0.0.1 Preview 1/2 | Historical public releases                      | Local workbench, settings, role presets, languages and read-only examples                                  |
+| 0.0.2             | Local source version, unpublished               | Model discovery, separate defaults, role data isolation and Git preparation                                |
+| 0.0.3             | Previous local source version, unpublished      | Dual-protocol streamed execution, review loops, activity bar and three branch strategies                   |
+| 0.0.4             | Earlier local source and VSIX, unpublished      | Universal shell, independent Reviewer verification, process display and recovery                           |
+| 0.0.5             | Earlier local source, VSIX and tag, unpublished | Native sidebar, legacy-tab migration, terminal separation and versioned designs                            |
+| 0.0.6             | Previous local version, unpublished             | Compact home, worktree artifacts, context summaries, tool recovery, bundled CLI and local Python           |
+| 0.0.7             | Current local preparation, unpublished          | Uncapped model/tool calls, legacy-limit recovery, acceptance diagnostics and background-command completion |
 
 0.0.6 includes Reviewer planning, autonomous Worker implementation and verification, independent Reviewer verification, acceptance and revised plans, pause/continue/stop, reload interruption, diff preview and local branch selection. Task chat supports read-only questions, queued messages during execution and continued changes. One task runs per workspace. Direct modes modify the opened project; start/restart requires a clean directory, while chat continuation retains the bound directory and uncommitted artifacts and obtains fresh evidence.
 
