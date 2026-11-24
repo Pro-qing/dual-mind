@@ -32,3 +32,4 @@ package-lock.json
 !resources/icon.png
 !resources/activity-icon.svg
 !resources/tools/manifest.json
+!resources/screenshots/dualmind-workbench.png

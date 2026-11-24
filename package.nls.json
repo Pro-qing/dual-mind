@@ -1,5 +1,5 @@
 {
-  "description": "A local Worker/Reviewer workbench with tasks, connection settings and bilingual review roles.",
+  "description": "AI pair programming in VS Code: Worker implements, Reviewer plans and reviews.",
   "openWorkbench": "Open Workbench",
   "showStatus": "Show Status",
   "language": "DualMind interface language. Built-in Reviewer definitions follow this choice; custom text and task snapshots keep their original content.",
