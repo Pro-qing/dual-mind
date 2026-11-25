@@ -15,15 +15,15 @@
 **New approved revision:** [Dual-agent planning and acceptance](./execution-cycle-proposal.md), approved 2026-11-20; implemented; see [validation coverage](./execution-cycle-validation.md).
 **Approved and implemented revision:** [Task home, detail, and errors](./task-pages-proposal.md) adds scenes 8–11 for separate home/detail pages, manual start after creation, and consistent bilingual errors. Scenes 8–11 were approved on 2026-11-20 and implemented; scenes 1–7 and their historical descriptions below are preserved.
 
-**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
+**Source version: 0.0.8 · Locally prepared; awaiting manual publication by the maintainer.** Recorded November 25, 2026. See the [0.0.8 version notes](./release-notes-0.0.8.md) for features, validation and artifacts. Historical versions, design archives and validation records retain their meaning.
 
-**There are currently 40 SVG/PNG pairs: 37 approved and scenes 38–40 pending explicit review.** Scenes 1–37 retain their original approvals and implementation records. New proposals cover provider/protocol settings, a compact task header with mutually exclusive context/results panels, and logs grouped by user request and then role. Backend adapters and request attribution are implemented, but these proposed UI controls and layouts are not integrated. Original artwork and historical review labels remain intact, and all content is illustrative. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
+**All 40 SVG/PNG pairs are approved.** Scenes 38–40 were approved November 25, 2026 and integrated: provider/protocol settings, compact task header, exclusive context/results panels and request/role log groups. Actual backgrounds follow the VS Code theme; artwork palettes are illustrative. Original assets and historical labels remain intact; runtime checks are recorded separately in the [development log](./development-log.md).
 
-Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. Early scenes use English labels; later revisions mainly use Simplified Chinese. Each group has explanations in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
+Each scene is **1440 × 900**, contains editable SVG text and vector elements. Historical scenes mainly use dark palettes; 0.0.7 includes light and dark examples, while implementation always follows the host theme. Early scenes use English labels; later revisions mainly use Simplified Chinese. Each group has explanations in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
 
 ## Browse by version
 
-The [design archive index](../design/README.md) maps versions to scenes and counts: 0.0.1 → 1–5, 0.0.2 → 6–7, 0.0.3 → 8–17, 0.0.4 → 18–23, 0.0.5 → 24–37, and 0.0.7 → 38–40 (pending review). Each folder has paired SVG/PNG assets and a README. These folders describe development versions, not complete snapshots of each initial tag: scenes 8–17 followed the original `v0.0.3` tag, and the sidebar moves from earlier 0.0.4 candidate validation into the 0.0.5 source milestone. Historical artwork and tags remain unchanged.
+The [design archive index](../design/README.md) maps versions to scenes and counts: 0.0.1 → 1–5, 0.0.2 → 6–7, 0.0.3 → 8–17, 0.0.4 → 18–23, 0.0.5 → 24–37, and 0.0.7 → 38–40 (approved). Each folder has paired SVG/PNG assets and a README. These folders describe development versions, not complete snapshots of each initial tag: scenes 8–17 followed the original `v0.0.3` tag, and the sidebar moves from earlier 0.0.4 candidate validation into the 0.0.5 source milestone. Historical artwork and tags remain unchanged.
 
 ## Design gallery
 
@@ -66,9 +66,9 @@ The [design archive index](../design/README.md) maps versions to scenes and coun
 | 35. Tool and command outcomes                  | [SVG](../design/v0.0.5/dual-mind-tool-results-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-tool-results-proposal.png)           |
 | 36. Repeated-error pause and continuation      | [SVG](../design/v0.0.5/dual-mind-tool-pause-proposal.svg)             | [PNG](../design/v0.0.5/dual-mind-tool-pause-proposal.png)             |
 | 37. Historical failures and acceptance         | [SVG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.png)      |
-| 38. Provider and protocol settings (pending)   | [SVG](../design/v0.0.7/dual-mind-model-provider-proposal.svg)         | [PNG](../design/v0.0.7/dual-mind-model-provider-proposal.png)         |
-| 39. Compact task header (pending)              | [SVG](../design/v0.0.7/dual-mind-compact-task-header-proposal.svg)    | [PNG](../design/v0.0.7/dual-mind-compact-task-header-proposal.png)    |
-| 40. Request-grouped logs (pending)             | [SVG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.svg)   | [PNG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.png)   |
+| 38. Provider and protocol settings (approved)  | [SVG](../design/v0.0.7/dual-mind-model-provider-proposal.svg)         | [PNG](../design/v0.0.7/dual-mind-model-provider-proposal.png)         |
+| 39. Compact task header (approved)             | [SVG](../design/v0.0.7/dual-mind-compact-task-header-proposal.svg)    | [PNG](../design/v0.0.7/dual-mind-compact-task-header-proposal.png)    |
+| 40. Request-grouped logs (approved)            | [SVG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.svg)   | [PNG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.png)   |
 
 ## Historical descriptions of scenes 1–7
 
@@ -184,7 +184,7 @@ Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection setti
 
 ## Review and implementation gate
 
-The owner has approved scenes 1–37. Scenes 38–40 remain pending; their visual changes require explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
+The owner has approved scenes 1–40. Approval for 38–40 on November 25, 2026 explicitly requires theme-aware backgrounds. Historical labels inside the artwork do not describe current status. Built-in Reviewer definitions, saved snapshots and illustrative data retain their meaning; future changes follow the [contribution guide](../../CONTRIBUTING.md).
 
 See [Architecture](./architecture.md) for implemented module responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. Implemented settings/execution messages, role handoffs and file-access boundaries are documented there.
 
@@ -204,7 +204,7 @@ Inspect each rendered image at full size for clipping, missing characters, overl
 
 ## Execution interface in the development branch
 
-The actual settings categories are API Connections, Defaults for new tasks, Task execution, Reviewer Roles, Model context, and Saved artifacts. The current connection form exposes OpenAI-compatible Chat Completions/Responses; Anthropic and Command Code backend adapters are not yet exposed through settings. Scenes 38–40 propose the pending provider controls, compact task header and request/role log accordions. No corresponding UI source is integrated. The activity-bar icon opens the complete native sidebar workbench; secondary task details initially collapse. Current detail otherwise retains scenes 14–20: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with public process cards in chat and original command details in evidence. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace; see [Usage](./usage.md) for current behavior.
+Settings categories are API Connections, Defaults, Task execution, Reviewer Roles, Model context and Saved artifacts. Separate Provider/protocol controls expose Chat Completions, Responses, Anthropic Messages and Command Code compatibility access. Titles and primary actions share a compact header, secondary details start collapsed, and context/results expand exclusively. Chat and evidence group by user request and then role, preserving the persistent composer. Evidence uses a roughly 360px column or a drawer capped at 430px below 1100px. One task runs per workspace; see [Usage](./usage.md).
 
 ## Approved additions: November 22, 2026
 

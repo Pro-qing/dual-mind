@@ -1,10 +1,10 @@
-import { ArtifactPanel, DeleteTaskDialog, ContextUsagePanel } from './Lifecycle';
+import { TaskLifecyclePanels, DeleteTaskDialog } from './Lifecycle';
 import type { DerivedTask } from './derivedTask';
 import { OperationError, toAppError, type AppError } from '../../src/shared/errors';
 import { ErrorNotice } from './ErrorNotice';
 import type { ReactNode } from 'react';
 import { TaskChat } from './TaskChat';
-import { ExecutionControls, statusKey } from './Execution';
+import { ExecutionControls } from './Execution';
 import { terminalStatuses } from '../../src/shared/execution';
 import { useEffect, useRef, useState } from 'react';
 import type {
@@ -553,51 +553,10 @@ function TaskDetail({
   const locked = currentRun && !terminalStatuses.includes(currentRun.status);
   return (
     <main className="task-content" aria-label={tr('taskDetail')}>
-      <section className="task-summary">
-        <div className="summary-top">
-          <h1>{task.name}</h1>
-          <span className="status-badge">
-            {currentRun
-              ? tr(statusKey(currentRun.status))
-              : tr(task.status === 'draft' ? 'pendingTask' : task.status)}
-          </span>
-        </div>
-      </section>
-      <div className="task-controls">
-        {preview ? (
-          <div className="button-row">
-            {(['start', 'pause', 'stop'] as const).map((key) => (
-              <button key={key} disabled>
-                {tr(key)}
-              </button>
-            ))}
-          </div>
-        ) : cleaned ? (
-          <p className="notice">{tr('artifactCleaned')}</p>
-        ) : (
-          <ExecutionControls taskId={task.id} run={currentRun} onSettings={onSettings} />
-        )}
-      </div>
-      <details
-        className="task-details"
-        open={Boolean(chatViews[task.id]?.detailsExpanded)}
-        onToggle={(event) => updateChatView(task.id, { detailsExpanded: event.currentTarget.open })}
-      >
-        <summary>{tr('taskDetailsActions')}</summary>
-        <div className="task-details-body">
-          <div className="task-metadata">
-            <span>
-              {tr('gitStrategy')}:{' '}
-              {currentRun?.branch ||
-                (task.git?.mode === 'branch'
-                  ? task.git.branch
-                  : tr(task.git?.mode === 'current' ? 'gitCurrent' : 'gitManaged'))}
-            </span>
-            <span>
-              {tr('maximumRounds')} {task.maxRounds}
-            </span>
-          </div>
-          <div className="button-row task-edit-actions">
+      <div className="task-overview">
+        <header className="task-heading">
+          <h1 title={task.name}>{task.name}</h1>
+          <div className="task-heading-actions">
             <button
               disabled={preview || pending || Boolean(locked) || cleaned}
               onClick={() => onEdit(task as TaskDraft)}
@@ -605,30 +564,80 @@ function TaskDetail({
               <Icon name="edit" />
               {tr('editTask')}
             </button>
-            {!preview && currentRun && (
-              <ResultActions
-                runId={currentRun.id}
-                available={Boolean(currentRun.directory) && !cleaned}
-              />
+            {preview ? (
+              <div className="button-row">
+                {(['start', 'pause', 'stop'] as const).map((key) => (
+                  <button key={key} disabled>
+                    {tr(key)}
+                  </button>
+                ))}
+              </div>
+            ) : cleaned ? (
+              <p className="notice">{tr('artifactCleaned')}</p>
+            ) : (
+              <ExecutionControls taskId={task.id} run={currentRun} onSettings={onSettings} />
             )}
             <button
-              className="danger"
-              disabled={preview || pending}
-              aria-label={`${tr('deleteTask')}: ${task.name}`}
-              onClick={() => onDelete(task as TaskDraft)}
+              aria-expanded={Boolean(chatViews[task.id]?.detailsExpanded)}
+              onClick={() =>
+                updateChatView(task.id, { detailsExpanded: !chatViews[task.id]?.detailsExpanded })
+              }
             >
-              <Icon name="trash" />
-              {tr('deleteTask')}
+              {tr('taskActions')}
             </button>
+            {!currentRun && (
+              <span className="status-badge">
+                {tr(task.status === 'draft' ? 'pendingTask' : task.status)}
+              </span>
+            )}
           </div>
-          <div className="model-bars">
-            <AgentPanel agent="worker" task={task} example={preview} />
-            <AgentPanel agent="reviewer" task={task} example={preview} />
-          </div>{' '}
-        </div>
-      </details>
-      {!preview && <ContextUsagePanel taskId={task.id} />}
-      {!preview && <ArtifactPanel task={task as TaskDraft} />}
+        </header>
+        <details
+          className="task-details"
+          open={Boolean(chatViews[task.id]?.detailsExpanded)}
+          onToggle={(event) =>
+            updateChatView(task.id, { detailsExpanded: event.currentTarget.open })
+          }
+        >
+          <summary>{tr('taskDetailsActions')}</summary>
+          <div className="task-details-body">
+            <div className="task-metadata">
+              <span>
+                {tr('gitStrategy')}:{' '}
+                {currentRun?.branch ||
+                  (task.git?.mode === 'branch'
+                    ? task.git.branch
+                    : tr(task.git?.mode === 'current' ? 'gitCurrent' : 'gitManaged'))}
+              </span>
+              <span>
+                {tr('maximumRounds')} {task.maxRounds}
+              </span>
+            </div>
+            <div className="button-row task-edit-actions">
+              {!preview && currentRun && (
+                <ResultActions
+                  runId={currentRun.id}
+                  available={Boolean(currentRun.directory) && !cleaned}
+                />
+              )}
+              <button
+                className="danger"
+                disabled={preview || pending}
+                aria-label={`${tr('deleteTask')}: ${task.name}`}
+                onClick={() => onDelete(task as TaskDraft)}
+              >
+                <Icon name="trash" />
+                {tr('deleteTask')}
+              </button>
+            </div>
+            <div className="model-bars">
+              <AgentPanel agent="worker" task={task} example={preview} />
+              <AgentPanel agent="reviewer" task={task} example={preview} />
+            </div>{' '}
+          </div>
+        </details>
+        {!preview && <TaskLifecyclePanels task={task as TaskDraft} />}
+      </div>
       <TaskChat key={task.id} task={task} preview={preview} visible={visible} />
     </main>
   );

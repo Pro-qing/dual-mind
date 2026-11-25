@@ -214,11 +214,22 @@ export interface TaskMessage {
   detail?: ExecutionDetail;
   fault?: AppError;
 }
+/** Public request labels accompany each page; they contain no role-private history. */
+export interface RequestSummary {
+  id: string;
+  text?: string;
+  time: string;
+  status?: 'pending' | 'processing' | 'handled' | 'answered';
+  runId?: string;
+  runStatus?: RunStatus;
+}
 export interface ConversationPage {
+  requests?: RequestSummary[];
   messages: TaskMessage[];
   before?: string;
 }
 export interface EvidencePage {
+  requests?: RequestSummary[];
   summary?: { records: number; errors: number; blockers?: number };
   events: RunEvent[];
   before?: string;

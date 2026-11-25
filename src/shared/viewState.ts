@@ -1,7 +1,14 @@
 import type { TaskDraft } from './model';
 import { restoreNavigation, type Navigation } from './navigation';
 
+export interface GroupView {
+  requests?: Record<string, boolean>;
+  roles?: Record<string, boolean>;
+}
 export interface ChatView {
+  taskPanel?: 'none' | 'context' | 'artifacts';
+  conversationGroups?: GroupView;
+  evidenceGroups?: GroupView;
   detailsExpanded?: boolean;
   panel?: 'open' | 'minimized' | 'closed';
   expandedMessages?: string[];
@@ -34,6 +41,24 @@ export function restoreChatViews(
       }
       const input = object(raw[task.id]),
         result: ChatView = {};
+      if (['none', 'context', 'artifacts'].includes(String(input.taskPanel))) {
+        result.taskPanel = input.taskPanel as ChatView['taskPanel'];
+      }
+      for (const key of ['conversationGroups', 'evidenceGroups'] as const) {
+        if (input[key] && typeof input[key] === 'object') {
+          const groups = object(input[key]);
+          result[key] = Object.fromEntries(
+            ['requests', 'roles'].map((kind) => [
+              kind,
+              Object.fromEntries(
+                Object.entries(object(groups[kind]))
+                  .filter(([id, open]) => id.length <= 250 && typeof open === 'boolean')
+                  .slice(-1000),
+              ),
+            ]),
+          );
+        }
+      }
       if (typeof input.detailsExpanded === 'boolean') {
         result.detailsExpanded = input.detailsExpanded;
       }

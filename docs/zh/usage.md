@@ -6,7 +6,7 @@
 
 **当前功能：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及[工具错误处理](./tool-errors.md)的宿主与前端自 0.0.6 起提供。[场景 30–34](./task-lifecycle-proposal.md)与[场景 35–37](./tool-errors-proposal.md)保留原审核和实现记录。
 
-**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
+**当前源码版本：0.0.8 · 本地已准备，待维护者手动发布。** 记录日期：2026-11-25。功能、验证与制品见[0.0.8 版本说明](./release-notes-0.0.8.md)。历史版本、设计归档和验证记录保留原意。
 
 ## 主页、任务详情与错误信息
 
@@ -34,16 +34,16 @@ code --install-extension Pro-qing.dual-mind
 
 Preview 标记表示扩展仍处于早期开发阶段。当前使用 Marketplace 普通发布通道，无需选择预发布通道。该扩展 ID 后续公开更新会递增扩展版本，用户可通过 VS Code 正常更新扩展；GitHub 同步保留对应版本的 VSIX 和校验文件。
 
-## 安装本地 0.0.6 包
+## 安装本地 0.0.8 包
 
-本地交付文件为 `release/dual-mind-0.0.6.vsix`，配套同名 `.vsix.sha256` 和构建记录；它尚未上传 Marketplace 或 GitHub Release。在项目根目录手动执行：
+本地交付文件为 `release/dual-mind-0.0.8.vsix`，配套同名 `.vsix.sha256` 和构建记录；它尚未上传 Marketplace 或 GitHub Release。在项目根目录手动执行：
 
 ```bash
-(cd release && sha256sum --check dual-mind-0.0.6.vsix.sha256)
-code --install-extension ./release/dual-mind-0.0.6.vsix
+(cd release && sha256sum --check dual-mind-0.0.8.vsix.sha256)
+code --install-extension ./release/dual-mind-0.0.8.vsix
 ```
 
-校验成功后再安装，也可使用 **Extensions: Install from VSIX...**。本轮交付不会自动安装；现有扩展身份仍为 `Pro-qing.dual-mind`。本版本功能与验证见[版本说明](./release-notes-0.0.6.md)，以下保留此前公开包的下载方法。
+校验成功后再安装，也可使用 **Extensions: Install from VSIX...**。本轮交付不会自动安装；现有扩展身份仍为 `Pro-qing.dual-mind`。本版本功能与验证见[版本说明](./release-notes-0.0.8.md)，以下保留此前公开包的下载方法。
 
 ## 下载、校验和安装 VSIX
 
@@ -102,7 +102,7 @@ code --install-extension dual-mind-0.0.1.vsix --force
 3. 点击**测试并获取模型**。**模型列表可访问**仅确认列表接口可访问，不代表推理权限或聊天适用性已验证。
 4. 搜索或选择模型 ID，也可手动输入自定义 ID，然后**保存连接**。**刷新模型**不会改变当前模型值。
 
-当前设置界面提供 OpenAI 兼容 Chat Completions 和 Responses。Anthropic Messages 与 Command Code 兼容适配器已在源码实现，但场景 38–40 尚待明确审核，对应 Provider 控件还未接入界面。详见[界面提案](./review-workbench-proposal.md)。
+设置页分别选择提供商和推理协议：OpenAI 兼容／Command Code，以及 Chat Completions／Responses／Anthropic Messages。按服务文档填写地址和模型 ID，密钥通过宿主密码框录入。修改地址、提供商或协议后先保存再查询模型；查询不自动选择模型。场景 38–40 已于 2026-11-25 审核并接入，详见[界面说明](./review-workbench-proposal.md)。
 
 打开设置或选择器不会自动请求。各连接的列表独立，仅在当前工作台挂载期间缓存。查询展示加载中、成功及数量／时间、空列表或本地化错误；失败或端点不支持列表时仍可手动输入 ID。修改 Base URL 后先保存再查询；成功修改地址／密钥或删除连接会使旧列表失效，取消替换密钥则保留旧密钥和列表。
 
@@ -134,13 +134,13 @@ Worker 与 Reviewer 的默认绑定相互独立，新任务继承默认值；已
 
 当前开发分支已接入专用 worktree 或选定本地分支中的模型执行、流式输出、检查／审查循环、暂停、继续、停止及聊天补充。自动收集编辑器上下文尚未实现，成果合入的宿主接口与页面入口均已接入；示例仍为隔离的只读内容。
 
-[设计归档](./design.md)现有 40 组，其中 37 组已审核、3 组待审核；待审核图稿描述的提供商控件和紧凑任务／日志布局尚未接入。当前源码支持单任务执行，并行执行仍待实现。剩余工作见[路线图](./roadmap.md)。更新后找不到工作台命令时，请确认 `Pro-qing.dual-mind` 已安装并启用于当前 VS Code 实例，并重载窗口。
+[设计归档](./design.md)现有 40 组，均已审核。场景 38–40 的提供商控件、紧凑任务栏和分组日志已接入，背景跟随当前 VS Code 主题。当前每工作区执行一个任务，并行执行仍待实现，见[路线图](./roadmap.md)。更新后找不到命令时，请确认 `Pro-qing.dual-mind` 已启用并重载窗口。
 
 ## 执行任务（开发分支）
 
 点击活动栏 **DualMind 图标**，打开工作台并创建任务。创建成功进入详情，任务为“待执行”；首次执行须由用户点击“开始”启动模型请求。
 
-1. 当前设置界面可为 Worker 和 Reviewer 配置 OpenAI 兼容 Chat Completions 或 Responses。Anthropic Messages 与 Command Code 适配器已在源码实现，但场景 38–40 待审核，因此尚不能在界面中选择。模型需要支持流式响应和工具调用；Command Code 适配器按声明的端点能力筛选查询结果。
+1. 为 Worker 和 Reviewer 分别选择连接与模型。连接可配置 OpenAI 兼容或 Command Code 提供商，以及 Chat Completions、Responses 或 Anthropic Messages 协议。模型须支持流式响应和工具调用；Command Code 模型查询按声明的端点能力筛选，不能按名称推测能力。
 2. 打开可信任的单根 Git 仓库，确保有已提交的命名分支；直接模式要求目录干净，隔离模式允许原目录有未提交修改且不会复制这些修改。选择专用 worktree、当前分支或指定本地分支。
 3. 写清需求并点击“开始”。**Reviewer 先阅读相关项目内容，拆解需求，下发执行方案和验收条件。** 初始规划不计入执行轮数。
 4. **Worker 按方案执行**，按需准备项目依赖、修改文件并选择具体命令进行验证。无需在设置中手填准备或检查命令；Worker 不自动安装系统工具链。
@@ -224,3 +224,9 @@ Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追�
 ## 持续执行与验收诊断
 
 模型往返和工具调用不设累计次数上限；任务配置的最大审查轮数、重复错误暂停、超时、上下文与日志限制仍生效。升级后，因旧调用上限失败的最新运行，在恢复记录有效时可点击**继续执行**；升级本身不会自动启动任务。Debug 显示具体验收阻断原因。必需的验证命令应在前台运行并等待完成。详见[工具错误](./tool-errors.md)、[故障恢复](./execution-recovery.md)和[shell 执行](./shell-execution.md)。
+
+## 0.0.8 紧凑界面与请求分组
+
+标题、编辑和运行控制位于同一紧凑区域，窄侧栏按需换行。上下文与成果并排，默认收起；打开一项关闭另一项，再次点击收起，切换保留内部状态。页面背景及控件配色由 VS Code 主题变量驱动，实时跟随浅色、深色及高对比度主题。
+
+聊天与证据按 `userRequestId` 分组，再分别折叠 Reviewer、Worker 和系统记录；相同文字的不同请求不合并。首次执行用 `initial:<runId>` 及运行时保存的需求快照，缺少请求 ID 的历史事件归入“更早记录”。默认展开当前或最近请求，历史组收起；全部展开／收起及手动选择分别按任务、聊天／证据保存。计数表示已加载记录，“已处理”不等同验收通过。原始需求和错误正文仍可展开阅读，消息分页、阅读锚点、常驻输入及恢复提示保留。

@@ -8,7 +8,7 @@
 
 [Compact task-list designs](./task-home-compact-proposal.md): scenes 28–29 are approved and implemented and document the home-layout and interaction changes now archived on local `master`.
 
-**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
+**Source version: 0.0.8 · Locally prepared; awaiting manual publication by the maintainer.** Recorded November 25, 2026. See the [0.0.8 version notes](./release-notes-0.0.8.md) for features, validation and artifacts. Historical versions, design archives and validation records retain their meaning.
 
 | Guide                                                   | Contents                                                                                |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -18,7 +18,7 @@
 | [Development](./development.md)                         | nvm, build commands, debugging, and tests                                               |
 | [Architecture](./architecture.md)                       | Implemented workbench, storage boundaries, branding assets, and module responsibilities |
 | [Host/UI protocol](./protocol.md)                       | Settings/model queries, execution messages, role handoffs and Git bindings              |
-| [UI design](./design.md)                                | 40 SVG/PNG pairs: 37 approved, 3 pending                                                |
+| [UI design](./design.md)                                | 40 SVG/PNG pairs: 40 approved                                                           |
 | [Roadmap](./roadmap.md)                                 | Versioned progress, implemented execution and remaining capabilities                    |
 | [Packaging and releases](./releasing.md)                | Publication history and the workflow for future GitHub / Marketplace versions           |
 | [Licensing](./licensing.md)                             | MIT license and bundled third-party notices                                             |
@@ -40,7 +40,10 @@ The [development log](./development-log.md) records code/documentation review, d
 
 ## Local source versions
 
-- [0.0.6](./release-notes-0.0.6.md): current complete feature set, local Python support, product introduction and local delivery record.
+- [0.0.8](./release-notes-0.0.8.md): current version awaiting manual publication, with providers, theme support, compact task headers and request groups.
+- [0.0.7](./release-notes-0.0.7.md): previous execution continuity, legacy-limit recovery and acceptance diagnostics.
+
+- [0.0.6](./release-notes-0.0.6.md): earlier complete feature set, local Python support, product introduction and local delivery record.
 - [0.0.5](./release-notes-0.0.5.md): earlier native sidebar workbench, versioned designs and local tag.
 - [0.0.4](./release-notes-0.0.4.md): earlier local source and VSIX, unpublished.
 - [0.0.3](./release-notes-0.0.3.md): previous local source version, unpublished.

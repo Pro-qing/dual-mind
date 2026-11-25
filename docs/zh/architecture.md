@@ -6,7 +6,7 @@
 
 **当前功能：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及[工具错误处理](./tool-errors.md)的宿主与前端自 0.0.6 起提供。[场景 30–34](./task-lifecycle-proposal.md)与[场景 35–37](./tool-errors-proposal.md)保留原审核和实现记录。
 
-**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
+**当前源码版本：0.0.8 · 本地已准备，待维护者手动发布。** 记录日期：2026-11-25。功能、验证与制品见[0.0.8 版本说明](./release-notes-0.0.8.md)。历史版本、设计归档和验证记录保留原意。
 
 ## 页面导航与结构化错误
 
@@ -36,7 +36,7 @@ resources/        随包 PNG 图标及归档品牌原图
 scripts/          构建、检查、本地测试和真实 Webview 验证
 tests/local/     存储与 React 交互测试
 tests/            VS Code 扩展宿主测试
-docs/design/v*/  按开发版本归档的 40 组 SVG／PNG（37 已审核、3 待审核）
+docs/design/v*/  按开发版本归档的 40 组 SVG／PNG（40 组均已审核）
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          兼容性 CI 和协作模板
@@ -70,7 +70,7 @@ Webview 只允许读取其构建目录，脚本使用 nonce CSP，禁止直接�
 
 ## 连接验证与模型查询
 
-当前设置界面按[场景 6–7](./design.md)提供使用 Bearer 认证的 OpenAI 兼容端点，并开放 Chat Completions／Responses。源码适配器也支持 Anthropic Messages 和 Command Code 兼容 API，但场景 38–40 的设置控件待审核，暂不能从界面选择。`src/providers/adapters/` 集中处理协议映射，`src/providers/models.ts` 保留网关路径并处理提供商专属模型发现。本功能不包含 Azure 专用认证。
+当前设置页按[场景 38](./review-workbench-proposal.md)提供独立 Provider／协议选择，开放 Chat Completions、Responses、Anthropic Messages 及 Command Code 兼容 API。`src/providers/adapters/` 处理协议映射和认证，`src/providers/models.ts` 保留网关路径与提供商专属模型发现。地址、Provider 或协议编辑后须保存再查询；旧客户端省略配置字段时保留已有 Provider、协议及模型窗口。
 
 用户明确发起查询 → 宿主在存储锁内读取连接元信息和密钥 → `ModelQueries` 在锁外执行网络请求 → 宿主返回校验后的 ID 和时间 → React 展示候选列表或手动输入。Webview 保留禁止直接联网的 CSP；查询不发送任务需求、角色指令或工作区内容。
 
@@ -178,3 +178,9 @@ Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追�
 ## 本机 Python
 
 任务准备及恢复会自动识别本机 Python 2.7／3 和常见项目环境，并将信息用于模型上下文。只有 Worker 可通过 `run_command` 执行命令；Reviewer 可读取已记录结果但不能发起命令。Python 不随包携带或安装，也不修改全局环境。发现顺序、预算与故障边界见[本机 Python 说明](./local-python.md)。
+
+## 0.0.8 紧凑界面与请求分组
+
+标题、编辑和运行控制位于同一紧凑区域，窄侧栏按需换行。上下文与成果并排，默认收起；打开一项关闭另一项，再次点击收起，切换保留内部状态。页面背景及控件配色由 VS Code 主题变量驱动，实时跟随浅色、深色及高对比度主题。
+
+聊天与证据按 `userRequestId` 分组，再分别折叠 Reviewer、Worker 和系统记录；相同文字的不同请求不合并。首次执行用 `initial:<runId>` 及运行时保存的需求快照，缺少请求 ID 的历史事件归入“更早记录”。默认展开当前或最近请求，历史组收起；全部展开／收起及手动选择分别按任务、聊天／证据保存。计数表示已加载记录，“已处理”不等同验收通过。原始需求和错误正文仍可展开阅读，消息分页、阅读锚点、常驻输入及恢复提示保留。

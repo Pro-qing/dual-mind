@@ -6,7 +6,7 @@
 
 **Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
+**Source version: 0.0.8 · Locally prepared; awaiting manual publication by the maintainer.** Recorded November 25, 2026. See the [0.0.8 version notes](./release-notes-0.0.8.md) for features, validation and artifacts. Historical versions, design archives and validation records retain their meaning.
 
 ## Home, task detail, and errors
 
@@ -34,16 +34,16 @@ If you installed the old development identity, follow the Preview 1 switching in
 
 The Preview label identifies this extension's early development stage. It uses the regular Marketplace channel; selecting a pre-release channel is not required. Future published updates under the same ID will use higher extension versions and can be installed through VS Code's normal extension update flow. GitHub releases retain the corresponding VSIX and checksum.
 
-## Install the local 0.0.6 package
+## Install the local 0.0.8 package
 
-The local delivery is `release/dual-mind-0.0.6.vsix`, accompanied by its `.vsix.sha256` and build record. It has not been uploaded to Marketplace or GitHub Releases. From the project root, run manually:
+The local delivery is `release/dual-mind-0.0.8.vsix`, accompanied by its `.vsix.sha256` and build record. It has not been uploaded to Marketplace or GitHub Releases. From the project root, run manually:
 
 ```bash
-(cd release && sha256sum --check dual-mind-0.0.6.vsix.sha256)
-code --install-extension ./release/dual-mind-0.0.6.vsix
+(cd release && sha256sum --check dual-mind-0.0.8.vsix.sha256)
+code --install-extension ./release/dual-mind-0.0.8.vsix
 ```
 
-Install only after verification succeeds, or use **Extensions: Install from VSIX...**. This delivery does not install automatically; the extension remains `Pro-qing.dual-mind`. See the [version notes](./release-notes-0.0.6.md) for capabilities and validation. The following section retains the earlier public package's download instructions.
+Install only after verification succeeds, or use **Extensions: Install from VSIX...**. This delivery does not install automatically; the extension remains `Pro-qing.dual-mind`. See the [version notes](./release-notes-0.0.8.md) for capabilities and validation. The following section retains the earlier public package's download instructions.
 
 ## Download, verify, and install a VSIX
 
@@ -102,7 +102,7 @@ Settings → **API Connections** manages a name, HTTP(S) Base URL, and an option
 3. Click **Test & fetch models**. **Model list accessible** confirms access to the list endpoint only; it does not verify inference or chat compatibility.
 4. Search or choose an ID, or enter a custom ID, then **Save connection**. **Refresh models** never changes the current model value.
 
-The current settings UI exposes OpenAI-compatible Chat Completions and Responses. Anthropic Messages and Command Code compatibility adapters are implemented in source, but their provider controls are not available until scenes 38–40 receive explicit design approval and the UI is integrated. See the [proposal](./review-workbench-proposal.md).
+Settings separates Provider (OpenAI compatible / Command Code) from protocol (Chat Completions / Responses / Anthropic Messages). Enter the URL and model ID supplied by your service, and set the key through the host password prompt. Save address, Provider or protocol edits before fetching models; fetching does not select a model. Scenes 38–40 were approved and integrated November 25, 2026; see the [interface guide](./review-workbench-proposal.md).
 
 Opening settings or a selector makes no request. Lists remain separate per connection and are cached only while the workbench is mounted. Queries show loading, success with count/time, an empty list, or a localized error. Manual IDs remain usable when listing fails or is unsupported. Save an edited Base URL before querying; successful URL/key changes or deletion invalidate the old list. Cancelling key replacement leaves the old key and list intact.
 
@@ -134,13 +134,13 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 The development branch executes tasks in dedicated worktrees or directly on a selected local branch with streaming, checks/review rounds and pause/continue/stop. Automatic editor-context collection and parallel execution remain unavailable. Host result integration is implemented, but its page controls are integrated. Examples remain isolated read-only content.
 
-The [design archive](./design.md) contains 40 pairs: 37 approved and three pending review. The pending scenes describe provider controls and compact task/log layouts that are not yet integrated. Current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+All 40 pairs in the [design archive](./design.md) are approved. Scenes 38–40 provider controls, compact task header and grouped logs are integrated, with backgrounds following the current VS Code theme. One task executes per workspace; parallel execution remains on the [roadmap](./roadmap.md). If commands disappear after updating, confirm `Pro-qing.dual-mind` is enabled and reload the window.
 
 ## Executing tasks (development source)
 
 Open the workbench from the **DualMind activity-bar icon** and create a task. Creation opens its detail page in the pending state. For a new task, **Start** begins the first model request and execution.
 
-1. In the current settings UI, configure Worker and Reviewer with OpenAI-compatible Chat Completions or Responses. Anthropic Messages and Command Code adapters exist in source but are not selectable through the UI pending approval of [scenes 38–40](./review-workbench-proposal.md). Models must support streaming and tool calls; the Command Code adapter filters discovered models by declared endpoint support.
+1. Select independent connections/models for Worker and Reviewer. Connections support OpenAI-compatible or Command Code providers and Chat Completions, Responses or Anthropic Messages protocols. Models must support streaming and tool calls; Command Code discovery filters declared endpoint capabilities without guessing from names.
 2. Open a trusted single-folder Git repository with a committed named branch. Direct mode requires a clean directory; managed mode permits source changes and does not copy them. Select a managed worktree, the current branch or an existing local branch.
 3. Describe the requirements and press Start. **Reviewer first reads relevant project context, decomposes the request and issues an executable plan with acceptance criteria.** Initial planning does not consume an execution round.
 4. **Worker implements that plan**, prepares project dependencies as needed, changes files and selects concrete verification commands. No preparation/check configuration is required. Worker does not automatically install system toolchains.
@@ -224,3 +224,9 @@ Preparation and recovery identify local Python 2.7/3 and common project environm
 ## Continued execution and acceptance diagnostics
 
 Model exchanges and tool calls have no cumulative count limit. The task's configured maximum review rounds, repeated-error pause, timeout, context and log limits remain effective. After upgrading, use **Continue execution** for a latest run stopped by an old call limit when its recovery data is valid; upgrading alone never resumes a task. Debug shows specific acceptance blockers. Run required verification commands in the foreground and wait for completion. See [tool errors](./tool-errors.md), [recovery](./execution-recovery.md) and [shell execution](./shell-execution.md).
+
+## 0.0.8 compact interface and request groups
+
+Titles, editing and run controls share a compact area and wrap in narrow sidebars. Context and artifacts sit side by side, initially closed; opening either closes the other and clicking it again closes both. Switching preserves internal state. VS Code theme variables drive backgrounds and controls, including live light, dark and high-contrast changes.
+
+Chat and evidence group by `userRequestId`, with separate Reviewer, Worker and system folds; equal text never merges distinct requests. Initial runs use `initial:<runId>` and their saved requirements snapshot. Older events without request IDs belong to Earlier records. The current or latest request starts open and historical groups closed; expand/collapse-all and manual choices are saved separately per task and surface. Counts describe loaded records; Handled does not mean acceptance passed. Original requirements and errors remain readable, with pagination, reading anchors, persistent composer and recovery notices retained.

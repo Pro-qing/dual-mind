@@ -1,6 +1,31 @@
 import type { Locale } from './model';
 
 const messages = {
+  reviewStepPassed: ['Step passed; continuing', '本步通过，继续执行'],
+  reviewRisk: ['Risk', '风险'],
+  reviewRisk_low: ['Low', '低'],
+  reviewRisk_medium: ['Medium', '中'],
+  reviewRisk_high: ['High', '高'],
+  reviewConfidence: ['Confidence', '信心'],
+  modelProvider: ['Provider', '提供商'],
+  providerCommandCode: ['Command Code', 'Command Code'],
+  modelsSaveConnection: [
+    'Save the address, provider and protocol before querying models.',
+    '请先保存地址、提供商与协议，再查询模型。',
+  ],
+  taskActions: ['Task actions', '任务操作'],
+  requestEarlier: ['Earlier records', '更早记录'],
+  requestInitial: ['Original task requirements', '原始任务需求'],
+  requestUnavailable: ['Request text unavailable', '请求原文不可用'],
+  requestRecords: ['loaded records', '条已加载记录'],
+  requestExpandAll: ['Expand all requests', '全部展开'],
+  requestCollapseAll: ['Collapse all requests', '全部收起'],
+  requestRunStatus: ['Run status', '执行状态'],
+  requestProcessedHint: [
+    'Message handled; task acceptance is shown in its review.',
+    '消息已处理；任务验收结论见审查记录。',
+  ],
+
   contextSettings: ['Model context', '模型上下文'],
   savedArtifacts: ['Saved artifacts', '保存的成果'],
   baseBranch: ['Base branch', '基点分支'],
@@ -494,8 +519,8 @@ const messages = {
   baseUrl: ['Base URL', '接口地址（Base URL）'],
   defaultModel: ['Default model ID', '默认模型 ID'],
   connectionHint: [
-    'Save an OpenAI-compatible endpoint, then explicitly fetch its model list.',
-    '保存 OpenAI 兼容接口配置后，可主动查询模型列表。',
+    'Save the provider, protocol and API endpoint, then explicitly fetch its model list.',
+    '保存提供商、协议与 API 地址后，可主动查询模型列表。',
   ],
   apiKey: ['API key', 'API 密钥'],
   keySaved: ['Saved in VS Code', '已保存在 VS Code 中'],

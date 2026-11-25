@@ -15,15 +15,15 @@
 **新增已审核修订：** [双 AI 方案与验收循环](./execution-cycle-proposal.md)，2026-11-20 审核通过，已实现，实际覆盖范围见[验证记录](./execution-cycle-validation.md)。
 **已审核并实现的修订：** [任务主页、详情与错误提示修订](./task-pages-proposal.md)提供场景 8–11，拆分主页和任务详情，创建后手动开始，并统一中英文错误展示。场景 8–11 已于 2026-11-20 审核通过并实现；下文场景 1–7 与历史说明保持原样。
 
-**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
+**当前源码版本：0.0.8 · 本地已准备，待维护者手动发布。** 记录日期：2026-11-25。功能、验证与制品见[0.0.8 版本说明](./release-notes-0.0.8.md)。历史版本、设计归档和验证记录保留原意。
 
-**当前共有 40 组 SVG／PNG：37 组已审核，场景 38–40 待明确审核。** 场景 1–37 保留原审核及实现记录；新提案覆盖提供商／协议设置、标题紧凑且上下文／成果互斥的任务栏，以及先按用户请求再按角色折叠的日志。后端适配器和请求归属已实现，但对应 UI 控件和布局尚未接入。原图及历史审核标签保持原样，所有图稿均为示例。已发布的 0.0.1 保留历史行为，当前操作见[使用说明](./usage.md)。
+**当前共有 40 组 SVG／PNG，全部已审核。** 场景 38–40 于 2026-11-25 获批并接入提供商／协议设置、紧凑任务栏、上下文／成果互斥展开，以及按请求和角色折叠日志。实际背景色跟随 VS Code 主题，图稿配色仅为示意。原图及历史审核标签保持原样，运行验证另见[开发日志](./development-log.md)。
 
-每张画布均为 **1440 × 900**，采用贴近 VS Code 的深色配色，使用可编辑的 SVG 文字与矢量元素。早期场景使用英文标签，后续修订以简体中文为主，各组均有中英双语说明。SVG 没有内嵌图片、脚本、外部字体或外部资源，PNG 为渲染预览。
+每张画布均为 **1440 × 900**，使用可编辑的 SVG 文字与矢量元素。历史稿以深色为主，0.0.7 同时包含浅色与深色示例；实现配色始终跟随宿主主题。早期场景使用英文标签，后续修订以简体中文为主，各组均有中英双语说明。SVG 没有内嵌图片、脚本、外部字体或外部资源，PNG 为渲染预览。
 
 ## 按版本查找
 
-[设计归档总索引](../design/README.md)列出版本、场景和数量。0.0.1 对应场景 1–5，0.0.2 对应 6–7，0.0.3 对应 8–17，0.0.4 对应 18–23，0.0.5 对应 24–37，0.0.7 对应待审核场景 38–40；每个目录都有同名 SVG／PNG 和 README。目录按开发版本归属，不是每个初始标签的完整快照：场景 8–17 是初始 `v0.0.3` 标签之后的同版本修订；侧栏由此前 0.0.4 候选包的开发记录归入正式的 0.0.5 源码里程碑。历史图稿内容和标签不改写。
+[设计归档总索引](../design/README.md)列出版本、场景和数量。0.0.1 对应场景 1–5，0.0.2 对应 6–7，0.0.3 对应 8–17，0.0.4 对应 18–23，0.0.5 对应 24–37，0.0.7 对应已审核场景 38–40；每个目录都有同名 SVG／PNG 和 README。目录按开发版本归属，不是每个初始标签的完整快照：场景 8–17 是初始 `v0.0.3` 标签之后的同版本修订；侧栏由此前 0.0.4 候选包的开发记录归入正式的 0.0.5 源码里程碑。历史图稿内容和标签不改写。
 
 ## 设计稿导航
 
@@ -66,9 +66,9 @@
 | 35. 工具调用与命令结果             | [SVG](../design/v0.0.5/dual-mind-tool-results-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-tool-results-proposal.png)           |
 | 36. 重复错误暂停与继续             | [SVG](../design/v0.0.5/dual-mind-tool-pause-proposal.svg)             | [PNG](../design/v0.0.5/dual-mind-tool-pause-proposal.png)             |
 | 37. 历史失败与当前验收             | [SVG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.png)      |
-| 38. 提供商与协议设置（待审核）     | [SVG](../design/v0.0.7/dual-mind-model-provider-proposal.svg)         | [PNG](../design/v0.0.7/dual-mind-model-provider-proposal.png)         |
-| 39. 紧凑任务栏（待审核）           | [SVG](../design/v0.0.7/dual-mind-compact-task-header-proposal.svg)    | [PNG](../design/v0.0.7/dual-mind-compact-task-header-proposal.png)    |
-| 40. 按请求分组的日志（待审核）     | [SVG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.svg)   | [PNG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.png)   |
+| 38. 提供商与协议设置（已审核）     | [SVG](../design/v0.0.7/dual-mind-model-provider-proposal.svg)         | [PNG](../design/v0.0.7/dual-mind-model-provider-proposal.png)         |
+| 39. 紧凑任务栏（已审核）           | [SVG](../design/v0.0.7/dual-mind-compact-task-header-proposal.svg)    | [PNG](../design/v0.0.7/dual-mind-compact-task-header-proposal.png)    |
+| 40. 按请求分组的日志（已审核）     | [SVG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.svg)   | [PNG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.png)   |
 
 ## 场景 1–7 的历史设计说明
 
@@ -184,7 +184,7 @@
 
 ## 审核与实现门槛
 
-场景 1–37 已审核，38–40 待审核；对应视觉修改须按[贡献指南](../../CONTRIBUTING.zh.md)经明确审核后实现。原图中的历史标签予以保留，不代表当前审核状态。内置 Reviewer 定义和已有任务快照保持兼容，图中运行状态和查询结果仍为示例。
+场景 1–40 均已审核；38–40 的审核日期为 2026-11-25，并明确要求背景色随主题变化。原图中的历史标签不代表当前状态。内置 Reviewer 定义、已有任务快照及示例数据保持原意，后续修订遵循[贡献指南](../../CONTRIBUTING.zh.md)。
 
 已实现模块职责见[架构说明](./architecture.md)，任务关联和配置边界见[通信协议](./protocol.md)。其中记录已实现的设置／执行消息、角色交接与文件访问边界。
 
@@ -204,7 +204,7 @@ npm run format:check
 
 ## 开发分支的执行界面
 
-实际设置类别为 API 连接、新任务的默认配置、任务执行、Reviewer 角色、模型上下文和保存的成果。当前连接界面提供 OpenAI 兼容 Chat Completions／Responses；Anthropic 和 Command Code 后端适配尚未通过设置界面开放。场景 38–40 是待审核的提供商控件、紧凑任务栏和请求／角色日志折叠提案，尚无对应 UI 源码。其余工作台保留已实现布局：任务次要详情默认折叠，当前详情采用场景 14–20 的紧凑模型栏、用户右侧／AI 左侧聊天、常驻输入框和独立证据面板；宽屏证据栏约 360 CSS 像素，低于 1100 CSS 像素时转为宽度不超过 430 CSS 像素及视口的抽屉。每工作区同时一个任务；当前行为见[使用说明](./usage.md)。
+实际设置类别为 API 连接、新任务默认配置、任务执行、Reviewer 角色、模型上下文和保存成果。连接页提供独立 Provider／协议控件，开放 Chat Completions、Responses、Anthropic Messages 和 Command Code 兼容 API。任务标题及主要操作集中排列，次要详情默认折叠，上下文与成果互斥展开。对话及证据按用户请求再按角色折叠，保留常驻输入框；宽屏证据栏约 360px，低于 1100px 时使用至多 430px 的抽屉。每工作区同时一个任务；当前操作见[使用说明](./usage.md)。
 
 ## 新增已审核设计：2026-11-22
 

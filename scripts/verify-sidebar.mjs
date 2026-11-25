@@ -83,11 +83,7 @@ async function launch(extension = root) {
       '--no-sandbox',
       '--disable-gpu',
       ...(process.env.DUAL_MIND_RESOURCE_UI === '1'
-        ? [
-            '--disable-extensions',
-            '--renderer-process-limit=2',
-            '--js-flags=--max-old-space-size=128',
-          ]
+        ? ['--renderer-process-limit=2', '--js-flags=--max-old-space-size=128']
         : []),
       '--password-store=basic',
       '--skip-welcome',

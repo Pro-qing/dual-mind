@@ -6,7 +6,7 @@
 
 **Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
+**Source version: 0.0.8 · Locally prepared; awaiting manual publication by the maintainer.** Recorded November 25, 2026. See the [0.0.8 version notes](./release-notes-0.0.8.md) for features, validation and artifacts. Historical versions, design archives and validation records retain their meaning.
 
 ## Page navigation and structured errors
 
@@ -36,7 +36,7 @@ resources/        Packaged PNG icon and archived branding source
 scripts/          Build, checks, local tests and actual Webview verification
 tests/local/     Store and React interaction tests
 tests/            VS Code extension-host tests
-docs/design/v*/  40 SVG/PNG pairs by development version (37 approved, 3 pending)
+docs/design/v*/  40 SVG/PNG pairs by development version (all 40 approved)
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          Compatibility CI and collaboration templates
@@ -70,7 +70,7 @@ Home and task detail share the native sidebar workbench; task selection opens de
 
 ## Connection verification and model discovery
 
-The current settings UI implements [scenes 6–7](./design.md) for OpenAI-compatible endpoints using Bearer authentication and exposes Chat Completions/Responses. Source adapters also support Anthropic Messages and Command Code's compatibility API, but their settings controls are pending approval of scenes 38–40; they are not currently selectable through the UI. `src/providers/adapters/` centralizes protocol mapping, while `src/providers/models.ts` preserves gateway prefixes and provider-specific discovery. Azure-specific authentication remains outside this feature.
+Settings implements [scene 38](./review-workbench-proposal.md) with independent Provider/protocol selection for Chat Completions, Responses, Anthropic Messages and Command Code compatibility access. `src/providers/adapters/` handles protocol/authentication mapping and `src/providers/models.ts` preserves gateway paths and provider-specific discovery. Address, Provider or protocol edits must be saved before querying; omitted fields in older client saves preserve existing Provider, protocol and context windows.
 
 A user requests a query → the host reads saved metadata and its secret under the store lock → `ModelQueries` performs network work outside that lock → the host returns validated IDs and a timestamp → React displays suggestions or manual input. The Webview keeps its no-direct-network CSP. Queries send no task requirements, role instructions, or workspace content.
 
@@ -178,3 +178,9 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 ## Local Python
 
 Preparation and recovery identify local Python 2.7/3 and common project environments for model context. Worker alone can execute commands through `run_command`; Reviewer can inspect recorded outcomes but cannot run them. Python is not bundled or installed, and global environments are unchanged. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
+
+## 0.0.8 compact interface and request groups
+
+Titles, editing and run controls share a compact area and wrap in narrow sidebars. Context and artifacts sit side by side, initially closed; opening either closes the other and clicking it again closes both. Switching preserves internal state. VS Code theme variables drive backgrounds and controls, including live light, dark and high-contrast changes.
+
+Chat and evidence group by `userRequestId`, with separate Reviewer, Worker and system folds; equal text never merges distinct requests. Initial runs use `initial:<runId>` and their saved requirements snapshot. Older events without request IDs belong to Earlier records. The current or latest request starts open and historical groups closed; expand/collapse-all and manual choices are saved separately per task and surface. Counts describe loaded records; Handled does not mean acceptance passed. Original requirements and errors remain readable, with pagination, reading anchors, persistent composer and recovery notices retained.

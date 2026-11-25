@@ -78,8 +78,12 @@ test('conversation pagination spans runs, preserves stable IDs and recovers proc
   assert.equal(new Set(all.map((m) => m.id)).size, 86);
   assert.equal(all.find((m) => m.kind === 'legacy')?.role, 'system');
   const evidence = await records.evidence(taskId);
-  assert.equal(evidence.events.length, 1);
-  assert.equal(evidence.events[0].text, 'First chunk last chunk');
+  assert.equal(evidence.events.length, 2);
+  assert.equal(
+    evidence.events.find((event) => event.kind === 'text')?.text,
+    'First chunk last chunk',
+  );
+  assert.equal(evidence.events[0].text, 'Legacy result without role');
   const recovered = new RunRecords(f.workspace, () => root);
   await recovered.initialize();
   assert.equal(recovered.runs[0].status, 'interrupted');
@@ -358,4 +362,116 @@ test('command failures remain review evidence rather than acceptance blockers', 
   assert.equal((await records.evidence(taskId)).summary?.errors, 1);
   assert.equal((await records.evidence(taskId)).summary?.blockers, 0);
   assert.equal((await records.evidence(taskId, old.id)).summary?.blockers, 0);
+});
+
+test('paged chat and evidence carry original request labels and frozen initial requirements', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'dualmind-request-pages-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const f = fixture(),
+    taskId = randomUUID(),
+    runId = randomUUID();
+  const records = new RunRecords(f.workspace, () => root);
+  await records.initialize();
+  records.runs.push({
+    id: runId,
+    taskId,
+    status: 'completed',
+    round: 1,
+    maxRounds: 5,
+    createdAt: '2026-11-25T00:00:00Z',
+    updatedAt: '',
+    sequence: 100,
+  });
+  await records.metadata(runId, {
+    version: 1,
+    task: { id: taskId, requirements: 'Frozen original requirements' },
+  });
+  const first = randomUUID(),
+    second = randomUUID();
+  for (const [index, id] of [first, second].entries()) {
+    await records.putMessage({
+      id,
+      userRequestId: id,
+      taskId,
+      runId,
+      role: 'user',
+      kind: 'message',
+      text: 'Identical request text',
+      status: 'handled',
+      time: `2026-11-25T00:00:0${index + 1}Z`,
+    });
+  }
+  await records.putMessage({
+    id: randomUUID(),
+    userRequestId: first,
+    taskId,
+    runId,
+    role: 'reviewer',
+    kind: 'answer',
+    text: 'Answer',
+    time: '2026-11-25T00:00:03Z',
+  });
+  for (let sequence = 1; sequence <= 100; sequence++) {
+    await records.event({
+      runId,
+      taskId,
+      sequence,
+      time: new Date(Date.UTC(2026, 10, 25, 1, 0, sequence)).toISOString(),
+      agent: sequence % 2 ? 'reviewer' : 'worker',
+      kind: 'text',
+      requestId: `model-${sequence}`,
+      userRequestId: sequence % 3 === 0 ? `initial:${runId}` : sequence % 3 === 1 ? first : second,
+      text: `Public output ${sequence}`,
+    });
+  }
+  const chat = await records.conversation(taskId, undefined, true);
+  assert.equal(chat.messages.length, 40);
+  assert.ok(!chat.messages.some((message) => message.role === 'user'));
+  const evidence = await records.evidence(taskId);
+  assert.equal(evidence.events.length, 80);
+  for (const page of [chat, evidence]) {
+    assert.equal(
+      page.requests?.find((request) => request.id === `initial:${runId}`)?.text,
+      'Frozen original requirements',
+    );
+    assert.equal(
+      page.requests?.find((request) => request.id === first)?.text,
+      'Identical request text',
+    );
+    assert.equal(page.requests?.find((request) => request.id === first)?.status, 'answered');
+    assert.equal(page.requests?.find((request) => request.id === second)?.status, 'handled');
+    assert.equal(page.requests?.length, 3);
+  }
+  const older = await records.evidence(taskId, undefined, undefined, evidence.before);
+  assert.equal(older.events.length, 20);
+  assert.equal(older.requests?.length, 3);
+  // Reload derives labels from public storage without rewriting old logs.
+  await records.save();
+  const reopened = new RunRecords(f.workspace, () => root);
+  await reopened.initialize();
+  assert.deepEqual((await reopened.conversation(taskId, undefined, true)).requests, chat.requests);
+  for (const [index, userRequestId] of [first, second].entries()) {
+    await records.event({
+      runId,
+      taskId,
+      sequence: 101 + index,
+      time: '2026-11-25T02:00:00Z',
+      agent: 'reviewer',
+      kind: 'text',
+      requestId: 'reused-model-request',
+      userRequestId,
+      text: `Separate output ${index}`,
+    });
+  }
+  assert.equal(
+    (await records.conversation(taskId, undefined, true)).messages.filter(
+      (m) => m.requestId === 'reused-model-request',
+    ).length,
+    2,
+  );
+  assert.equal(
+    (await records.evidence(taskId)).events.filter((e) => e.requestId === 'reused-model-request')
+      .length,
+    2,
+  );
 });

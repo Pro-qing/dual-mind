@@ -2,7 +2,7 @@
 
 [简体中文](../zh/development.md) · [Documentation](./README.md)
 
-**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
+**Source version: 0.0.8 · Locally prepared; awaiting manual publication by the maintainer.** Recorded November 25, 2026. See the [0.0.8 version notes](./release-notes-0.0.8.md) for features, validation and artifacts. Historical versions, design archives and validation records retain their meaning.
 
 ## Environment
 
@@ -109,9 +109,9 @@ npm run package
 
 CI runs environment and local store/React tests, formatting, types, lint, documentation links, design-asset checks, and extension-host tests in each matrix job. It covers VS Code 1.100.0 and stable in Ubuntu 20.04 containers, plus stable on native Ubuntu 24.04. The Ubuntu 20.04 stable job additionally validates the real Webview and packaging; see the [validation matrix](./environment.md). Use `npm run format` after editing supported text files. The SVG is intentionally excluded from Prettier so its hand-authored geometry stays readable.
 
-Local tests use serial workers and a 256 MiB JavaScript heap per test process. On a constrained host, run checks and GUI suites separately; observe the entire process tree, available memory, swap and elapsed time, and stop the test if the host loses its reserve. A JavaScript heap cap alone does not bound Electron memory. `DUAL_MIND_RESOURCE_UI=1` adds renderer/heap limits and disables unrelated extensions in GUI fixtures; `DUAL_MIND_SKIP_NATIVE_UI=1` runs the Webview suite alone so `node scripts/verify-sidebar.mjs` can follow separately. These flags do not impose an OS memory quota.
+Local tests use serial workers and a 256 MiB JavaScript heap per test process. On a constrained host, run checks and GUI suites separately; observe the entire process tree, available memory, swap and elapsed time, and stop the test if the host loses its reserve. A JavaScript heap cap alone does not bound Electron memory. `DUAL_MIND_RESOURCE_UI=1` adds renderer/heap limits; GUI fixtures use an empty isolated extensions directory; `DUAL_MIND_SKIP_NATIVE_UI=1` runs the Webview suite alone so `node scripts/verify-sidebar.mjs` can follow separately. These flags do not impose an OS memory quota.
 
-Set `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.7-candidate.vsix` when running `npm run package` to keep a separate candidate without replacing the default package. Packaging does not install or publish the extension.
+Set `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.8-candidate.vsix` when running `npm run package` to keep a separate candidate without replacing the default package. Packaging does not install or publish the extension.
 
 ## Troubleshooting
 
@@ -173,3 +173,7 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 ## Verification for execution continuity
 
 Prepare and verify the bundled-tool cache before running local suites, including inside independent worktrees: `npm run tools:prepare` and `npm run tools:verify`. A source checkout does not copy ignored caches. Tests use local model endpoints; no private credentials or paid inference are required. Regression cases cover both protocols beyond former call limits, recovery without replay, structured acceptance errors, redaction and background-command cleanup. Run checks in the foreground and record final exit status. A background launch and an empty output file are not successful validation.
+
+## 0.0.8 theme and grouping regression
+
+`DUAL_MIND_UI_REVIEW_ONLY=1 npm run test:ui` runs the new scenes/theme matrix across light, dark and both high-contrast themes, English/Chinese and 240/320/480/1200px, using the installed editor's actual theme IDs. `DUAL_MIND_SKIP_REVIEW_UI=1 DUAL_MIND_SKIP_NATIVE_UI=1 npm run test:ui` runs the existing full workflow separately; then run the theme matrix and `node scripts/verify-sidebar.mjs`. The default entry includes all three parts sequentially. These switches allow separate recorded results: `review-scenes-results.json` for the theme matrix and `results.json` for the full workflow.

@@ -1,4 +1,5 @@
 /* global window, document, getComputedStyle */
+import { verifyReviewScenes } from './verify-review-scenes.mjs';
 import { _electron } from 'playwright-core';
 import { downloadAndUnzipVSCode } from '@vscode/test-electron';
 import assert from 'node:assert/strict';
@@ -242,16 +243,17 @@ const server = createServer((request, response) => {
               : {
                   name: 'submit_review',
                   arguments: JSON.stringify({
-                    verdict: approve ? 'approve' : 'changes_requested',
+                    verdict: approve ? 'pass' : 'fail',
+                    risk: approve ? 'low' : 'medium',
+                    confidence: approve ? 0.95 : 0.7,
+                    issues: approve ? [] : ['The artifact needs repair.'],
+                    evidence: [`Inspected the actual ${artifactPath} and supplied host evidence`],
+                    reasoning: 'Judge the actual artifact and recorded verification.',
+                    nextStep: {
+                      action: approve ? 'finish' : 'continue',
+                      instructions: approve ? '' : 'Repair the artifact and verify again.',
+                    },
                     summary: approve ? 'Artifact accepted.' : 'Fix the failed artifact.',
-                    acceptance: [
-                      {
-                        criterionId: 'result',
-                        passed: approve,
-                        commandIds: handoff?.submission?.evidence?.[0]?.commandIds ?? [],
-                        evidence: `Inspected the actual ${artifactPath} and supplied host evidence`,
-                      },
-                    ],
                     ...(approve ? {} : { nextPlan: plan }),
                   }),
                 };
@@ -262,10 +264,14 @@ const server = createServer((request, response) => {
         };
       }
       const id = `${worker ? 'worker' : 'reviewer'}-${turn}`;
+      const publicText =
+        call.name === 'submit_review' && approve
+          ? 'Artifact reviewed.\nTASK_COMPLETE\n'
+          : 'Working on the isolated task artifact.\n';
       response.setHeader('Content-Type', 'text/event-stream');
       const events = request.url.endsWith('/responses')
         ? [
-            { type: 'response.output_text.delta', delta: 'Reviewing the task artifact.\n' },
+            { type: 'response.output_text.delta', delta: publicText },
             {
               type: 'response.completed',
               response: {
@@ -283,7 +289,7 @@ const server = createServer((request, response) => {
                 {
                   index: 0,
                   delta: {
-                    content: 'Working on the isolated task artifact.\n',
+                    content: publicText,
                     tool_calls: [{ index: 0, id, type: 'function', function: call }],
                   },
                   finish_reason: 'tool_calls',
@@ -304,14 +310,17 @@ const server = createServer((request, response) => {
   requests.push({
     method: request.method,
     url: request.url,
-    authorized: request.headers.authorization === `Bearer ${testKey}`,
+    authorized:
+      request.headers.authorization === `Bearer ${testKey}` ||
+      request.headers['x-api-key'] === testKey,
     hasBody: Boolean(request.headers['content-length'] || request.headers['transfer-encoding']),
   });
   response.setHeader('Content-Type', 'application/json');
   if (
-    request.headers.authorization !== `Bearer ${testKey}` ||
+    (request.headers.authorization !== `Bearer ${testKey}` &&
+      request.headers['x-api-key'] !== testKey) ||
     request.method !== 'GET' ||
-    !request.url?.endsWith('/v1/models')
+    !request.url?.split('?')[0].endsWith('/v1/models')
   ) {
     response.writeHead(403);
     response.end('{}');
@@ -323,7 +332,13 @@ const server = createServer((request, response) => {
     return;
   }
   response.end(
-    JSON.stringify({ data: (responseMode === 'empty' ? [] : modelIds).map((id) => ({ id })) }),
+    JSON.stringify({
+      data: (responseMode === 'empty' ? [] : modelIds).map((id) => ({
+        id,
+        supported_endpoints: ['chat/completions', 'responses', 'messages'],
+      })),
+      has_more: false,
+    }),
   );
 });
 await new Promise((resolve, reject) => {
@@ -339,11 +354,7 @@ async function launch(folder = workspace) {
       '--no-sandbox',
       '--disable-gpu',
       ...(process.env.DUAL_MIND_RESOURCE_UI === '1'
-        ? [
-            '--disable-extensions',
-            '--renderer-process-limit=2',
-            '--js-flags=--max-old-space-size=128',
-          ]
+        ? ['--renderer-process-limit=2', '--js-flags=--max-old-space-size=128']
         : []),
       '--password-store=basic',
       ...(process.platform === 'linux' ? ['--ozone-platform=x11'] : []),
@@ -594,7 +605,7 @@ async function assertMenuBounds(f) {
   );
   assert.ok(bounds.scrolls, 'Long model lists must scroll inside the menu');
 }
-try {
+async function validateInterface() {
   let page = await launch();
   // Remove the native explorer to give the editor its own wide design canvas.
   await page
@@ -829,6 +840,7 @@ try {
   await f.getByLabel('最大轮次', { exact: true }).fill('7');
   await click(f, '保存任务');
   await f.getByRole('dialog').waitFor({ state: 'hidden' });
+  await f.locator('.task-details > summary').click();
   assert.ok((await f.locator('.task-details .task-metadata').innerText()).includes('7'));
   await command(page, 'DualMind: Open Workbench');
   f = await frame(page);
@@ -865,7 +877,10 @@ try {
     .evaluate((element) => getComputedStyle(element).gridTemplateColumns);
   assert.equal(defaultsColumns.trim().split(/\s+/).length, 1);
   await screenshot(page, f, 'zh-task-defaults-narrow');
-  const defaultWorker = f.getByRole('combobox', { name: 'Worker（执行者） 模型 ID', exact: true });
+  const defaultWorker = f.getByRole('combobox', {
+    name: 'Worker（执行者） 模型 ID',
+    exact: true,
+  });
   await defaultWorker.click();
   await assertMenuBounds(f);
   await screenshot(page, f, 'zh-task-defaults-models-narrow');
@@ -990,7 +1005,7 @@ try {
   assert.equal(reviewTurns, 3);
   await f.locator('.process-message').first().waitFor();
   assert.ok(!(await f.locator('.chat-messages').innerText()).includes('reviewer-private-state'));
-  const requirementCard = f.locator('[data-message-id="requirements"]');
+  const requirementCard = f.locator('[data-message-id^="requirements:initial:"]');
   await requirementCard.scrollIntoViewIfNeeded();
   const sizeButton = requirementCard.getByRole('button', { name: 'Expand message', exact: true });
   assert.equal(await sizeButton.innerText(), '');
@@ -1085,6 +1100,38 @@ try {
 
   await language(f, 'en');
   await screenshot(page, f, 'en-execution-complete');
+  if (process.env.DUAL_MIND_UI_REVIEW_ONLY === '1') {
+    await verifyReviewScenes({
+      page,
+      frame: f,
+      profile,
+      sidebarWidth,
+      screenshot,
+      language,
+      click,
+      executable,
+    });
+    await writeFile(
+      join(artifacts, 'review-scenes-results.json'),
+      JSON.stringify(
+        {
+          version,
+          passed: true,
+          screenshots: captures,
+          themes: ['light', 'dark', 'hc-dark', 'hc-light'],
+          widths: [240, 320, 480, 1200],
+          locales: ['en', 'zh-CN'],
+        },
+        null,
+        2,
+      ),
+    );
+    console.log(
+      `Approved review scenes passed on VS Code ${version}; ${captures.length} screenshots.`,
+    );
+    return;
+  }
+
   await size(820, 1040);
   await f.getByRole('dialog', { name: 'Tools, checks and review evidence' }).waitFor();
   await screenshot(page, f, 'en-execution-evidence-drawer');
@@ -1168,7 +1215,7 @@ try {
     .getByLabel('Follow up or request changes', { exact: true })
     .fill('Explain after this operation');
   await click(f, 'Send');
-  await f.getByText('Pending', { exact: true }).waitFor();
+  await f.locator('.request-heading').getByText('Pending', { exact: true }).waitFor();
   await screenshot(page, f, 'en-chat-queued-message');
   await f.locator('.chat-activity').filter({ hasText: 'Running command' }).waitFor();
   await f.locator('.evidence-rail .chat-count').waitFor();
@@ -1493,9 +1540,9 @@ try {
   }
   recoveryFault = undefined;
   // Exercise the approved lifecycle controls against real disposable Git worktrees.
-  await f.locator('.context-usage > summary').click();
+  await f.getByRole('button', { name: 'Model context usage', exact: true }).click();
   await screenshot(page, f, 'en-context-usage');
-  await f.locator('.artifact-panel > summary').click();
+  await f.getByRole('button', { name: 'Task artifacts', exact: true }).click();
   await f.locator('.artifact-panel .artifact-facts').waitFor();
   const lifecycleDirectory = await f
     .locator('.artifact-panel .artifact-facts dd')
@@ -1546,7 +1593,7 @@ try {
   await click(f, 'Create task');
   await f.getByRole('dialog').waitFor({ state: 'hidden' });
   await f.getByRole('heading', { name: 'Restored UI artifact', exact: true }).waitFor();
-  await f.locator('.artifact-panel > summary').click();
+  await f.getByRole('button', { name: 'Task artifacts', exact: true }).click();
   await f.locator('.artifact-panel .artifact-facts').waitFor();
   const restoredDirectory = await f
     .locator('.artifact-panel .artifact-facts dd')
@@ -1636,6 +1683,18 @@ try {
     .waitFor({ timeout: 30000 });
   assert.equal(await f.locator('.recovery-notice').count(), 0);
   await screenshot(page, f, 'en-tool-pause-repaired');
+  if (process.env.DUAL_MIND_SKIP_REVIEW_UI !== '1') {
+    await verifyReviewScenes({
+      page,
+      frame: f,
+      profile,
+      sidebarWidth,
+      screenshot,
+      language,
+      click,
+      executable,
+    });
+  }
   await click(f, 'Delete task: Repeated tool error UI');
   await f.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
   await f.getByRole('heading', { name: 'No tasks yet', exact: true }).waitFor();
@@ -1656,6 +1715,13 @@ try {
         modelQueries: requests.length,
         taskBranchesCreated: 4,
         repeatedToolPausePassed: true,
+        approvedReviewScenesPassed: process.env.DUAL_MIND_SKIP_REVIEW_UI !== '1',
+        themeMatrix: [
+          'Light Modern',
+          'Dark Modern',
+          'Default High Contrast',
+          'Default High Contrast Light',
+        ],
         lifecycleArtifactsPassed: true,
         contextWindowSettingsPassed: true,
         savedArtifactRestorePassed: true,
@@ -1674,6 +1740,9 @@ try {
   console.log(
     `Real Webview UI verification passed on VS Code ${version}; ${captures.length} screenshots in ${artifacts}`,
   );
+}
+try {
+  await validateInterface();
 } catch (error) {
   console.error(error);
   if (app) {
@@ -1699,6 +1768,6 @@ try {
 }
 
 // Resource-conscious callers may run the native suite separately.
-if (process.env.DUAL_MIND_SKIP_NATIVE_UI !== '1') {
+if (process.env.DUAL_MIND_SKIP_NATIVE_UI !== '1' && process.env.DUAL_MIND_UI_REVIEW_ONLY !== '1') {
   await import('./verify-sidebar.mjs');
 }

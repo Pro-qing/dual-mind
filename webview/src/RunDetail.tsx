@@ -147,18 +147,47 @@ export function ExecutionDetailView({
     );
   }
   const r = detail.review;
+  const verdict =
+    r.verdict === 'approve' || (r.verdict === 'pass' && r.nextStep?.action === 'finish')
+      ? 'reviewApproved'
+      : r.verdict === 'pass'
+        ? 'reviewStepPassed'
+        : 'reviewChanges';
   return (
     <section className="handoff-card">
       {compact ? (
-        <strong>{tr(r.verdict === 'approve' ? 'reviewApproved' : 'reviewChanges')}</strong>
+        <strong>{tr(verdict)}</strong>
       ) : (
         <h3>
-          {tr(r.verdict === 'approve' ? 'reviewApproved' : 'reviewChanges')} · v{r.planVersion}
+          {tr(verdict)} · v{r.planVersion}
         </h3>
       )}
       <p>{r.summary}</p>
+      {r.risk && (
+        <p>
+          {tr('reviewRisk')}: {tr(`reviewRisk_${r.risk}`)}
+          {r.confidence !== undefined &&
+            ` · ${tr('reviewConfidence')}: ${Math.round(r.confidence * 100)}%`}
+        </p>
+      )}
+      {r.reasoning && <p>{r.reasoning}</p>}
+      {r.issues?.length ? (
+        <ul>
+          {r.issues.map((issue, index) => (
+            <li key={index}>{issue}</li>
+          ))}
+        </ul>
+      ) : null}
+      {r.evidence?.length ? (
+        <ul>
+          {r.evidence.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      ) : null}
+      {r.nextStep?.instructions && <p>{r.nextStep.instructions}</p>}
       <ul>
-        {r.acceptance.map((e) => (
+        {(r.acceptance ?? []).map((e) => (
           <li key={e.criterionId}>
             <strong>
               {e.criterionId} · {tr(e.passed ? 'criterionPassed' : 'criterionNotPassed')}

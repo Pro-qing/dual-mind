@@ -6,7 +6,7 @@
 
 **当前功能：**[工作树、上下文摘要与成果收尾](./task-lifecycle.md)及[工具错误处理](./tool-errors.md)的宿主与前端自 0.0.6 起提供。[场景 30–34](./task-lifecycle-proposal.md)与[场景 35–37](./tool-errors-proposal.md)保留原审核和实现记录。
 
-**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
+**当前源码版本：0.0.8 · 本地已准备，待维护者手动发布。** 记录日期：2026-11-25。功能、验证与制品见[0.0.8 版本说明](./release-notes-0.0.8.md)。历史版本、设计归档和验证记录保留原意。
 
 ## 页面状态与错误兼容
 
@@ -76,7 +76,7 @@ Webview 本地导航为 `{view: "home"}`、`{view: "task", taskId}` 或 `{view: 
 
 专用 worktree 成果处理已有宿主接口，页面入口已接入；多任务并行执行仍属于后续工作。[保留的设计参考](./design.md)说明目标界面。已实现的异步执行消息关联任务及执行实例；活动任务删除等待停止确认，失败时保留记录。只读示例使用界面内数据，不发出任务修改请求。
 
-宿主和存储已接受 Provider／协议字段，源码适配器支持 Anthropic Messages 及 Command Code 兼容请求。当前设置界面仍只提供 OpenAI 兼容 Chat Completions／Responses；其余提供商控件待[场景 38–40](./review-workbench-proposal.md)明确审核后接入。
+宿主、存储及[场景 38](./review-workbench-proposal.md)设置界面均提供 Provider／协议字段。设置页开放三种协议及 Command Code 兼容入口；地址、Provider 或协议改变后须先保存再查询，成功保存使旧查询结果失效。旧客户端省略 Provider、协议或模型窗口字段时保留原配置。
 
 ## 角色交接边界
 
@@ -137,12 +137,12 @@ RunSummary 可选 plan、submission、review 保存当前展示所需内容。Ru
 
 新增执行动作：
 
-| 动作              | 参数与结果                                                                                                      |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| `message.send`    | `taskId`、客户端 UUID `messageId`、1–50,000 字符 `text`；先持久化再确认，相同 ID 重试不会再次启动               |
-| `messages.resume` | `taskId`；用户明确继续处理停止／中断后保存的消息，不自动恢复手动暂停                                            |
-| `conversation`    | `taskId`、可选不透明 `before`；返回 `conversation: {messages, before?}`，最多 40 条                             |
-| `evidence`        | `taskId`、可选 `runId`、`through` 序号及不透明 `before`；返回 `evidence: {events, before?}`，最多 80 条分组记录 |
+| 动作              | 参数与结果                                                                                                                 |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `message.send`    | `taskId`、客户端 UUID `messageId`、1–50,000 字符 `text`；先持久化再确认，相同 ID 重试不会再次启动                          |
+| `messages.resume` | `taskId`；用户明确继续处理停止／中断后保存的消息，不自动恢复手动暂停                                                       |
+| `conversation`    | `taskId`、可选不透明 `before`；返回 `conversation: {messages, requests?, before?}`，最多 40 条                             |
+| `evidence`        | `taskId`、可选 `runId`、`through` 序号及不透明 `before`；返回 `evidence: {events, requests?, before?}`，最多 80 条分组记录 |
 
 `TaskMessage` 包含稳定 `id`、`taskId`、`time`、`role`、`kind`、`text`，以及可选 `userRequestId`、`status: pending | processing | handled`、`runId`、`sequence`、`round`、`detail`、`fault`。每条用户请求单独处理，答复与执行事件都保留该请求 ID 以供归组。消息文本、参数和详情均先脱敏；模型与命令原文不自动翻译。`conversationVersion` 通知前端消息更新，分页读取不覆盖更新到的执行状态。
 
@@ -158,7 +158,7 @@ Worker 和宿主检查共用[通用 shell 执行层](./shell-execution.md)，自
 
 `ExecutionSnapshot.activity` 是可选的临时字段，包含 `id`、`taskId`、`runId`、`agent`、`phase`、`stage`、`startedAt`，以及可选 `requestId`、`userRequestId`、`tool`、`commandId`、`label`。stage 为 waiting／receiving／tool／command。快照与订阅只包含脱敏元数据，不含模型私有协议或原始命令参数。活动不存入执行记录，宿主重启后不恢复。
 
-`conversation` 请求增加可选布尔 `includeProcess`，默认 false 兼容现有客户端。开启后 `TaskMessage.kind` 可为 `process`，包含 `requestId` 和 `userRequestId`。公开文本按运行、角色和模型请求归并，从完整运行历史投影后再分页，不依赖最近 80 个事件。首个事件提供稳定 ID／时间，sequence 更新为最后包含的事件以定位证据。缺少角色的旧文本仍只在证据中展示。原日志不重写，答复和提交仍是独立消息；已审核聊天界面发送 `includeProcess: true`，旧客户端继续使用默认投影。
+`conversation` 请求增加可选布尔 `includeProcess`，默认 false 兼容现有客户端。开启后 `TaskMessage.kind` 可为 `process`，包含 `requestId` 和 `userRequestId`。公开文本按运行、用户请求、角色和模型请求归并，从完整运行历史投影后再分页，不依赖最近 80 个事件。首个事件提供稳定 ID／时间，sequence 更新为最后包含的事件以定位证据。缺少角色的旧文本仍只在证据中展示。原日志不重写，答复和提交仍是独立消息；已审核聊天界面发送 `includeProcess: true`，旧客户端继续使用默认投影。
 
 `TaskWorkspaces.prepare(taskId, strategy?, taskName?)` 接收宿主读取的任务标题，旧内部调用者默认 `task`。新专用绑定增加可选版本 2 命名元数据；无元数据的旧绑定保留原名称。伪造任务后缀、不匹配的命名元数据和登记分支变化均被拒绝。
 
@@ -213,3 +213,5 @@ UI → 宿主 `view.state` 镜像显示状态，`navigation.ack` 使用导航请
 `ExecutionEnvironmentSummary.python?` 包含 `complete` 和 `interpreters`。每个候选保留 `path`（调用路径）、`source`（`project`／`virtualenv`／`conda`／`path`）、`label`、`status`（`available`／`unavailable`／`skipped`）。成功时附加 `major`、`version`、`implementation` 和解释器报告的 `executable`；不可用时用 `reason` 记录 `missing`、`permission`、`startFailed`、`timeout`、`outputLimit`、`probeFailed`、`invalidResponse`、`unsupportedVersion` 或 `budget`。`complete: false` 表示发现未完成，不能据此认定未列出的解释器不存在。旧快照没有该字段时兼容读取。
 
 每个探测复用独立的 `environment` 恢复操作类型，不新增模型工具或 Webview 请求。其 `result` 仅含脱敏身份／状态，原始 stdout／stderr 不入日志。内部 `runProcess` 可选输出上限用于将探测限制为 4 KiB；普通命令仍采用共享 2 MiB 上限。发现结果不是第三方包可用性或业务验收证据。详见[本机 Python](./local-python.md)。
+
+聊天和证据分页增加可选 `requests: RequestSummary[]`，按当前页涉及的请求提供 ID、原文、时间、消息状态及关联运行状态；原消息不在当前页时也可得到标题。首次需求来自已脱敏运行元数据，原 JSONL 不改写；仅缺失旧元数据时使用可识别的无原文标题。证据分页包含方案、提交和审查，保留命令／工具输出聚合及历史错误计数。`ChatView` 新增可选 `taskPanel`、`conversationGroups` 和 `evidenceGroups`；保持版本 1，只持久化面板枚举、ID 与布尔折叠偏好，不持久化消息正文。

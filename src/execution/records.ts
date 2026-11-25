@@ -13,6 +13,7 @@ import type {
   TaskMessage,
   ConversationPage,
   EvidencePage,
+  RequestSummary,
 } from '../shared/execution';
 import { emptyExecutionConfig, terminalStatuses } from '../shared/execution';
 import type { StateStorage } from '../core/store';
@@ -210,6 +211,55 @@ export class RunRecords {
       }
     }
   }
+  private readonly initialRequestText = new Map<string, string>();
+  private async requestSummaries(
+    taskId: string,
+    entries: readonly (RunEvent | TaskMessage)[],
+    messages?: TaskMessage[],
+  ): Promise<RequestSummary[]> {
+    const saved = messages ?? (await this.messages(taskId));
+    const ids = new Set(
+      entries.flatMap((entry) => (entry.userRequestId ? [entry.userRequestId] : [])),
+    );
+    const result: RequestSummary[] = [];
+    for (const id of ids) {
+      const user = saved.find((m) => m.role === 'user' && (m.userRequestId === id || m.id === id));
+      const answer = saved.find((m) => m.kind === 'answer' && m.userRequestId === id);
+      const initialRun = id.startsWith('initial:')
+        ? this.runs.find((r) => r.id === id.slice(8) && r.taskId === taskId)
+        : undefined;
+      const runId =
+        initialRun?.id ?? user?.runId ?? entries.find((e) => e.userRequestId === id)?.runId;
+      const run = this.runs.find((r) => r.id === runId && r.taskId === taskId);
+      let text = user?.text;
+      if (initialRun) {
+        text = this.initialRequestText.get(initialRun.id);
+        if (text === undefined && this.root()) {
+          try {
+            const metadata = JSON.parse(
+              await readFile(join(this.root()!, 'runs', `${initialRun.id}.json`), 'utf8'),
+            );
+            if (metadata?.task?.id === taskId && typeof metadata.task.requirements === 'string') {
+              text = metadata.task.requirements;
+              this.initialRequestText.set(initialRun.id, text!);
+            }
+          } catch {
+            // Missing legacy metadata must not hide otherwise readable execution records.
+          }
+        }
+      }
+      result.push({
+        id,
+        text,
+        time:
+          user?.time ?? initialRun?.createdAt ?? entries.find((e) => e.userRequestId === id)!.time,
+        status: answer ? 'answered' : user?.status,
+        runId,
+        runStatus: run?.status,
+      });
+    }
+    return result;
+  }
   async conversation(
     taskId: string,
     before?: string,
@@ -236,7 +286,12 @@ export class RunRecords {
           event.requestId &&
           (event.agent === 'worker' || event.agent === 'reviewer')
         ) {
-          const key = JSON.stringify([event.runId, event.agent, event.requestId]);
+          const key = JSON.stringify([
+            event.runId,
+            event.userRequestId,
+            event.agent,
+            event.requestId,
+          ]);
           const existing = processMessages.get(key);
           if (existing) {
             existing.text += event.text;
@@ -294,6 +349,7 @@ export class RunRecords {
     const page = ordered.slice(-40);
     return {
       messages: page,
+      requests: await this.requestSummaries(taskId, page, messages),
       before: ordered.length > page.length ? messageCursor(page[0]) : undefined,
     };
   }
@@ -318,7 +374,7 @@ export class RunRecords {
             (through ?? Number.MAX_SAFE_INTEGER - 1) + 1,
             Number.MAX_SAFE_INTEGER,
           )
-        ).filter((e) => !['plan', 'submission', 'review', 'feedback', 'state'].includes(e.kind)),
+        ).filter((e) => !['feedback', 'state'].includes(e.kind)),
       );
     }
     const grouped = new Map<string, RunEvent>();
@@ -331,7 +387,7 @@ export class RunRecords {
         : event.commandId
           ? `${event.runId}:command:${event.commandId}`
           : event.kind === 'text' && event.requestId
-            ? `${event.runId}:text:${event.requestId}`
+            ? `${event.runId}:text:${event.agent ?? 'system'}:${event.userRequestId ?? ''}:${event.requestId}`
             : `${event.runId}:${event.sequence}`;
       const previous = grouped.get(key);
       if (previous) {
@@ -371,6 +427,7 @@ export class RunRecords {
     const page = ordered.slice(-80);
     return {
       events: page,
+      requests: await this.requestSummaries(taskId, page),
       summary,
       before: ordered.length > page.length ? eventCursor(page[0]) : undefined,
     };
@@ -384,6 +441,7 @@ export class RunRecords {
   }
   async removeTask(taskId: string) {
     for (const run of this.runs.filter((run) => run.taskId === taskId)) {
+      this.initialRequestText.delete(run.id);
       await this.recovery(run.id).remove();
     }
     this.runs = this.runs.filter((run) => run.taskId !== taskId);

@@ -2,9 +2,23 @@
 
 [简体中文](../zh/releasing.md) · [Documentation](./README.md)
 
-**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
+**Source version: 0.0.8 · Locally prepared; awaiting manual publication by the maintainer.** Recorded November 25, 2026. See the [0.0.8 version notes](./release-notes-0.0.8.md) for features, validation and artifacts. Historical versions, design archives and validation records retain their meaning.
 
-## 0.0.7 local delivery
+## 0.0.8 manual-publication delivery
+
+Version 0.0.8 includes the provider adapters, Pair-style review, approved interface and theme changes developed after the original 0.0.7 tag. This preparation changes only project versions/documentation; runtime source matches the validated `0.0.7-review-ui` candidate. See [0.0.8 notes](./release-notes-0.0.8.md) for checks and reused evidence.
+
+Deliver `release/dual-mind-0.0.8.vsix`, `dual-mind-0.0.8.vsix.sha256` and `dual-mind-0.0.8-build.json`. At the maintainer’s subsequent request, archive the current work in a bilingual Git commit, create local annotated tag `v0.0.8`, and rebuild from that clean commit. The build record identifies the exact commit, tag object, source/package hashes and actual checks. Packaged README/changelog links are pinned to `v0.0.8`.
+
+For manual publication, push the commit and verify its CI, then push the existing local `v0.0.8` tag so packaged documentation links resolve. If source changes again, revalidate and prepare the corresponding artifact. Upload the same verified VSIX to GitHub Release and Marketplace using the workflow below and record actual publication times. The version notes provide bilingual release text. Local archiving and packaging do not install, push or publish.
+
+```bash
+(cd release && sha256sum --check dual-mind-0.0.8.vsix.sha256)
+```
+
+The 0.0.7 and older entries below retain their original preparation context.
+
+## Historical local 0.0.7 delivery
 
 After repair validation, update the source version to 0.0.7 and validate the final files. Archive a bilingual local commit and annotated `v0.0.7` tag, then build from that clean commit with `DUAL_MIND_RELEASE_REF=v0.0.7 npm run package`. Deliver `release/dual-mind-0.0.7.vsix`, its `.vsix.sha256` and `dual-mind-0.0.7-build.json`. The build record identifies the exact commit, source/package hashes, toolchain, checks and limitations. Verify the package in isolated editor user/extension directories. Old packages and task worktrees remain intact.
 
@@ -52,7 +66,7 @@ Both previews are already published. Keep their tags and attachments intact; the
 
 ## Icon and package inputs
 
-The original 1408 × 768 JPEG is archived unchanged at `resources/branding/dual-mind.jpeg`. The packaged PNG uses its centered crop `(320, 0, 1088, 768)`, reduced to 256 × 256 with Lanczos. The image is not stretched. `.vscodeignore` allows the icon, activity-bar SVG, bundled-tool manifest and `resources/screenshots/dualmind-workbench.png`, while excluding the source JPEG and resource-maintenance files. All 37 approved interface SVG/PNG pairs remain in the package. See [asset provenance](../../resources/README.md) for the actual interface screenshot.
+The original 1408 × 768 JPEG is archived unchanged at `resources/branding/dual-mind.jpeg`. The packaged PNG uses its centered crop `(320, 0, 1088, 768)`, reduced to 256 × 256 with Lanczos. The image is not stretched. `.vscodeignore` allows the icon, activity-bar SVG, bundled-tool manifest and `resources/screenshots/dualmind-workbench.png`, while excluding the source JPEG and resource-maintenance files. All 40 approved interface SVG/PNG pairs remain in the package. See [asset provenance](../../resources/README.md) for the actual interface screenshot.
 
 ## Prepare the next version
 
@@ -91,7 +105,7 @@ From the clean checkout of the new tag, load nvm and install locked dependencies
 
 `npm run package` rebuilds the extension host and Webview. `DUAL_MIND_RELEASE_REF` fixes packaged README/changelog links to the new tag. The output is `release/dual-mind-<version>.vsix`; running packaging again for that version overwrites the local file. Keep release candidates and downloaded verification copies in separate locations. Generated bundles, validation screenshots, VSIX files and checksum files remain ignored by Git; the product image `resources/screenshots/dualmind-workbench.png` is tracked and included in the package.
 
-Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all 40 archived SVG/PNG pairs (37 approved and three pending review) in their version directories, the product screenshot, and rg/fd/jq executables with upstream licenses. The pending drawings are proposals, not evidence that their UI is implemented. The source JPEG, development sources, tests, credentials and source maps must be absent.
+Inspect the VSIX manifest for Publisher `Pro-qing`, ID `dual-mind`, the chosen new version, the Preview flag, and the PNG icon. For the current distribution policy, it remains a regular Marketplace-channel package. Verify inclusion of the MIT license, third-party notices, bilingual metadata/docs, host/frontend bundles, and all 40 archived SVG/PNG pairs (all approved) in their version directories, the product screenshot, and rg/fd/jq executables with upstream licenses. Design approval and runtime verification are recorded separately. The source JPEG, development sources, tests, credentials and source maps must be absent.
 
 Install the package in an isolated user profile/extensions directory. Verify the icon, identity/version, workbench, both languages, task creation/saving and reload recovery. Keep only the intended extension identity enabled in that profile.
 

@@ -2,12 +2,23 @@
 
 [简体中文](./CHANGELOG.zh.md) · [Project home](./README.md)
 
+## 0.0.8 — Model access and a theme-aware workbench (locally prepared, awaiting manual publication, 2026-11-25)
+
+- Expose OpenAI-compatible / Command Code providers and Chat Completions, Responses and Anthropic Messages protocols, with independent selection and saved-configuration model queries.
+- Reviewer uses Pair-style pass/fail, risk, confidence and evidence while remaining read-only; Worker owns changes and command execution.
+- Integrate approved scenes 38–40: compact task headers, exclusive context/artifact panels, and chat/evidence grouped by request and then role.
+- Follow VS Code light, dark and high-contrast themes for backgrounds, controls, selection and notices; fix narrow-sidebar composer visibility and high-contrast selected text.
+- Preserve original request labels/status across pagination, older connection saves, legacy logs and display preferences; keep private model histories separate.
+- See [0.0.8 notes](./docs/en/release-notes-0.0.8.md) for version preparation, reused validation and manual-publication artifacts. Retain the original v0.0.7 development artwork and historical records.
+
 ## 0.0.7 — Execution continuity and acceptance diagnostics (local, unpublished, 2026-11-24)
 
 - Remove cumulative model/tool call limits, retain counters, and allow manual recovery of runs stopped by the old limits.
 - Explain acceptance blockers, clarify `unresolved`, and preserve evidence checks and legacy error records.
 - Reject command success when tracked children remain after parent exit; keep actual exit codes and process cleanup.
 - See [0.0.7 notes](docs/en/release-notes-0.0.7.md) for validation and local installation artifacts.
+
+- November 25: integrate approved scenes 38–40 with live theme colors, Provider/protocol settings, exclusive context/artifact panels and request/role log groups. Preserve configuration on older saves and supply original request labels with paginated records.
 
 ## 0.0.6 — Complete task workflow and local Python (locally prepared, unpublished, 2026-11-24)
 

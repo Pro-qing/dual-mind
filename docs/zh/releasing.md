@@ -2,9 +2,23 @@
 
 [English](../en/releasing.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
+**当前源码版本：0.0.8 · 本地已准备，待维护者手动发布。** 记录日期：2026-11-25。功能、验证与制品见[0.0.8 版本说明](./release-notes-0.0.8.md)。历史版本、设计归档和验证记录保留原意。
 
-## 0.0.7 本地交付
+## 0.0.8 手动发布交付
+
+当前 0.0.8 汇总 0.0.7 标签之后完成的模型适配、Pair 式审查、已审核界面和主题修订。版本准备只更新项目版本及文档，运行源码与已验证的 `0.0.7-review-ui` 候选一致；检查及证据复用见[0.0.8 说明](./release-notes-0.0.8.md)。
+
+交付文件为 `release/dual-mind-0.0.8.vsix`、`dual-mind-0.0.8.vsix.sha256` 和 `dual-mind-0.0.8-build.json`。按维护者后续要求，将当前成果归档为双语 Git 提交，创建本地附注标签 `v0.0.8`，并从该干净提交重新打包。构建记录保存精确提交、标签对象、源码／制品摘要与实际检查；包内 README／更新日志链接固定到 `v0.0.8`。
+
+维护者手动发布时，推送该提交并核对对应 CI，再推送已有的本地 `v0.0.8` 标签，使包内文档链接可访问；若源码再次变化，重新验证并准备对应制品。然后按下方流程将同一个已校验 VSIX 上传到 GitHub Release 和 Marketplace，记录实际发布时间。版本说明可直接作为本次双语发布文案。本地归档和打包不执行安装、推送或公开发布。
+
+```bash
+(cd release && sha256sum --check dual-mind-0.0.8.vsix.sha256)
+```
+
+以下 0.0.7 及更早记录保留原始发布准备语境。
+
+## 0.0.7 历史本地交付
 
 修复功能验证后将源码升级到 0.0.7，再验证最终文件。创建双语本地提交及附注标签 `v0.0.7`，从该干净提交执行 `DUAL_MIND_RELEASE_REF=v0.0.7 npm run package`。交付 `release/dual-mind-0.0.7.vsix`、对应 `.vsix.sha256` 与 `dual-mind-0.0.7-build.json`。构建记录保存精确提交、源码／安装包摘要、工具链、检查和限制。在隔离编辑器用户／扩展目录中安装验证，保留旧包及任务工作树。
 
@@ -52,7 +66,7 @@
 
 ## 图标与打包输入
 
-原始 1408 × 768 JPEG 原样归档至 `resources/branding/dual-mind.jpeg`。随包 PNG 使用中央裁剪区域 `(320, 0, 1088, 768)`，以 Lanczos 缩小为 256 × 256，不拉伸图案。`.vscodeignore` 放行图标、活动栏 SVG、内置工具清单及 `resources/screenshots/dualmind-workbench.png`，排除源 JPEG 及资源维护文件。37 组已审核 SVG／PNG 界面设计继续随包保留，原始界面截图来源见[资源说明](../../resources/README.md)。
+原始 1408 × 768 JPEG 原样归档至 `resources/branding/dual-mind.jpeg`。随包 PNG 使用中央裁剪区域 `(320, 0, 1088, 768)`，以 Lanczos 缩小为 256 × 256，不拉伸图案。`.vscodeignore` 放行图标、活动栏 SVG、内置工具清单及 `resources/screenshots/dualmind-workbench.png`，排除源 JPEG 及资源维护文件。40 组已审核 SVG／PNG 界面设计继续随包保留，原始界面截图来源见[资源说明](../../resources/README.md)。
 
 ## 准备下一版本
 
@@ -91,7 +105,7 @@ VSCODE_TEST_VERSION=stable npm test
 
 `npm run package` 会重建扩展宿主与 Webview，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签。产物路径为 `release/dual-mind-<version>.vsix`，再次打包同一版本会覆盖本地文件；候选包和重新下载的验证副本应分别存放。构建产物、验证截图、VSIX 和校验文件继续由 Git 忽略；用于产品介绍的 `resources/screenshots/dualmind-workbench.png` 已提交并随包提供。
 
-检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及按版本目录组织的全部 40 组 SVG／PNG（37 组已审核、3 组待审核）、产品截图及 rg／fd／jq 可执行文件与上游许可证。待审核图稿仅为提案，不代表 UI 已实现。源 JPEG、开发源码、测试、凭据和 source map 不应出现。
+检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及按版本目录组织的全部 40 组 SVG／PNG（全部已审核）、产品截图及 rg／fd／jq 可执行文件与上游许可证。设计审核与运行验证分别记录。源 JPEG、开发源码、测试、凭据和 source map 不应出现。
 
 在隔离用户配置／扩展目录中安装包，验证图标、身份／版本、工作台、两种语言、任务创建／保存及重载恢复。该配置只启用目标扩展身份。
 

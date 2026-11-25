@@ -2,7 +2,7 @@
 
 [简体中文](../zh/tool-errors.md) · [UI record](./tool-errors-proposal.md) · [Task lifecycle](./task-lifecycle.md)
 
-**Current version: 0.0.7.** Implemented and archived during 0.0.5 development on November 23, 2026; available since [0.0.6](./release-notes-0.0.6.md). That round approved the existing frontend designs and authorized tool-error handling and frontend integration together. Scenes 28–34 are connected; scenes 35–37 are drawn and implemented under the confirmed plan without another visual approval stop. Historical tags and publication records remain intact.
+**Current version: 0.0.8.** Implemented and archived during 0.0.5 development on November 23, 2026; available since [0.0.6](./release-notes-0.0.6.md). That round approved the existing frontend designs and authorized tool-error handling and frontend integration together. Scenes 28–34 are connected; scenes 35–37 are drawn and implemented under the confirmed plan without another visual approval stop. Historical tags and publication records remain intact.
 
 ## Three result layers
 

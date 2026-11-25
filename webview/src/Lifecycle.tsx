@@ -85,12 +85,12 @@ export function ContextSettings() {
             } else {
               windows[model] = tokens;
             }
-            const { id, name, baseUrl, defaultModel, protocol } = connection;
+            const { id, name, baseUrl, defaultModel, protocol, provider } = connection;
             await run(
               {
                 kind: 'connection.save',
                 id,
-                input: { name, baseUrl, defaultModel, protocol, contextWindows: windows },
+                input: { name, baseUrl, defaultModel, protocol, provider, contextWindows: windows },
               },
               'contextSaved',
             );
@@ -171,6 +171,45 @@ function ContextEditor({
     </form>
   );
 }
+export function TaskLifecyclePanels({ task }: { task: TaskDraft }) {
+  const { execution, snapshot, chatViews, updateChatView, tr } = useUI();
+  const hasContext = execution.runs.some((run) => run.taskId === task.id);
+  const hasArtifacts = Boolean(
+    execution.preparedTaskIds?.includes(task.id) ||
+    snapshot.preparedTaskIds?.includes(task.id) ||
+    execution.artifacts?.some((entry) => entry.taskId === task.id),
+  );
+  const selected = chatViews[task.id]?.taskPanel ?? 'none';
+  const id = useId();
+  if (!hasContext && !hasArtifacts) {
+    return null;
+  }
+  return (
+    <section className="task-lifecycle-panels">
+      <div className="task-panel-bar">
+        {(['context', 'artifacts'] as const).map((kind) => (
+          <button
+            key={kind}
+            disabled={kind === 'context' ? !hasContext : !hasArtifacts}
+            aria-expanded={selected === kind}
+            aria-controls={`${id}-${kind}`}
+            onClick={() =>
+              updateChatView(task.id, { taskPanel: selected === kind ? 'none' : kind })
+            }
+          >
+            {tr(kind === 'context' ? 'contextUsage' : 'artifactsTitle')}
+          </button>
+        ))}
+      </div>
+      <div id={`${id}-context`} hidden={selected !== 'context'}>
+        <ContextUsagePanel taskId={task.id} />
+      </div>
+      <div id={`${id}-artifacts`} hidden={selected !== 'artifacts'}>
+        <ArtifactPanel task={task} expanded={selected === 'artifacts'} />
+      </div>
+    </section>
+  );
+}
 export function ContextUsagePanel({ taskId }: { taskId: string }) {
   const { execution, tr, openContextSettings } = useUI();
   const run = execution.runs.find((r) => r.taskId === taskId);
@@ -178,8 +217,7 @@ export function ContextUsagePanel({ taskId }: { taskId: string }) {
     return null;
   }
   return (
-    <details className="context-usage">
-      <summary>{tr('contextUsage')}</summary>
+    <section className="context-usage" aria-label={tr('contextUsage')}>
       {(['worker', 'reviewer'] as const).map((role) => {
         const usage = run.context?.[role];
         return (
@@ -210,7 +248,7 @@ export function ContextUsagePanel({ taskId }: { taskId: string }) {
       <button className="text-button" onClick={openContextSettings}>
         {tr('contextInspectSettings')}
       </button>
-    </details>
+    </section>
   );
 }
 function FileManifest({ artifact }: { artifact: TaskArtifactStatus }) {
@@ -261,9 +299,8 @@ function FileManifest({ artifact }: { artifact: TaskArtifactStatus }) {
   );
 }
 type Operation = 'commit' | 'merge' | 'cleanup' | 'complete' | 'abort';
-export function ArtifactPanel({ task }: { task: TaskDraft }) {
+export function ArtifactPanel({ task, expanded }: { task: TaskDraft; expanded: boolean }) {
   const { execution, tr, snapshot, openDerived } = useUI();
-  const [expanded, setExpanded] = useState(false);
   const prepared =
     execution.preparedTaskIds?.includes(task.id) || snapshot.preparedTaskIds?.includes(task.id);
   const { value, setValue, error, refresh, loading } = useArtifact(
@@ -291,12 +328,7 @@ export function ArtifactPanel({ task }: { task: TaskDraft }) {
     cleaned: 'artifactCleaned',
   } as const;
   return (
-    <details
-      className="artifact-panel"
-      open={expanded}
-      onToggle={(e) => setExpanded(e.currentTarget.open)}
-    >
-      <summary>{tr('artifactsTitle')}</summary>
+    <section className="artifact-panel" aria-label={tr('artifactsTitle')}>
       {error && <ErrorNotice error={error} locale={snapshot.locale} />}
       <button disabled={blocked || active} onClick={() => void refresh()}>
         {tr('artifactRefresh')}
@@ -410,7 +442,7 @@ export function ArtifactPanel({ task }: { task: TaskDraft }) {
           onUpdated={setValue}
         />
       )}
-    </details>
+    </section>
   );
 }
 function MergeLocation({ merge }: { merge: ArtifactMerge }) {

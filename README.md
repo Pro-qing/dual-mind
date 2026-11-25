@@ -23,7 +23,7 @@ You can add requirements, ask questions, pause, stop, or continue. After a run, 
 ## What you can do
 
 - **Give the two roles distinct responsibilities.** Choose a Bug, Feature, Review, Refactor, or custom review focus. Worker handles implementation while Reviewer plans and evaluates the work against the task's criteria.
-- **Use your own models.** Connect an OpenAI-compatible API and choose models independently for Worker and Reviewer. Use the same service or different connections, discover available model IDs, or enter them manually. API keys are stored through VS Code.
+- **Use your own models.** Connect an OpenAI-compatible API, Anthropic Messages, or the Command Code compatibility API and choose models independently for Worker and Reviewer. Use the same service or different connections, discover available model IDs, or enter them manually. API keys are stored through VS Code.
 - **Keep task work separate.** Start from a local base branch in an isolated Git worktree, or work directly on the current or a selected branch. Inspect differences and open the task directory before deciding what to keep.
 - **Follow the work and its evidence.** Read role-labelled conversations, command output, checks, and review results. Pause to provide feedback and continue recoverable runs. Each role manages its own context, with automatic summaries helping longer tasks continue.
 - **Control the outcome.** Commit task changes and merge into a local target branch explicitly. Handle conflicts, preserve work before cleaning an isolated worktree, or restore saved artifacts into a new task. Review approval does not automatically publish your work.

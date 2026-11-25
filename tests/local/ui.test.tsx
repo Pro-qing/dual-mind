@@ -478,7 +478,7 @@ test('URL edits block queries until saved; key cancellation retains results and 
     (rtl.screen.getByRole('button', { name: 'Test & fetch models' }) as HTMLButtonElement).disabled,
     true,
   );
-  assert.ok(rtl.screen.getByText(/Save the changed Base URL/));
+  assert.ok(rtl.screen.getByText(/Save the address, provider and protocol/));
   click('Save connection');
   await rtl.waitFor(() =>
     assert.ok(
@@ -2258,7 +2258,7 @@ for (const locale of ['en', 'zh-CN'] as const) {
   });
 }
 
-async function lifecycleUI(locale: 'en' | 'zh-CN' = 'en', failCommit = false) {
+async function lifecycleUI(locale: 'en' | 'zh-CN' = 'en', failCommit = false, withRun = false) {
   const f = fixture({ editorLanguage: locale });
   await f.store.dispatch({ kind: 'task.save', input: taskInput() });
   const snapshot = await f.store.snapshot(),
@@ -2281,7 +2281,20 @@ async function lifecycleUI(locale: 'en' | 'zh-CN' = 'en', failCommit = false) {
   };
   const state: import('../../src/shared/execution').ExecutionSnapshot = {
     config: { prepare: [], checks: [] },
-    runs: [],
+    runs: withRun
+      ? [
+          {
+            id: 'run',
+            taskId: task.id,
+            status: 'completed',
+            round: 1,
+            maxRounds: 5,
+            createdAt: '',
+            updatedAt: '',
+            sequence: 1,
+          },
+        ]
+      : [],
     preparedTaskIds: [task.id],
     artifacts: [],
   };
@@ -2365,7 +2378,7 @@ async function lifecycleUI(locale: 'en' | 'zh-CN' = 'en', failCommit = false) {
       initialNavigation={{ view: 'task', taskId: task.id }}
     />,
   );
-  rtl.fireEvent.click(document.querySelector('.artifact-panel summary')!);
+  click(t(locale, 'artifactsTitle'));
   await rtl.screen.findByText('/fixture/task');
   return { task, f, calls, tr: (key: MessageKey) => t(locale, key) };
 }
@@ -2473,3 +2486,353 @@ for (const locale of ['en', 'zh-CN'] as const) {
     assert.equal(h.calls.filter((a) => a.kind === 'resume').length, 0);
   });
 }
+
+for (const locale of ['en', 'zh-CN'] as const) {
+  test(`${locale}: provider and protocol changes require saving and context edits preserve both`, async () => {
+    const calls: Array<{ provider?: string; protocol?: string }> = [];
+    const f = fixture({
+      editorLanguage: locale,
+      fetchModels: async (connection) => {
+        calls.push(connection);
+        return { models: ['manual-model'], fetchedAt: new Date().toISOString() };
+      },
+    });
+    await f.store.dispatch({
+      kind: 'connection.save',
+      input: {
+        name: 'Provider test',
+        baseUrl: 'http://localhost:1234/v1',
+        defaultModel: 'manual-model',
+      },
+    });
+    const id = (await f.store.snapshot()).connections[0].id;
+    await f.store.dispatch({ kind: 'connection.key', id });
+    const tr = (key: MessageKey) => t(locale, key);
+    await mount(f, { view: 'api', returnTo: { view: 'home' } });
+    click(tr('testConnection'));
+    await rtl.screen.findByText(new RegExp(tr('modelsAccessible')));
+    for (const [field, value] of [
+      ['modelProvider', 'commandCode'],
+      ['inferenceProtocol', 'anthropic'],
+    ] as const) {
+      rtl.fireEvent.change(rtl.screen.getByRole('combobox', { name: tr(field) }), {
+        target: { value },
+      });
+      assert.ok(
+        rtl.screen.getByRole('button', { name: tr('testConnection') }).hasAttribute('disabled'),
+      );
+      assert.equal(calls.length, 1);
+    }
+    click(tr('saveConnection'));
+    await rtl.waitFor(() =>
+      assert.equal(
+        rtl.screen.getByRole('button', { name: tr('testConnection') }).hasAttribute('disabled'),
+        false,
+      ),
+    );
+    assert.equal(rtl.screen.queryByText(new RegExp(tr('modelsAccessible'))), null);
+    assert.equal(modelInput(new RegExp(tr('defaultModel'))).value, 'manual-model');
+    click(tr('testConnection'));
+    await rtl.screen.findByText(new RegExp(tr('modelsAccessible')));
+    assert.equal(calls[1].provider, 'commandCode');
+    assert.equal(calls[1].protocol, 'anthropic');
+    click(tr('contextSettings'));
+    rtl.fireEvent.change(rtl.screen.getByRole('spinbutton', { name: tr('contextWindow') }), {
+      target: { value: '65536' },
+    });
+    click(tr('save'));
+    await rtl.screen.findByText(tr('contextSaved'));
+    const connection = (await f.store.snapshot()).connections[0];
+    assert.equal(connection.provider, 'commandCode');
+    assert.equal(connection.protocol, 'anthropic');
+    assert.deepEqual(connection.contextWindows, { 'manual-model': 65536 });
+    assert.ok(!document.body.textContent?.includes('test-only-key'));
+  });
+}
+
+test('context and artifact panels are exclusive and retain mounted detail state', async () => {
+  await lifecycleUI('en', false, true);
+  const artifact = document.querySelector<HTMLElement>('.artifact-panel')!;
+  const details = artifact.querySelector<HTMLDetailsElement>('details')!;
+  rtl.fireEvent.click(details.querySelector('summary')!);
+  await rtl.waitFor(() => assert.equal(details.open, true));
+  click('Model context usage');
+  assert.equal(
+    rtl.screen.getByRole('button', { name: 'Task artifacts' }).getAttribute('aria-expanded'),
+    'false',
+  );
+  assert.ok(artifact.parentElement?.hidden);
+  assert.ok(rtl.screen.getByRole('region', { name: 'Model context usage' }));
+  click('Task artifacts');
+  assert.equal(
+    rtl.screen.getByRole('button', { name: 'Model context usage' }).getAttribute('aria-expanded'),
+    'false',
+  );
+  const toggle = rtl.screen.getByRole('button', { name: 'Task artifacts' });
+  rtl.fireEvent.click(toggle);
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  assert.ok(artifact.parentElement?.hidden);
+  rtl.fireEvent.click(toggle);
+  assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  assert.equal(document.querySelector('.artifact-panel'), artifact);
+  assert.equal(details.open, true);
+  assert.ok(rtl.screen.getByRole('button', { name: 'Edit task' }));
+  assert.equal(document.querySelector<HTMLDetailsElement>('.task-details')?.open, false);
+});
+
+test('request and role folds stay independent across stream updates, language changes and reload', async () => {
+  const width = window.innerWidth;
+  Object.defineProperty(window, 'innerWidth', { value: 1300, configurable: true });
+  try {
+    const f = fixture();
+    await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+    const snapshot = await f.store.snapshot(),
+      task = snapshot.tasks[0];
+    const state = { config: { prepare: [], checks: [] }, runs: [] };
+    const requests: import('../../src/shared/execution').RequestSummary[] = [
+      {
+        id: 'first',
+        text: 'Same original request',
+        time: '2026-11-25T00:00:00Z',
+        status: 'answered',
+      },
+      {
+        id: 'second',
+        text: 'Same original request',
+        time: '2026-11-25T00:01:00Z',
+        status: 'handled',
+      },
+    ];
+    const messages: import('../../src/shared/execution').TaskMessage[] = [
+      {
+        id: 'first-output',
+        userRequestId: 'first',
+        taskId: task.id,
+        time: '2026-11-25T00:00:10Z',
+        role: 'reviewer',
+        kind: 'answer',
+        text: 'Older answer',
+      },
+      {
+        id: 'second-output',
+        userRequestId: 'second',
+        taskId: task.id,
+        time: '2026-11-25T00:01:10Z',
+        role: 'worker',
+        kind: 'process',
+        text: 'Streaming output',
+        sequence: 1,
+      },
+      {
+        id: 'old-record',
+        taskId: task.id,
+        time: '2026-11-24T00:00:00Z',
+        role: 'system',
+        kind: 'legacy',
+        text: 'Legacy output',
+      },
+    ];
+    const events: RunEvent[] = messages.map((m, i) => ({
+      runId: 'run',
+      taskId: task.id,
+      userRequestId: m.userRequestId,
+      agent: m.role === 'worker' ? 'worker' : m.role === 'reviewer' ? 'reviewer' : undefined,
+      sequence: i + 1,
+      kind: 'tool',
+      text: m.text,
+      time: m.time,
+    }));
+    let push: ((value: import('../../src/shared/execution').ExecutionUpdate) => void) | undefined;
+    let saved: import('../../src/shared/viewState').WorkbenchViewState | undefined;
+    const bridge: Bridge = {
+      request: async () => snapshot,
+      queryModels: async () => ({ models: [], fetchedAt: '' }),
+      onModelsInvalidated: () => () => undefined,
+      onExecution: (listener) => {
+        push = listener;
+        return () => undefined;
+      },
+      execute: async () => ({
+        state,
+        conversation: { messages: structuredClone(messages), requests },
+        evidence: { events, requests },
+      }),
+    };
+    const props = {
+      snapshot: { ...snapshot, execution: state },
+      bridge,
+      initialNavigation: { view: 'task', taskId: task.id },
+      onViewState: (value: import('../../src/shared/viewState').WorkbenchViewState) => {
+        saved = value;
+      },
+    };
+    const ui = rtl.render(<App {...props} />);
+    await rtl.within(document.querySelector('.chat-messages')!).findByText('Streaming output');
+    const heading = (surface: string, id: string) =>
+      document.querySelector<HTMLButtonElement>(
+        `${surface} [data-request-id="${id}"] > .request-heading`,
+      )!;
+    await rtl.waitFor(() => assert.ok(heading('.evidence-list', 'second')));
+    assert.equal(heading('.chat-messages', 'first').getAttribute('aria-expanded'), 'false');
+    assert.equal(
+      heading('.chat-messages', 'legacy').textContent?.includes('Earlier records'),
+      true,
+    );
+    assert.equal(heading('.chat-messages', 'second').getAttribute('aria-expanded'), 'true');
+    assert.match(heading('.chat-messages', 'second').textContent!, /Handled/);
+    assert.doesNotMatch(heading('.chat-messages', 'second').textContent!, /acceptance passed/);
+    const role = document.querySelector<HTMLButtonElement>(
+      '.chat-messages [data-request-id="second"] .request-role-heading',
+    )!;
+    rtl.fireEvent.click(role);
+    rtl.fireEvent.click(heading('.evidence-list', 'second'));
+    messages[1] = { ...messages[1], sequence: 2, text: 'Streaming output continued' };
+    await rtl.act(async () => push?.({ state: { ...state, conversationVersion: 1 }, events: [] }));
+    await rtl
+      .within(document.querySelector('.chat-messages')!)
+      .findByText('Streaming output continued');
+    assert.equal(role.getAttribute('aria-expanded'), 'false');
+    assert.equal(heading('.chat-messages', 'second').getAttribute('aria-expanded'), 'true');
+    assert.equal(heading('.evidence-list', 'second').getAttribute('aria-expanded'), 'false');
+    ui.rerender(
+      <App {...props} snapshot={{ ...props.snapshot, locale: 'zh-CN', language: 'zh-CN' }} />,
+    );
+    assert.equal(role.getAttribute('aria-expanded'), 'false');
+    assert.ok(heading('.chat-messages', 'second').textContent?.includes('已处理'));
+    const persisted = structuredClone(saved!);
+    assert.ok(!JSON.stringify(persisted).includes('Same original request'));
+    ui.unmount();
+    rtl.render(<App {...props} initialChatViews={persisted.chats} />);
+    await rtl
+      .within(document.querySelector('.chat-messages')!)
+      .findByText('Streaming output continued');
+    assert.equal(
+      document
+        .querySelector('.chat-messages [data-request-id="second"] .request-role-heading')
+        ?.getAttribute('aria-expanded'),
+      'false',
+    );
+    rtl.fireEvent.click(
+      rtl
+        .within(document.querySelector('.chat-messages')!)
+        .getByRole('button', { name: 'Expand all requests' }),
+    );
+    assert.equal(heading('.chat-messages', 'first').getAttribute('aria-expanded'), 'true');
+    rtl.fireEvent.click(
+      rtl
+        .within(document.querySelector('.chat-messages')!)
+        .getByRole('button', { name: 'Collapse all requests' }),
+    );
+    assert.equal(heading('.chat-messages', 'second').getAttribute('aria-expanded'), 'false');
+  } finally {
+    Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+  }
+});
+
+test('current and legacy reviews distinguish completed approval from a passing step that continues', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const task = (await f.store.snapshot()).tasks[0];
+  const reviews: import('../../src/shared/execution').ReviewResult[] = [
+    { verdict: 'approve', summary: 'Legacy acceptance', acceptance: [], planVersion: 1 },
+    {
+      verdict: 'pass',
+      summary: 'Current acceptance',
+      acceptance: [],
+      planVersion: 1,
+      risk: 'low',
+      confidence: 0.94,
+      evidence: ['Saved command output'],
+      nextStep: { action: 'finish', instructions: '' },
+    },
+    {
+      verdict: 'pass',
+      summary: 'Correct intermediate step',
+      acceptance: [],
+      planVersion: 1,
+      nextStep: { action: 'continue', instructions: 'Continue the next step' },
+    },
+  ];
+  await mount(f, { view: 'task', taskId: task.id }, undefined, {
+    execute: async () => ({
+      state: { config: { prepare: [], checks: [] }, runs: [] },
+      conversation: {
+        messages: reviews.map((review, index) => ({
+          id: String(index),
+          taskId: task.id,
+          time: String(index),
+          role: 'reviewer',
+          kind: 'review',
+          text: review.summary,
+          detail: { type: 'review', review },
+        })),
+      },
+      evidence: { events: [] },
+    }),
+  });
+  await rtl.screen.findByText('Current acceptance');
+  assert.equal(rtl.screen.getAllByText(t('en', 'reviewApproved')).length, 2);
+  assert.ok(rtl.screen.getByText('Step passed; continuing'));
+  assert.ok(rtl.screen.getByText(/Confidence: 94%/));
+});
+
+test('request summaries refresh queued message status when the original message is outside the latest page', async () => {
+  const f = fixture();
+  await f.store.dispatch({ kind: 'task.save', input: taskInput() });
+  const snapshot = await f.store.snapshot(),
+    task = snapshot.tasks[0];
+  const state = { config: { prepare: [], checks: [] }, runs: [] };
+  const user: import('../../src/shared/execution').TaskMessage = {
+    id: 'user',
+    userRequestId: 'request',
+    taskId: task.id,
+    role: 'user',
+    kind: 'message',
+    text: 'Original queued question',
+    status: 'pending',
+    time: '2026-11-25T00:00:00Z',
+  };
+  let answered = false;
+  let push: ((value: import('../../src/shared/execution').ExecutionUpdate) => void) | undefined;
+  await mount(f, { view: 'task', taskId: task.id }, undefined, {
+    onExecution: (listener) => {
+      push = listener;
+      return () => undefined;
+    },
+    execute: async () => ({
+      state,
+      conversation: {
+        messages: answered
+          ? [
+              {
+                ...user,
+                id: 'answer',
+                role: 'reviewer',
+                kind: 'answer',
+                text: 'New answer on another page',
+                status: undefined,
+              },
+            ]
+          : [user],
+        requests: [
+          {
+            id: 'request',
+            text: user.text,
+            time: user.time,
+            status: answered ? 'answered' : 'pending',
+          },
+        ],
+      },
+      evidence: { events: [] },
+    }),
+  });
+  await rtl.waitFor(() => assert.ok(document.querySelector('.chat-queue')));
+  answered = true;
+  await rtl.act(async () => push?.({ state: { ...state, conversationVersion: 1 }, events: [] }));
+  await rtl.screen.findByText('New answer on another page');
+  assert.equal(document.querySelector('.chat-queue'), null);
+  assert.equal(
+    document.querySelector('[data-message-id="user"] .message-state')?.textContent,
+    'Handled',
+  );
+});

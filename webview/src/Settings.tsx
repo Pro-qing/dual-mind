@@ -78,6 +78,7 @@ function ConnectionEditor({
     name: record?.name || '',
     baseUrl: record?.baseUrl || 'https://api.openai.com/v1',
     defaultModel: record?.defaultModel || '',
+    provider: record?.provider || 'openaiCompatible',
     protocol: record?.protocol || 'chatCompletions',
   }));
   const [deleting, setDeleting] = useState(false);
@@ -97,7 +98,9 @@ function ConnectionEditor({
           <h2>{record?.name || tr('newConnection')}</h2>
           <p>{tr('connectionHint')}</p>
         </div>
-        <span className="type-label">{tr('compatible')}</span>
+        <span className="type-label">
+          {tr(input.provider === 'commandCode' ? 'providerCommandCode' : 'compatible')}
+        </span>
       </header>
       <div className="settings-detail-grid">
         <div>
@@ -131,6 +134,21 @@ function ConnectionEditor({
             </label>
             <p className="hint">{tr('modelsUrlHint')}</p>
             <label>
+              {tr('modelProvider')}
+              <select
+                value={input.provider}
+                onChange={(event) =>
+                  setInput({
+                    ...input,
+                    provider: event.target.value as ConnectionRecord['provider'],
+                  })
+                }
+              >
+                <option value="openaiCompatible">{tr('compatible')}</option>
+                <option value="commandCode">{tr('providerCommandCode')}</option>
+              </select>
+            </label>
+            <label>
               {tr('inferenceProtocol')}
               <select
                 aria-label={tr('inferenceProtocol')}
@@ -138,12 +156,13 @@ function ConnectionEditor({
                 onChange={(event) =>
                   setInput({
                     ...input,
-                    protocol: event.target.value as 'chatCompletions' | 'responses',
+                    protocol: event.target.value as ConnectionRecord['protocol'],
                   })
                 }
               >
                 <option value="chatCompletions">Chat Completions</option>
                 <option value="responses">Responses</option>
+                <option value="anthropic">Anthropic Messages</option>
               </select>
             </label>
             <div>
@@ -175,7 +194,12 @@ function ConnectionEditor({
               connectionId={record?.id || ''}
               connectionMode
               blockedReason={
-                record && input.baseUrl.trim() !== record.baseUrl ? 'modelsSaveAddress' : undefined
+                record &&
+                (input.baseUrl.trim() !== record.baseUrl ||
+                  input.provider !== (record.provider ?? 'openaiCompatible') ||
+                  input.protocol !== (record.protocol ?? 'chatCompletions'))
+                  ? 'modelsSaveConnection'
+                  : undefined
               }
             />
             <div className="form-actions">
@@ -242,7 +266,14 @@ export function Connections() {
               onClick={() => setSelected(c.id)}
             >
               <strong>{c.name}</strong>
-              <span>{tr('compatible')}</span>
+              <span>
+                {tr(c.provider === 'commandCode' ? 'providerCommandCode' : 'compatible')} ·{' '}
+                {c.protocol === 'anthropic'
+                  ? 'Anthropic Messages'
+                  : c.protocol === 'responses'
+                    ? 'Responses'
+                    : 'Chat Completions'}
+              </span>
               <span className={c.hasKey ? 'key-saved' : 'warning-text'}>
                 {tr(c.hasKey ? 'keySaved' : 'keyMissing')}
               </span>

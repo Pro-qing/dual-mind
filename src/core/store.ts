@@ -607,6 +607,12 @@ export class LocalStore {
           const previous = action.id ? findConnection(action.id) : undefined;
           const item = {
             ...action.input,
+            ...(action.input.provider === undefined && previous?.provider
+              ? { provider: previous.provider }
+              : {}),
+            ...(action.input.protocol === undefined && previous?.protocol
+              ? { protocol: previous.protocol }
+              : {}),
             ...(action.input.contextWindows === undefined && previous?.contextWindows
               ? { contextWindows: previous.contextWindows }
               : {}),
@@ -619,8 +625,8 @@ export class LocalStore {
           if (
             previous &&
             (previous.baseUrl !== item.baseUrl ||
-              previous.protocol !== item.protocol ||
-              previous.provider !== item.provider)
+              (previous.protocol ?? 'chatCompletions') !== (item.protocol ?? 'chatCompletions') ||
+              (previous.provider ?? 'openaiCompatible') !== (item.provider ?? 'openaiCompatible'))
           ) {
             this.ports.onConnectionChanged?.(item.id);
           }

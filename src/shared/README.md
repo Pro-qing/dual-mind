@@ -13,3 +13,7 @@ TaskMessage and conversation/evidence pages support durable follow-up across exe
 `artifacts.ts` 定义显式 Git 生命周期操作和保存成果；`context.ts` 定义角色预算及持久化摘要检查点。
 
 Tool outcomes now distinguish execution, failure, rejection, skipped calls and unknown effects; repeated failures pause while retaining diagnostic counts, without cumulative model/tool call limits. / 工具结果区分执行、失败、拒绝、跳过及未知副作用；重复失败暂停时保留诊断计数，模型／工具调用不设累计次数上限。
+
+Scenes 38–40 were approved November 25, 2026 and integrated with live VS Code theme colors. Provider/protocol settings preserve older saves. Request summaries accompany both page types, and shared request/role grouping keeps separate chat/evidence display preferences. Context and artifacts share one expansion state while remaining mounted.
+
+场景 38–40 于 2026-11-25 审核通过并接入，颜色实时跟随 VS Code 主题。提供商／协议设置兼容旧保存。两类分页携带请求摘要，共用请求／角色分组逻辑并分别保存显示偏好。上下文与成果共享展开状态，切换保留挂载状态。

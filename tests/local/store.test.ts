@@ -424,3 +424,40 @@ test('model context windows and managed bases are validated and preserved across
     }),
   );
 });
+
+test('connection edits preserve provider, protocol and context windows omitted by older clients', async () => {
+  const f = fixture();
+  const input = {
+    name: 'Gateway',
+    baseUrl: 'http://localhost:8000',
+    defaultModel: 'manual',
+    provider: 'commandCode' as const,
+    protocol: 'anthropic' as const,
+    contextWindows: { manual: 65536 },
+  };
+  await f.store.dispatch({ kind: 'connection.save', input });
+  const { id } = (await f.store.snapshot()).connections[0];
+  await f.store.dispatch({
+    kind: 'connection.save',
+    id,
+    input: { name: 'Renamed', baseUrl: input.baseUrl, defaultModel: 'manual' },
+  });
+  const connection = (await f.store.snapshot()).connections[0];
+  assert.equal(connection.provider, 'commandCode');
+  assert.equal(connection.protocol, 'anthropic');
+  assert.deepEqual(connection.contextWindows, { manual: 65536 });
+  assert.deepEqual(f.invalidated, []);
+  await f.store.dispatch({
+    kind: 'connection.save',
+    id,
+    input: { ...input, provider: 'openaiCompatible' },
+  });
+  assert.deepEqual(f.invalidated, [id]);
+  await f.store.dispatch({
+    kind: 'connection.save',
+    id,
+    input: { ...input, protocol: 'responses', contextWindows: {} },
+  });
+  assert.equal(f.invalidated.length, 2);
+  assert.deepEqual((await f.store.snapshot()).connections[0].contextWindows, {});
+});

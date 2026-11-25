@@ -6,7 +6,7 @@
 
 **Current capabilities:** [worktrees, context summaries and artifact operations](./task-lifecycle.md), together with [tool-error handling](./tool-errors.md), were introduced in 0.0.6 with host and frontend support. [Scenes 30–34](./task-lifecycle-proposal.md) and [scenes 35–37](./tool-errors-proposal.md) retain their original approval and implementation records.
 
-**Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
+**Source version: 0.0.8 · Locally prepared; awaiting manual publication by the maintainer.** Recorded November 25, 2026. See the [0.0.8 version notes](./release-notes-0.0.8.md) for features, validation and artifacts. Historical versions, design archives and validation records retain their meaning.
 
 ## Page state and error compatibility
 
@@ -76,7 +76,7 @@ Successful address/key changes and deletion invalidate results. Request and conn
 
 Dedicated-worktree artifact operations have host interfaces, with UI integrated; parallel task execution remains future work. The [retained design reference](./design.md) describes the intended UI. Implemented asynchronous execution messages identify both task and run. Active-task deletion waits for stop acknowledgement; failures preserve records. The read-only example view uses UI-only data and does not emit task mutations.
 
-Provider and protocol fields are accepted by the host and storage, and the source adapters support Anthropic Messages and Command Code compatibility requests. The current settings UI still exposes only OpenAI-compatible Chat Completions/Responses; provider controls remain pending explicit approval of [scenes 38–40](./review-workbench-proposal.md).
+Provider/protocol fields are exposed by the host, storage and [scene 38](./review-workbench-proposal.md) settings UI. All three protocols and Command Code compatibility access are selectable. Address, Provider or protocol edits block queries until saved; successful changes invalidate cached results. Older client saves that omit Provider, protocol or context-window fields preserve the previous configuration.
 
 ## Role handoffs
 
@@ -137,12 +137,12 @@ Command startup adds structured commandNotFound, commandPermissionDenied, comman
 
 New execution actions:
 
-| Action            | Parameters and result                                                                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `message.send`    | `taskId`, client UUID `messageId`, and 1–50,000 character `text`; persistence precedes acknowledgement and ID retries do not launch again |
-| `messages.resume` | `taskId`; explicit processing of saved messages after stop/interruption, without automatically resuming a manual pause                    |
-| `conversation`    | `taskId`, optional opaque `before`; returns `conversation: {messages, before?}`, up to 40 messages                                        |
-| `evidence`        | `taskId`, optional `runId`, `through` sequence and opaque `before`; returns `evidence: {events, before?}`, up to 80 grouped records       |
+| Action            | Parameters and result                                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `message.send`    | `taskId`, client UUID `messageId`, and 1–50,000 character `text`; persistence precedes acknowledgement and ID retries do not launch again      |
+| `messages.resume` | `taskId`; explicit processing of saved messages after stop/interruption, without automatically resuming a manual pause                         |
+| `conversation`    | `taskId`, optional opaque `before`; returns `conversation: {messages, requests?, before?}`, up to 40 messages                                  |
+| `evidence`        | `taskId`, optional `runId`, `through` sequence and opaque `before`; returns `evidence: {events, requests?, before?}`, up to 80 grouped records |
 
 `TaskMessage` carries stable `id`, `taskId`, `time`, `role`, `kind`, `text`, and optional `userRequestId`, `status: pending | processing | handled`, `runId`, `sequence`, `round`, `detail`, `fault`. Each user request is processed individually; its answers and execution events retain the request ID for grouping. Text, parameters and details are redacted; model and command output is not translated. `conversationVersion` signals message updates. Page responses do not overwrite fresher execution state.
 
@@ -158,7 +158,7 @@ Worker and host-managed checks use the [shared shell execution layer](./shell-ex
 
 `ExecutionSnapshot.activity` is ephemeral and optional. Its fields are `id`, `taskId`, `runId`, `agent`, `phase`, `stage`, `startedAt`, and optional `requestId`, `userRequestId`, `tool`, `commandId`, `label`. Stage is waiting/receiving/tool/command. Snapshots and subscriptions contain redacted metadata only, never raw model protocol or command arguments. No activity is persisted in run records or restored after host restart.
 
-The `conversation` request adds optional boolean `includeProcess` (default false for existing clients). When enabled, `TaskMessage.kind` may be `process`, with `requestId` and `userRequestId`. Public text events are grouped by run, role and model request across the full run history before pagination, not the last 80 events. The first event provides stable ID/time; sequence tracks the last included event for evidence navigation. Unattributed legacy text remains evidence-only. Raw logs are not rewritten; final answers and submissions remain separate messages. The approved chat UI sends `includeProcess: true`; older clients keep the default projection.
+The `conversation` request adds optional boolean `includeProcess` (default false for existing clients). When enabled, `TaskMessage.kind` may be `process`, with `requestId` and `userRequestId`. Public text events are grouped by run, user request, role and model request across the full run history before pagination, not the last 80 events. The first event provides stable ID/time; sequence tracks the last included event for evidence navigation. Unattributed legacy text remains evidence-only. Raw logs are not rewritten; final answers and submissions remain separate messages. The approved chat UI sends `includeProcess: true`; older clients keep the default projection.
 
 `TaskWorkspaces.prepare(taskId, strategy?, taskName?)` accepts the host's saved task title, defaulting to `task` for older internal callers. New managed bindings add optional naming metadata version 2. Legacy bindings without metadata retain their exact original name; forged task suffixes, incompatible naming metadata and changed registered branches are rejected.
 
@@ -213,3 +213,5 @@ The optional `ExecutionEnvironmentSummary.bundledTools?` array contains `name` (
 Optional `ExecutionEnvironmentSummary.python?` contains `complete` and `interpreters`. Each candidate retains `path` (invocation path), `source` (`project`/`virtualenv`/`conda`/`path`), `label`, and `status` (`available`/`unavailable`/`skipped`). Success adds `major`, `version`, `implementation`, and reported `executable`. Unavailable candidates use `reason`: `missing`, `permission`, `startFailed`, `timeout`, `outputLimit`, `probeFailed`, `invalidResponse`, `unsupportedVersion` or `budget`. `complete: false` means discovery is incomplete, not that omitted interpreters are absent. Older snapshots remain valid without this optional field.
 
 Each probe reuses a separate `environment` recovery operation; no model tool or Webview request is added. Its result contains only redacted identity/status, without raw stdout/stderr. An internal `runProcess` output-limit option caps probes at 4 KiB; ordinary commands retain the shared 2 MiB limit. Discovery is neither third-party package verification nor acceptance evidence. See [local Python](./local-python.md).
+
+Conversation and evidence pages add optional `requests: RequestSummary[]`, supplying IDs, original text, timestamps, message status and associated run status for requests referenced on the page, even when the original message is on another page. Initial text comes from redacted run metadata; existing JSONL is not rewritten. Missing legacy metadata uses an identifiable title without inventing text. Evidence includes plans, submissions and reviews while preserving command/tool output aggregation and historical error counts. `ChatView` adds optional `taskPanel`, `conversationGroups` and `evidenceGroups`, retaining version 1 and storing only panel enums, IDs and boolean display preferences, never message bodies.

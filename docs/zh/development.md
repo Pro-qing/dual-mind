@@ -2,7 +2,7 @@
 
 [English](../en/development.md) · [文档索引](./README.md)
 
-**当前源码版本：0.0.7 · 本地版本准备，尚未公开发布。** 记录日期：2026-11-24。修复、验证及本地制品见[0.0.7 版本说明](./release-notes-0.0.7.md)。公开发布由维护者单独执行，历史版本记录保留原意。
+**当前源码版本：0.0.8 · 本地已准备，待维护者手动发布。** 记录日期：2026-11-25。功能、验证与制品见[0.0.8 版本说明](./release-notes-0.0.8.md)。历史版本、设计归档和验证记录保留原意。
 
 ## 开发环境
 
@@ -109,9 +109,9 @@ npm run package
 
 CI 各组合运行环境及本地存储／React 测试、格式、类型、lint、文档链接、设计资源检查和扩展宿主测试。验证组合包括 Ubuntu 20.04 容器中的 VS Code 1.100.0 和 stable，以及原生 Ubuntu 24.04 上的 stable；Ubuntu 20.04 stable 组合额外验证真实 Webview 和打包，详见[环境验证组合](./environment.md)。修改支持的文本文件后可执行 `npm run format`。手写 SVG 的几何排版不交由 Prettier 修改。
 
-本地测试使用串行工作进程，每个测试进程的 JavaScript 堆限制为 256 MiB。资源有限时，将工程检查与各图形套件分别运行；监测完整进程树、主机可用内存、交换空间和耗时，主机余量不足时停止测试。仅限制 JavaScript 堆不能限制 Electron 总内存。`DUAL_MIND_RESOURCE_UI=1` 为图形测试增加渲染进程／堆限制并禁用无关扩展；`DUAL_MIND_SKIP_NATIVE_UI=1` 只运行 Webview 套件，随后可单独执行 `node scripts/verify-sidebar.mjs`。这些开关本身不提供操作系统级内存配额。
+本地测试使用串行工作进程，每个测试进程的 JavaScript 堆限制为 256 MiB。资源有限时，将工程检查与各图形套件分别运行；监测完整进程树、主机可用内存、交换空间和耗时，主机余量不足时停止测试。仅限制 JavaScript 堆不能限制 Electron 总内存。`DUAL_MIND_RESOURCE_UI=1` 为图形测试增加渲染进程／堆限制；图形测试使用空的隔离扩展目录；`DUAL_MIND_SKIP_NATIVE_UI=1` 只运行 Webview 套件，随后可单独执行 `node scripts/verify-sidebar.mjs`。这些开关本身不提供操作系统级内存配额。
 
-运行 `npm run package` 时设置 `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.7-candidate.vsix`，可生成独立候选包并保留默认安装包。打包不会自动安装或发布。
+运行 `npm run package` 时设置 `DUAL_MIND_PACKAGE_PATH=release/dual-mind-0.0.8-candidate.vsix`，可生成独立候选包并保留默认安装包。打包不会自动安装或发布。
 
 ## 常见问题
 
@@ -173,3 +173,7 @@ Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追�
 ## 持续执行修复验证
 
 本地套件运行前需准备并核验内置工具缓存，独立工作树也一样：执行 `npm run tools:prepare` 与 `npm run tools:verify`。源码检出不复制被忽略的缓存。测试使用本地模型端点，无需个人凭据或付费推理。回归覆盖两种协议超过旧调用次数、恢复不重放、结构化验收错误、脱敏及后台命令清理。检查必须在前台执行并记录最终退出状态；后台启动及空输出文件不能计为验证通过。
+
+## 0.0.8 主题与分组回归
+
+`DUAL_MIND_UI_REVIEW_ONLY=1 npm run test:ui` 运行新场景与主题矩阵，覆盖浅色、深色及两种高对比度，中英文和 240／320／480／1200px；使用编辑器实际注册的主题 ID。`DUAL_MIND_SKIP_REVIEW_UI=1 DUAL_MIND_SKIP_NATIVE_UI=1 npm run test:ui` 单独执行既有完整流程，随后分别运行主题矩阵和 `node scripts/verify-sidebar.mjs`。默认入口依次包含三部分。上述开关用于分开记录实际通过情况；主题矩阵结果为 `review-scenes-results.json`，完整流程为 `results.json`。

@@ -2,7 +2,9 @@
 
 [简体中文](../zh/review-workbench-proposal.md) · [Design index](./design.md)
 
-**Status: pending explicit review.** Prepared November 25, 2026. The three SVG/PNG pairs below are static illustrations. They introduce model-provider configuration, a compact task header and request-grouped logs. Corresponding UI source has not been integrated; backend model adapters, read-only review and request attribution are developed independently of this visual approval.
+**Status: approved November 25, 2026; integrated into 0.0.7 source.** The owner requires backgrounds to match the current VS Code theme. Original SVG/PNG assets remain static references; their light/dark palettes do not fix the product theme. Runtime checks are recorded in the [development log](./development-log.md).
+
+**Release attribution:** approved and integrated during 0.0.7 development, these changes are delivered in 0.0.8. Original design paths and approval dates remain unchanged.
 
 ## 38. Model-provider settings
 
@@ -30,4 +32,10 @@ Each user question or modification request has its own collapsible group, labell
 
 ## Review boundary
 
-These drawings need explicit approval before their visual changes are implemented, as required by [CONTRIBUTING.md](../../CONTRIBUTING.md). Approval covers the provider controls, the two compact rows, the mutually exclusive context/results section, and the request/role accordion model. Existing artwork and its 37 approvals remain unchanged. Example timestamps, names and results do not represent an actual execution.
+Approval covers provider controls, the compact task header, exclusive context/results panels and request/role accordions. Implementation retains the native sidebar, wraps narrow actions, and uses theme variables for backgrounds, inputs, selection, borders and text, including live theme changes. Original artwork and approvals remain intact. Example names, times and results are not execution evidence. Future visual changes follow [CONTRIBUTING.md](../../CONTRIBUTING.md).
+
+## 0.0.8 compact interface and request groups
+
+Titles, editing and run controls share a compact area and wrap in narrow sidebars. Context and artifacts sit side by side, initially closed; opening either closes the other and clicking it again closes both. Switching preserves internal state. VS Code theme variables drive backgrounds and controls, including live light, dark and high-contrast changes.
+
+Chat and evidence group by `userRequestId`, with separate Reviewer, Worker and system folds; equal text never merges distinct requests. Initial runs use `initial:<runId>` and their saved requirements snapshot. Older events without request IDs belong to Earlier records. The current or latest request starts open and historical groups closed; expand/collapse-all and manual choices are saved separately per task and surface. Counts describe loaded records; Handled does not mean acceptance passed. Original requirements and errors remain readable, with pagination, reading anchors, persistent composer and recovery notices retained.

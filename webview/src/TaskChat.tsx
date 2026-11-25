@@ -1,3 +1,6 @@
+import { RequestGroups } from './RequestGroups';
+import { mergeRequests } from './requestGrouping';
+import type { RequestSummary } from '../../src/shared/execution';
 import { RecoveryNotice } from './Recovery';
 import { ChatCard, ChatIconButton } from './ChatCard';
 import { ChatActivity } from './ChatActivity';
@@ -12,7 +15,11 @@ import { ExecutionDetailView } from './RunDetail';
 import { ExecutionEvidenceItem } from './Execution';
 import { ErrorNotice } from './ErrorNotice';
 
-function mergeMessages(current: TaskMessage[], incoming: TaskMessage[]) {
+function mergeMessages(
+  current: TaskMessage[],
+  incoming: TaskMessage[],
+  requests: RequestSummary[] = [],
+) {
   const merged = new Map(current.map((m) => [m.id, m]));
   incoming.forEach((m) => {
     const previous = merged.get(m.id);
@@ -20,6 +27,16 @@ function mergeMessages(current: TaskMessage[], incoming: TaskMessage[]) {
       merged.set(m.id, m);
     }
   });
+  const status = new Map(requests.map((request) => [request.id, request.status]));
+  for (const [id, message] of merged) {
+    const latestStatus = message.userRequestId && status.get(message.userRequestId);
+    if (message.role === 'user' && latestStatus) {
+      merged.set(id, {
+        ...message,
+        status: latestStatus === 'answered' ? 'handled' : latestStatus,
+      });
+    }
+  }
   return [...merged.values()].sort((a, b) =>
     `${a.time}:${a.id}`.localeCompare(`${b.time}:${b.id}`),
   );
@@ -55,6 +72,8 @@ export function TaskChat({
     [updateChatView, task.id, preview],
   );
   const [messages, setMessages] = useState<TaskMessage[]>([]);
+  const [requests, setRequests] = useState<RequestSummary[]>([]);
+  const [evidenceRequests, setEvidenceRequests] = useState<RequestSummary[]>([]);
   const [before, setBefore] = useState<string>();
   const [error, setError] = useState<AppError>();
   const [text, setText] = useState('');
@@ -174,7 +193,10 @@ export function TaskChat({
             return;
           }
           rememberAnchor();
-          setMessages((current) => mergeMessages(current, result.conversation!.messages));
+          setMessages((current) =>
+            mergeMessages(current, result.conversation!.messages, result.conversation!.requests),
+          );
+          setRequests((current) => mergeRequests(current, result.conversation!.requests));
           if (!historyInitialized.current) {
             setBefore(result.conversation.before);
             historyInitialized.current = true;
@@ -235,6 +257,7 @@ export function TaskChat({
     messages.length,
     view.expandedMessages,
     view.minimizedMessages,
+    view.conversationGroups,
     panelMode,
     narrow,
   ]);
@@ -265,7 +288,10 @@ export function TaskChat({
       });
       if (result.conversation) {
         rememberAnchor(true, true);
-        setMessages((current) => mergeMessages(current, result.conversation!.messages));
+        setMessages((current) =>
+          mergeMessages(current, result.conversation!.messages, result.conversation!.requests),
+        );
+        setRequests((current) => mergeRequests(current, result.conversation!.requests));
         setBefore(result.conversation.before);
       }
     } catch (e) {
@@ -283,6 +309,7 @@ export function TaskChat({
           return;
         }
         if (global.evidence) {
+          setEvidenceRequests((current) => mergeRequests(current, global.evidence!.requests));
           const summary = global.evidence.summary ?? {
             records: global.evidence.events.length,
             errors: global.evidence.events.filter(
@@ -307,6 +334,7 @@ export function TaskChat({
         if (request !== evidenceGeneration.current || !result.evidence) {
           return;
         }
+        setEvidenceRequests((current) => mergeRequests(current, result.evidence!.requests));
         setEvents((current) => {
           const merged = new Map(
             (older
@@ -421,6 +449,16 @@ export function TaskChat({
       evidenceTop.current = 0;
       setEvents([]);
     }
+    if (message) {
+      const id = message.userRequestId ?? 'legacy';
+      const role = message.role === 'user' ? 'reviewer' : message.role;
+      updateView({
+        evidenceGroups: {
+          requests: { ...view.evidenceGroups?.requests, [id]: true },
+          roles: { ...view.evidenceGroups?.roles, [JSON.stringify([id, role])]: true },
+        },
+      });
+    }
     setPanelMode('open', changedScope);
     setLocate((value) => value + 1);
   };
@@ -449,7 +487,10 @@ export function TaskChat({
       sendId.current = undefined;
       const result = await execute({ kind: 'conversation', taskId: task.id, includeProcess: true });
       if (result.conversation) {
-        setMessages((current) => mergeMessages(current, result.conversation!.messages));
+        setMessages((current) =>
+          mergeMessages(current, result.conversation!.messages, result.conversation!.requests),
+        );
+        setRequests((current) => mergeRequests(current, result.conversation!.requests));
       }
     } catch (e) {
       setError(toAppError(e));
@@ -552,7 +593,7 @@ export function TaskChat({
               {tr('olderHistory')}
             </button>
           )}
-          {!before && (
+          {!before && !messages.some((m) => m.userRequestId?.startsWith('initial:')) && (
             <ChatCard
               id="requirements"
               role="user"
@@ -582,67 +623,93 @@ export function TaskChat({
               </ChatCard>
             </>
           )}
-          {messages.map((m) => (
-            <ChatCard
-              key={m.id}
-              id={m.id}
-              role={`${m.role}${m.kind === 'process' ? ' process-message' : ''}`}
-              title={title(m)}
-              time={m.time}
-              {...messageSize(m.id)}
-              canMinimize={m.role === 'system'}
-              error={m.kind === 'error' || Boolean(m.fault)}
-              footer={
-                <>
-                  {m.runId &&
-                    m.kind !== 'answer' &&
-                    execution.runs.some((r) => r.id === m.runId && r.kind !== 'conversation') && (
-                      <small className="message-run">
-                        {tr('chatRun')} #
-                        {execution.runs
-                          .filter((r) => r.taskId === task.id && r.kind !== 'conversation')
-                          .reverse()
-                          .findIndex((r) => r.id === m.runId) + 1}
-                        {m.round ? ` · ${tr('chatRound')} ${m.round}` : ''}
-                      </small>
-                    )}
-                  {m.kind === 'answer' && (
-                    <span className="message-state">{tr('run_answered')}</span>
-                  )}
-                  {m.status && (
-                    <span className="message-state">
-                      {tr(
-                        m.status === 'pending'
-                          ? 'chatPending'
-                          : m.status === 'processing'
-                            ? 'chatProcessing'
-                            : 'chatHandled',
+          <RequestGroups
+            items={messages}
+            requests={requests}
+            renderRequest={(request) =>
+              request.text &&
+              (request.id.startsWith('initial:') ||
+                !messages.some((m) => m.role === 'user' && m.userRequestId === request.id)) ? (
+                <ChatCard
+                  id={`requirements:${request.id}`}
+                  role="user"
+                  title={`${tr('chatYou')}${request.id.startsWith('initial:') ? ` · ${tr('requirements')}` : ''}`}
+                  {...messageSize(`requirements:${request.id}`)}
+                >
+                  <p className="chat-text">{request.text}</p>
+                </ChatCard>
+              ) : null
+            }
+            activeRequestId={
+              execution.activity?.taskId === task.id ? execution.activity.userRequestId : undefined
+            }
+            preferences={view.conversationGroups}
+            onChange={(conversationGroups) => {
+              rememberAnchor(true);
+              updateView({ conversationGroups });
+            }}
+            renderItem={(m) => (
+              <ChatCard
+                key={m.id}
+                id={m.id}
+                role={`${m.role}${m.kind === 'process' ? ' process-message' : ''}`}
+                title={title(m)}
+                time={m.time}
+                {...messageSize(m.id)}
+                canMinimize={m.role === 'system'}
+                error={m.kind === 'error' || Boolean(m.fault)}
+                footer={
+                  <>
+                    {m.runId &&
+                      m.kind !== 'answer' &&
+                      execution.runs.some((r) => r.id === m.runId && r.kind !== 'conversation') && (
+                        <small className="message-run">
+                          {tr('chatRun')} #
+                          {execution.runs
+                            .filter((r) => r.taskId === task.id && r.kind !== 'conversation')
+                            .reverse()
+                            .findIndex((r) => r.id === m.runId) + 1}
+                          {m.round ? ` · ${tr('chatRound')} ${m.round}` : ''}
+                        </small>
                       )}
-                    </span>
-                  )}
-                  {m.runId && (
-                    <button className="text-button" onClick={() => openEvidence(m)}>
-                      {tr('chatViewEvidence')}
-                    </button>
-                  )}
-                </>
-              }
-            >
-              {m.detail ? (
-                <ExecutionDetailView detail={m.detail} compact />
-              ) : m.kind === 'error' ? (
-                <ErrorNotice
-                  error={toAppError(m.fault || m.text, 'legacyExecution')}
-                  locale={snapshot.locale}
-                />
-              ) : (
-                <p className="chat-text">{m.text}</p>
-              )}
-              {m.fault && m.kind !== 'error' && (
-                <ErrorNotice error={m.fault} locale={snapshot.locale} />
-              )}
-            </ChatCard>
-          ))}
+                    {m.kind === 'answer' && (
+                      <span className="message-state">{tr('run_answered')}</span>
+                    )}
+                    {m.status && (
+                      <span className="message-state">
+                        {tr(
+                          m.status === 'pending'
+                            ? 'chatPending'
+                            : m.status === 'processing'
+                              ? 'chatProcessing'
+                              : 'chatHandled',
+                        )}
+                      </span>
+                    )}
+                    {m.runId && (
+                      <button className="text-button" onClick={() => openEvidence(m)}>
+                        {tr('chatViewEvidence')}
+                      </button>
+                    )}
+                  </>
+                }
+              >
+                {m.detail ? (
+                  <ExecutionDetailView detail={m.detail} compact />
+                ) : m.kind === 'error' ? (
+                  <ErrorNotice
+                    error={toAppError(m.fault || m.text, 'legacyExecution')}
+                    locale={snapshot.locale}
+                  />
+                ) : (
+                  <p className="chat-text">{m.text}</p>
+                )}
+                {m.fault && m.kind !== 'error' && (
+                  <ErrorNotice error={m.fault} locale={snapshot.locale} />
+                )}
+              </ChatCard>
+            )}
+          />
         </div>
         {newMessages && (
           <button
@@ -835,78 +902,93 @@ export function TaskChat({
             <button onClick={() => void loadEvidence(evidenceBefore)}>{tr('olderHistory')}</button>
           )}
           {!events.length && <p className="hint">{tr('chatNoEvidence')}</p>}
-          {events.map((e) => {
-            const id = eventId(e),
-              minimized = Boolean(view.minimizedEvidence?.includes(id));
-            const failed = e.tool
-              ? ['failed', 'rejected', 'unknown'].includes(e.tool.status)
-              : Boolean(e.fault) ||
-                e.kind === 'error' ||
-                (e.detail?.type === 'command' && !e.detail.command.ok);
-            return (
-              <div className="evidence-item" key={id} data-minimized={minimized}>
-                <details
-                  className="evidence-record"
-                  open={expanded.has(id)}
-                  onToggle={(event) => {
-                    if (minimized) {
-                      return;
-                    }
-                    const open = event.currentTarget.open;
-                    updateView({
-                      expandedEvidence: toggleId(viewRef.current.expandedEvidence, id, open),
-                    });
-                  }}
-                >
-                  <summary
-                    onClick={(event) => {
+          <RequestGroups
+            items={events}
+            requests={evidenceRequests}
+            activeRequestId={
+              execution.activity?.taskId === task.id ? execution.activity.userRequestId : undefined
+            }
+            preferences={view.evidenceGroups}
+            onChange={(evidenceGroups) => updateView({ evidenceGroups })}
+            renderItem={(e) => {
+              const id = eventId(e),
+                minimized = Boolean(view.minimizedEvidence?.includes(id));
+              const failed = e.tool
+                ? ['failed', 'rejected', 'unknown'].includes(e.tool.status)
+                : Boolean(e.fault) ||
+                  e.kind === 'error' ||
+                  (e.detail?.type === 'command' && !e.detail.command.ok);
+              return (
+                <div className="evidence-item" key={id} data-minimized={minimized}>
+                  <details
+                    className="evidence-record"
+                    open={expanded.has(id)}
+                    onToggle={(event) => {
                       if (minimized) {
-                        event.preventDefault();
-                        updateView({
-                          minimizedEvidence: toggleId(view.minimizedEvidence, id, false),
-                        });
+                        return;
                       }
+                      const open = event.currentTarget.open;
+                      updateView({
+                        expandedEvidence: toggleId(viewRef.current.expandedEvidence, id, open),
+                      });
                     }}
                   >
-                    {e.agent ? tr(e.agent) : tr('chatSystem')} ·{' '}
-                    {e.detail?.type === 'command'
-                      ? e.detail.command.name
-                      : tr(
-                          e.kind === 'text'
-                            ? 'chatProcess'
-                            : e.kind === 'error'
-                              ? 'chatError'
-                              : 'chatTool',
-                        )}{' '}
-                    <small>#{e.sequence}</small>
-                    {e.tool ? (
-                      <span className={failed ? 'chat-error-badge' : 'chat-result-badge'}>
-                        {tr(`outcome_${e.tool.status}`)}
-                      </span>
-                    ) : failed ? (
-                      <span className="chat-error-badge">{tr('chatError')}</span>
-                    ) : e.detail?.type === 'command' ? (
-                      <span className="chat-result-badge">{tr('commandPassed')}</span>
-                    ) : null}
-                  </summary>
-                  <div className="evidence-record-content" hidden={minimized}>
-                    <ExecutionEvidenceItem event={e} />
+                    <summary
+                      onClick={(event) => {
+                        if (minimized) {
+                          event.preventDefault();
+                          updateView({
+                            minimizedEvidence: toggleId(view.minimizedEvidence, id, false),
+                          });
+                        }
+                      }}
+                    >
+                      {e.agent ? tr(e.agent) : tr('chatSystem')} ·{' '}
+                      {e.detail?.type === 'command'
+                        ? e.detail.command.name
+                        : tr(
+                            e.kind === 'plan'
+                              ? 'chatPlan'
+                              : e.kind === 'submission'
+                                ? 'chatSubmission'
+                                : e.kind === 'review'
+                                  ? 'chatAcceptance'
+                                  : e.kind === 'text'
+                                    ? 'chatProcess'
+                                    : e.kind === 'error'
+                                      ? 'chatError'
+                                      : 'chatTool',
+                          )}{' '}
+                      <small>#{e.sequence}</small>
+                      {e.tool ? (
+                        <span className={failed ? 'chat-error-badge' : 'chat-result-badge'}>
+                          {tr(`outcome_${e.tool.status}`)}
+                        </span>
+                      ) : failed ? (
+                        <span className="chat-error-badge">{tr('chatError')}</span>
+                      ) : e.detail?.type === 'command' ? (
+                        <span className="chat-result-badge">{tr('commandPassed')}</span>
+                      ) : null}
+                    </summary>
+                    <div className="evidence-record-content" hidden={minimized}>
+                      <ExecutionEvidenceItem event={e} />
+                    </div>
+                  </details>
+                  <div className="record-actions">
+                    <ChatIconButton
+                      action={minimized ? 'restore' : 'minimize'}
+                      expanded={!minimized}
+                      onClick={() =>
+                        updateView({
+                          minimizedEvidence: toggleId(view.minimizedEvidence, id, !minimized),
+                        })
+                      }
+                    />
                   </div>
-                </details>
-                <div className="record-actions">
-                  <ChatIconButton
-                    action={minimized ? 'restore' : 'minimize'}
-                    expanded={!minimized}
-                    onClick={() =>
-                      updateView({
-                        minimizedEvidence: toggleId(view.minimizedEvidence, id, !minimized),
-                      })
-                    }
-                  />
                 </div>
-              </div>
-            );
-          })}
+              );
+            }}
+          />
         </div>
       </aside>
     </section>
