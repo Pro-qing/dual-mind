@@ -1,4 +1,6 @@
 import type { ModelErrorCode, ModelList } from '../shared/model';
+import type { Protocol, ProviderPreset } from '../shared/execution';
+import { modelListHeaders, supportsProtocol } from './adapters/protocol';
 
 export const modelQueryTimeout = 20_000;
 export const modelResponseLimit = 2 * 1024 * 1024;
@@ -10,6 +12,8 @@ export class ModelQueryError extends Error {
 export interface ModelCredentials {
   baseUrl: string;
   key?: string;
+  protocol?: Protocol;
+  provider?: ProviderPreset;
 }
 
 /** Append to the API path rather than replacing a gateway's prefix. */
@@ -53,11 +57,17 @@ function statusError(status: number): ModelErrorCode {
   }
   return 'modelsFailed';
 }
-function modelIds(value: unknown): string[] {
+interface ModelPage {
+  ids: string[];
+  hasMore: boolean;
+  cursor?: string;
+}
+function modelPage(value: unknown, credentials: ModelCredentials): ModelPage {
   if (!value || typeof value !== 'object' || !('data' in value) || !Array.isArray(value.data)) {
     throw new ModelQueryError('modelsInvalidResponse');
   }
   const ids: string[] = [];
+  const lastModelId = value.data.at(-1);
   for (const item of value.data) {
     if (
       !item ||
@@ -70,9 +80,27 @@ function modelIds(value: unknown): string[] {
     ) {
       throw new ModelQueryError('modelsInvalidResponse');
     }
+    if (credentials.provider === 'commandCode') {
+      if (!('supported_endpoints' in item) || !Array.isArray(item.supported_endpoints)) {
+        throw new ModelQueryError('modelsInvalidResponse');
+      }
+      if (!supportsProtocol(item.supported_endpoints, credentials.protocol ?? 'chatCompletions')) {
+        continue;
+      }
+    }
     ids.push(item.id);
   }
-  return [...new Set(ids)];
+  const hasMore = 'has_more' in value ? value.has_more : false;
+  if (typeof hasMore !== 'boolean') {
+    throw new ModelQueryError('modelsInvalidResponse');
+  }
+  const cursor =
+    'last_id' in value && typeof value.last_id === 'string'
+      ? value.last_id
+      : lastModelId && typeof lastModelId === 'object' && typeof lastModelId.id === 'string'
+        ? lastModelId.id
+        : undefined;
+  return { ids, hasMore, ...(cursor ? { cursor } : {}) };
 }
 /** Never expose upstream error bodies (which may echo credentials) to the UI. */
 export async function fetchModels(
@@ -80,7 +108,7 @@ export async function fetchModels(
   signal: AbortSignal,
   options: { timeoutMs?: number; fetch?: typeof fetch } = {},
 ): Promise<ModelList> {
-  const url = modelsUrl(credentials.baseUrl);
+  const baseUrl = modelsUrl(credentials.baseUrl);
   if (!credentials.key) {
     throw new ModelQueryError('keyRequired');
   }
@@ -97,45 +125,78 @@ export async function fetchModels(
   }, options.timeoutMs ?? modelQueryTimeout);
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   try {
-    const response = await (options.fetch ?? fetch)(url, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${credentials.key}`, Accept: 'application/json' },
-      redirect: 'manual',
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      await response.body?.cancel();
-      throw new ModelQueryError(statusError(response.status));
-    }
-    const length = Number(response.headers.get('content-length'));
-    if (length > modelResponseLimit) {
-      await response.body?.cancel();
-      throw new ModelQueryError('modelsTooLarge');
-    }
-    if (!response.body) {
-      throw new ModelQueryError('modelsInvalidResponse');
-    }
-    reader = response.body.getReader();
-    let bytes = 0;
-    const chunks: Uint8Array[] = [];
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) {
-        break;
+    const ids: string[] = [];
+    const cursors = new Set<string>();
+    let cursor: string | undefined;
+    let totalBytes = 0;
+    for (let pageNumber = 0; pageNumber < 20; pageNumber++) {
+      const url = new URL(baseUrl);
+      const anthropic =
+        credentials.protocol === 'anthropic' && credentials.provider !== 'commandCode';
+      if (anthropic) {
+        url.searchParams.set('limit', '100');
       }
-      bytes += value.byteLength;
-      if (bytes > modelResponseLimit) {
+      if (cursor) {
+        url.searchParams.set(anthropic ? 'after_id' : 'after', cursor);
+      }
+      const response = await (options.fetch ?? fetch)(url.toString(), {
+        method: 'GET',
+        headers: modelListHeaders({
+          key: credentials.key,
+          protocol: credentials.protocol,
+          provider: credentials.provider,
+        }),
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        await response.body?.cancel();
+        throw new ModelQueryError(statusError(response.status));
+      }
+      const length = Number(response.headers.get('content-length'));
+      if (length > modelResponseLimit - totalBytes) {
+        await response.body?.cancel();
         throw new ModelQueryError('modelsTooLarge');
       }
-      chunks.push(value);
+      if (!response.body) {
+        throw new ModelQueryError('modelsInvalidResponse');
+      }
+      reader = response.body.getReader();
+      let bytes = 0;
+      const chunks: Uint8Array[] = [];
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+        bytes += value.byteLength;
+        totalBytes += value.byteLength;
+        if (totalBytes > modelResponseLimit) {
+          throw new ModelQueryError('modelsTooLarge');
+        }
+        chunks.push(value);
+      }
+      let payload: unknown;
+      try {
+        payload = JSON.parse(Buffer.concat(chunks, bytes).toString('utf8'));
+      } catch {
+        throw new ModelQueryError('modelsInvalidResponse');
+      }
+      const page = modelPage(payload, credentials);
+      ids.push(...page.ids);
+      if (!page.hasMore) {
+        break;
+      }
+      if (!page.cursor || cursors.has(page.cursor) || pageNumber === 19) {
+        throw new ModelQueryError(pageNumber === 19 ? 'modelsTooLarge' : 'modelsInvalidResponse');
+      }
+      cursors.add(page.cursor);
+      cursor = page.cursor;
+      await reader.cancel().catch(() => undefined);
+      reader.releaseLock();
+      reader = undefined;
     }
-    let payload: unknown;
-    try {
-      payload = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-    } catch {
-      throw new ModelQueryError('modelsInvalidResponse');
-    }
-    return { models: modelIds(payload), fetchedAt: new Date().toISOString() };
+    return { models: [...new Set(ids)], fetchedAt: new Date().toISOString() };
   } catch (error) {
     if (signal.aborted) {
       throw new ModelQueryError('modelsChanged');

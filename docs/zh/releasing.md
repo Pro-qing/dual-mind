@@ -91,7 +91,7 @@ VSCODE_TEST_VERSION=stable npm test
 
 `npm run package` 会重建扩展宿主与 Webview，`DUAL_MIND_RELEASE_REF` 将包内 README／更新日志链接固定到新标签。产物路径为 `release/dual-mind-<version>.vsix`，再次打包同一版本会覆盖本地文件；候选包和重新下载的验证副本应分别存放。构建产物、验证截图、VSIX 和校验文件继续由 Git 忽略；用于产品介绍的 `resources/screenshots/dualmind-workbench.png` 已提交并随包提供。
 
-检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及按版本目录组织的全部 37 组已审核 SVG／PNG、产品截图及 rg／fd／jq 可执行文件与上游许可证；源 JPEG、开发源码、测试、凭据和 source map 不应出现。
+检查 VSIX 清单中的 Publisher `Pro-qing`、ID `dual-mind`、所选新版本、Preview 标记和 PNG 图标。按当前分发约定继续使用 Marketplace 普通通道。检查 MIT 许可、第三方声明、双语元信息／文档、宿主／前端及按版本目录组织的全部 40 组 SVG／PNG（37 组已审核、3 组待审核）、产品截图及 rg／fd／jq 可执行文件与上游许可证。待审核图稿仅为提案，不代表 UI 已实现。源 JPEG、开发源码、测试、凭据和 source map 不应出现。
 
 在隔离用户配置／扩展目录中安装包，验证图标、身份／版本、工作台、两种语言、任务创建／保存及重载恢复。该配置只启用目标扩展身份。
 

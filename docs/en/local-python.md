@@ -2,7 +2,7 @@
 
 [简体中文](../zh/local-python.md) · [Usage](./usage.md) · [Command execution](./shell-execution.md)
 
-DualMind uses Python 2.7/3 and dependency environments already present on the host. It does not bundle, download or install Python. Worker and Reviewer continue using `run_command` for scripts, file inspection and information processing; no interpreter-selection page is added.
+DualMind uses Python 2.7/3 and dependency environments already present on the host. It does not bundle, download or install Python. Worker uses `run_command` for scripts and information processing; Reviewer can inspect files and recorded outcomes but cannot execute commands. Both roles may receive the discovered environment summary as model context; no interpreter-selection page is added.
 
 ## Discovery during preparation
 

@@ -36,7 +36,7 @@ Recovery rechecks workspace trust and binding, model settings, the environment, 
 
 Each recovery starts a new generation. Old model output, callbacks and handoffs cannot advance the new state. Cancellation persists operations that already happened; new execution waits for confirmed cleanup. Explicit user stops and persistence failures remain distinct causes.
 
-Changed artifacts invalidate old acceptance evidence. Reviewer must reverify or request Worker changes; a newer failure cannot be overridden by an older success. Recovery neither consumes another normal work round nor resets completed role calls or argument-correction counts.
+Recorded command outcomes remain in history when artifacts change. Reviewer judges the current artifacts and may request fresh Worker verification, but the host does not require criterion-linked fresh command evidence as an automatic acceptance gate. A change during review invalidates that reviewed snapshot and pauses completion. Recovery neither consumes another normal work round nor resets completed role calls or argument-correction counts.
 
 Actual local and CI coverage is reported in the [development log](./development-log.md). Unrun platforms are not claimed as verified.
 
@@ -46,4 +46,4 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 
 ## Local Python
 
-Preparation and recovery identify local Python 2.7/3 and common project environments, supplying verified invocation paths and versions to Worker and Reviewer. Execution retains `run_command`, without bundling/installing Python or changing global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
+Preparation and recovery identify local Python 2.7/3 and common project environments for model context. Worker alone can invoke `run_command`; Reviewer can inspect recorded outcomes but cannot run commands. Python is not bundled or installed, and global environments are unchanged. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.

@@ -165,6 +165,35 @@ test('Responses keeps multi-call batches, rejects orphans, and strips opaque pro
   });
   assert.ok(!JSON.stringify(publicHistory(messages)).includes('opaque'));
 });
+test('Anthropic tool-use messages and tool-result blocks remain indivisible context groups', () => {
+  const messages: History = [
+    { role: 'system', content: 'Policy' },
+    {
+      role: 'assistant',
+      content: [
+        { type: 'text', text: 'Inspecting both files.' },
+        { type: 'tool_use', id: 'a', name: 'read_file', input: { path: 'a' } },
+        { type: 'tool_use', id: 'b', name: 'read_file', input: { path: 'b' } },
+      ],
+    },
+    {
+      role: 'user',
+      content: [
+        { type: 'tool_result', tool_use_id: 'a', content: '{"content":"A"}' },
+        { type: 'tool_result', tool_use_id: 'b', content: '{"content":"B"}' },
+      ],
+    },
+    { role: 'user', content: 'Continue.' },
+  ];
+  assert.equal(contextGroups(messages, 'anthropic').length, 2);
+  assert.throws(() => contextGroups(messages.slice(0, 2), 'anthropic'), {
+    code: 'contextCompaction',
+  });
+  assert.throws(() => contextGroups(messages.slice(2, 3), 'anthropic'), {
+    code: 'contextCompaction',
+  });
+  assert.ok(!JSON.stringify(publicHistory(messages)).includes('Policy'));
+});
 test('minimum budgets and non-progressing summaries fail recoverably instead of deleting instructions', async () => {
   const endpoint: Endpoint = {
     baseUrl: 'http://unused.invalid',

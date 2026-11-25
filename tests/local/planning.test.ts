@@ -1,460 +1,223 @@
-import {
-  OperationError,
-  redactError,
-  toAppError,
-  formatError,
-  errorMessages,
-} from '../../src/shared/errors';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { ExecutionEvidenceItem } from '../../webview/src/Execution';
-import { UIContext, type UIContextValue } from '../../webview/src/context';
-import type { RunEvent } from '../../src/shared/execution';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { errorMessages, formatError, redactError, toAppError } from '../../src/shared/errors';
 import {
   agentTools,
-  validateTool,
   validatePlan,
   validateReview,
   validateSubmission,
+  validateTool,
 } from '../../src/execution/contracts';
 import { validateConfig } from '../../src/execution/records';
-import type {
-  PlanInput,
-  WorkSubmission,
-  ReviewResult,
-  CommandEvidence,
-} from '../../src/shared/execution';
+import { acceptanceBlockers } from '../../src/shared/acceptance';
+import type { PlanInput, ReviewResult, RunEvent, WorkSubmission } from '../../src/shared/execution';
+import { ExecutionEvidenceItem } from '../../webview/src/Execution';
+import { UIContext, type UIContextValue } from '../../webview/src/context';
+
 const input: PlanInput = {
-  objective: 'Fix cancellation',
-  requirements: 'Cancelling creates no output',
-  steps: ['Inspect cancellation', 'Fix and verify'],
-  revisionReason: '',
+  objective: 'Improve task safety',
+  requirements: 'Inspect the actual result and preserve user work.',
+  steps: ['Inspect the files', 'Implement and verify'],
   criteria: [
     {
-      id: 'cancel',
-      description: 'No file on cancellation',
-      verification: 'command',
-      evidence: 'Run regression coverage',
-      reason: '',
+      id: 'safety',
+      description: 'The implementation preserves user work.',
+      verification: 'reading',
+      evidence: 'Inspect changed files and outcomes.',
+      reason: 'Artifact inspection is sufficient.',
     },
   ],
+  revisionReason: '',
 };
 const plan = validatePlan(input);
-const command: CommandEvidence = {
-  id: 'host-evidence',
-  name: 'Regression',
-  program: 'npm',
-  args: ['test'],
-  cwd: '.',
-  purpose: 'verify',
-  criterionIds: ['cancel'],
-  timeoutSeconds: 180,
-  planVersion: 1,
-  round: 1,
-  before: 'current',
-  after: 'current',
-  ok: true,
-  exitCode: 0,
-};
 const submission: WorkSubmission = {
-  summary: 'Fixed',
-  completedSteps: ['Fix and verify'],
+  summary: 'Implemented the requested behavior.',
+  completedSteps: ['Implemented'],
+  evidence: [],
   unresolved: [],
-  planVersion: 1,
-  revision: 'current',
-  evidence: [{ criterionId: 'cancel', evidence: 'Regression result', commandIds: [command.id] }],
+  planVersion: plan.version,
+  revision: 'host-owned-artifact-fingerprint',
 };
 const review: ReviewResult = {
-  verdict: 'approve',
-  summary: 'Verified actual artifacts',
-  acceptance: [{ ...submission.evidence[0], passed: true }],
-  planVersion: 1,
+  verdict: 'pass',
+  risk: 'low',
+  confidence: 0.92,
+  issues: [],
+  evidence: ['The current diff matches the request.'],
+  reasoning: 'The artifacts satisfy the requested behavior.',
+  summary: 'The task is complete.',
+  acceptance: [],
+  nextStep: { action: 'finish', instructions: '' },
+  planVersion: plan.version,
+  completionMarker: true,
 };
-test('planning and rejection require actionable plans and stable acceptance criteria', () => {
+
+test('plans remain actionable and revisions preserve stable acceptance IDs', () => {
   assert.throws(() => validatePlan({ ...input, steps: [] }), { code: 'planInvalid' });
   assert.throws(
     () => validatePlan({ ...input, criteria: [input.criteria[0], input.criteria[0]] }),
     { code: 'planInvalid' },
   );
-  assert.throws(
-    () => validatePlan({ ...input, criteria: [{ ...input.criteria[0], verification: 'reading' }] }),
-    { code: 'planInvalid' },
-  );
   assert.throws(() => validatePlan(input, plan), { code: 'planRevisionInvalid' });
-  assert.throws(
-    () =>
-      validatePlan(
-        { ...input, revisionReason: 'Weaken', criteria: [{ ...input.criteria[0], id: 'other' }] },
-        plan,
-      ),
-    { code: 'planRevisionInvalid' },
-  );
   assert.equal(
-    validatePlan({ ...input, revisionReason: 'Repair failing cancellation test' }, plan).version,
+    validatePlan({ ...input, revisionReason: 'Address the observed issue.' }, plan).version,
     2,
   );
   assert.throws(
     () =>
-      validateReview(
-        { ...review, verdict: 'changes_requested' },
+      validatePlan(
+        {
+          ...input,
+          revisionReason: 'Change direction',
+          criteria: [{ ...input.criteria[0], id: 'new' }],
+        },
         plan,
-        submission,
-        new Map(),
-        'current',
-        [],
-        false,
       ),
-    { code: 'reviewIncomplete' },
-  );
-  validateReview(
-    {
-      ...review,
-      verdict: 'changes_requested',
-      acceptance: [{ ...review.acceptance[0], passed: false }],
-      nextPlan: { ...input, revisionReason: 'Fix failed check' },
-    },
-    plan,
-    submission,
-    new Map(),
-    'current',
-    [],
-    false,
+    { code: 'planRevisionInvalid' },
   );
 });
-test('only genuine current successful command evidence can approve artifacts', () => {
-  const commands = new Map([[command.id, command]]);
+
+test('Worker submissions may omit per-criterion command citations', () => {
+  validateSubmission(submission, plan, new Map());
+  validateSubmission(
+    {
+      ...submission,
+      evidence: [
+        { criterionId: 'not-in-plan', commandIds: ['unverified'], evidence: 'Observed output.' },
+      ],
+    },
+    plan,
+    new Map(),
+  );
+});
+
+test('Pair-style finish requires pass, confidence threshold and the independent marker', () => {
+  validateReview(review, plan, false);
+  assert.throws(() => validateReview({ ...review, confidence: 0.79 }, plan, false), {
+    code: 'reviewFinishInvalid',
+  });
+  assert.throws(() => validateReview({ ...review, completionMarker: false }, plan, false), {
+    code: 'reviewFinishInvalid',
+  });
+  assert.throws(() => validateReview({ ...review, verdict: 'fail' }, plan, false), {
+    code: 'reviewIncomplete',
+  });
+  assert.throws(() => validateReview(review, plan, true), { code: 'feedbackPending' });
+});
+
+test('pass/fail continue both require a revision plan and do not require successful commands', () => {
+  const nextPlan = { ...input, revisionReason: 'Continue with the remaining request.' };
+  for (const verdict of ['pass', 'fail'] as const) {
+    validateReview(
+      {
+        ...review,
+        verdict,
+        confidence: verdict === 'pass' ? 0.95 : 0.4,
+        acceptance: [],
+        nextStep: { action: 'continue', instructions: 'Continue the work.' },
+        nextPlan,
+        completionMarker: false,
+      },
+      plan,
+      false,
+    );
+  }
   assert.throws(
     () =>
       validateReview(
         {
           ...review,
-          verdict: 'changes_requested',
-          nextPlan: { ...input, revisionReason: 'Fix other work' },
+          nextStep: { action: 'continue', instructions: 'Continue the work.' },
+          completionMarker: false,
         },
         plan,
-        submission,
-        new Map(),
-        'current',
-        [],
         false,
       ),
-    { code: 'evidenceInvalid' },
+    { code: 'reviewIncomplete' },
   );
-  validateReview(review, plan, submission, commands, 'current', [], false);
-  for (const patch of [
-    { ok: false },
-    { before: 'old' },
-    { after: 'changed' },
-    { planVersion: 2 },
-    { purpose: 'prepare' as const },
-    { criterionIds: [] },
-  ]) {
-    assert.throws(
-      () =>
-        validateReview(
-          review,
-          plan,
-          submission,
-          new Map([[command.id, { ...command, ...patch }]]),
-          'current',
-          [],
-          false,
-        ),
-      { code: 'evidenceInvalid' },
-    );
-  }
-  assert.throws(() => validateSubmission(submission, plan, new Map()), { code: 'evidenceInvalid' });
-  assert.throws(() => validateReview(review, plan, submission, commands, 'new', [], false), {
-    code: 'evidenceInvalid',
-  });
-  assert.throws(
-    () =>
-      validateReview(
-        review,
-        plan,
-        { ...submission, unresolved: ['Still broken'] },
-        commands,
-        'current',
-        [],
-        false,
-      ),
-    { code: 'evidenceInvalid' },
-  );
-  assert.throws(
-    () =>
-      validateReview(
-        review,
-        plan,
-        submission,
-        commands,
-        'current',
-        [{ ...command, ok: false }],
-        false,
-      ),
-    { code: 'evidenceInvalid' },
-  );
-  assert.throws(() => validateReview(review, plan, submission, commands, 'current', [], true), {
-    code: 'feedbackPending',
-  });
-  const failed = { ...command, id: 'failed', ok: false };
-  validateReview(
-    review,
-    plan,
-    submission,
-    new Map([
-      [failed.id, failed],
-      [command.id, command],
-    ]),
-    'current',
-    [],
-    false,
-  );
-  assert.throws(
-    () =>
-      validateReview(
-        review,
-        plan,
-        submission,
-        new Map([
-          [command.id, command],
-          [failed.id, failed],
-        ]),
-        'current',
-        [],
-        false,
-      ),
-    { code: 'evidenceInvalid' },
-  );
-});
-test('tool validation enforces nested arrays, roles, paths as literal values and bounded command parameters', () => {
-  const call = (name: string, args: unknown) => ({
-    id: 'tool',
-    name,
-    arguments: JSON.stringify(args),
-  });
-  const tools = agentTools('worker');
-  const args = {
-    name: 'Check',
-    command: 'node --version | cat',
-    purpose: 'verify',
-    criterionIds: ['cancel'],
-  };
-  assert.deepEqual(validateTool(call('run_command', args), tools), args);
-  for (const patch of [
-    { command: ['wrong type'] },
-    { timeoutSeconds: 901 },
-    { criterionIds: [12] },
-    { arbitrary: true },
-    { command: 'x\0y' },
-  ]) {
-    assert.throws(() => validateTool(call('run_command', { ...args, ...patch }), tools), {
-      code: 'toolArgumentsInvalid',
-    });
-  }
-  assert.deepEqual(validateTool(call('run_command', args), agentTools('reviewer')), args);
-  assert.throws(
-    () =>
-      validateTool(
-        call('submit_plan', { ...input, criteria: [{ ...input.criteria[0], injected: true }] }),
-        agentTools('planning'),
-      ),
-    { code: 'toolArgumentsInvalid' },
-  );
-});
-test('empty command settings are automatic; legacy custom commands and explicit disabled values survive', () => {
-  assert.equal(validateConfig({ prepare: [], checks: [] }).customCommandsEnabled, false);
-  const config = {
-    prepare: [
-      { id: 'prepare', name: 'Install', program: 'npm', args: ['ci'], timeoutSeconds: 180 },
-    ],
-    checks: [],
-  };
-  assert.equal(validateConfig(config).customCommandsEnabled, true);
-  const disabled = validateConfig({ ...config, customCommandsEnabled: false });
-  assert.equal(disabled.customCommandsEnabled, false);
-  assert.deepEqual(disabled.prepare, config.prepare);
-  assert.throws(() => validateConfig({ ...config, customCommandsEnabled: 'false' }), {
-    code: 'commandConfigInvalid',
-  });
+  assert.deepEqual(acceptanceBlockers(), []);
 });
 
-test('Reviewer can supply independent verification while stale, failed and unsubmitted Worker records remain invalid', () => {
-  const independent: CommandEvidence = {
-    ...command,
-    id: 'reviewer-test',
-    agent: 'reviewer',
-    phase: 'reviewer',
-    command: 'npm test',
-  };
-  const accepted = {
-    ...review,
-    acceptance: [{ ...review.acceptance[0], commandIds: [independent.id] }],
-  };
-  const submitted = { ...submission, evidence: [{ ...submission.evidence[0], commandIds: [] }] };
-  validateReview(
-    accepted,
-    plan,
-    submitted,
-    new Map([[independent.id, independent]]),
-    'current',
-    [],
-    false,
-  );
-  for (const patch of [
-    { agent: 'worker' as const },
-    { phase: 'planning' as const },
-    { planVersion: 0 },
-    { exitCode: 1 },
-    { ok: false },
-    { after: 'changed' },
-    { purpose: 'explore' as const },
-  ]) {
-    assert.throws(
-      () =>
-        validateReview(
-          accepted,
-          plan,
-          submitted,
-          new Map([[independent.id, { ...independent, ...patch }]]),
-          'current',
-          [],
-          false,
-        ),
-      { code: 'evidenceInvalid' },
-    );
-  }
-  assert.throws(
-    () =>
-      validateReview(
-        accepted,
-        plan,
-        submitted,
-        new Map([
-          [independent.id, independent],
-          ['later', { ...independent, id: 'later', ok: false, exitCode: 1 }],
-        ]),
-        'current',
-        [],
-        false,
-      ),
-    { code: 'evidenceInvalid' },
-  );
-  for (const phase of ['planning', 'answering'] as const) {
-    const definitions = agentTools(phase);
-    const call = {
-      id: 'probe',
-      name: 'run_command',
-      arguments: JSON.stringify({
-        name: 'Inspect',
-        command: 'git status',
-        purpose: 'explore',
-        criterionIds: [],
-      }),
-    };
-    assert.equal(validateTool(call, definitions).purpose, 'explore');
+test('review tool contract exposes no command or mutation tools to Reviewer or planning', () => {
+  for (const phase of ['planning', 'answering', 'reviewer'] as const) {
+    const tools = agentTools(phase);
+    const names = tools.map((tool) => tool.name);
+    for (const denied of ['run_command', 'run_check', 'write_file', 'delete_file']) {
+      assert.equal(names.includes(denied), false, `${phase} must not expose ${denied}`);
+    }
+    assert.ok(names.includes('read_file'));
+    assert.ok(names.includes('task_diff'));
     assert.throws(
       () =>
         validateTool(
           {
-            ...call,
+            id: 'forbidden',
+            name: 'run_command',
             arguments: JSON.stringify({
-              name: 'Test',
+              name: 'test',
               command: 'npm test',
               purpose: 'verify',
-              criterionIds: ['cancel'],
+              criterionIds: ['safety'],
             }),
           },
-          definitions,
+          tools,
         ),
-      { code: 'toolArgumentsInvalid' },
+      { code: 'toolNotAllowed' },
     );
-    assert.ok(!definitions.some((d) => ['write_file', 'delete_file'].includes(d.name)));
+  }
+  const worker = agentTools('worker').map((tool) => tool.name);
+  for (const allowed of ['run_command', 'run_check', 'write_file', 'delete_file']) {
+    assert.ok(worker.includes(allowed));
   }
 });
 
-test('acceptance diagnostics identify blockers without weakening approval', () => {
-  const commands = new Map([[command.id, command]]);
-  const reject = (work: WorkSubmission, reason: string) =>
-    assert.throws(
-      () => validateReview(review, plan, work, commands, 'current', [], false),
-      (error: unknown) => error instanceof OperationError && error.params?.reason === reason,
-    );
-  reject({ ...submission, unresolved: ['Optional browser tests were not run'] }, 'unresolved');
-  validateReview(
-    review,
-    plan,
-    { ...submission, summary: 'Optional browser tests were not run' },
-    commands,
-    'current',
-    [],
-    false,
-  );
-  reject({ ...submission, revision: 'old' }, 'submissionRevision');
-  for (const [reason, patch] of [
-    ['commandFailed', { ok: false, exitCode: 1 }],
-    ['commandPlan', { planVersion: 0 }],
-    ['commandRevision', { after: 'old' }],
-    ['commandPurpose', { purpose: 'explore' }],
-    ['commandCriterion', { criterionIds: [] }],
-  ] as [string, Partial<CommandEvidence>][]) {
-    assert.throws(
-      () =>
-        validateReview(
-          review,
-          plan,
-          submission,
-          new Map([[command.id, { ...command, ...patch }]]),
-          'current',
-          [],
-          false,
-        ),
-      (error: unknown) =>
-        error instanceof OperationError &&
-        error.params?.reason === reason &&
-        error.params.commandId === command.id &&
-        error.params.criterionId === 'cancel',
-    );
-  }
-  assert.throws(
-    () => validateReview(review, plan, submission, new Map(), 'current', [], false),
-    (error: unknown) =>
-      error instanceof OperationError && error.params?.reason === 'commandMissing',
-  );
+test('nested tool schemas and execution configuration remain bounded', () => {
+  const worker = agentTools('worker');
   assert.throws(
     () =>
-      validateReview(
-        review,
-        plan,
-        submission,
-        new Map([...commands, ['new', { ...command, id: 'new', ok: false }]]),
-        'current',
-        [],
-        false,
+      validateTool(
+        {
+          id: 'bad',
+          name: 'write_file',
+          arguments: JSON.stringify({ path: 'a', content: 'b', extra: true }),
+        },
+        worker,
       ),
-    (error: unknown) =>
-      error instanceof OperationError &&
-      error.params?.reason === 'latestVerification' &&
-      error.params.commandId === 'new',
+    { code: 'toolArgumentsInvalid' },
   );
+  const commands = validateConfig({
+    customCommandsEnabled: false,
+    prepare: [],
+    checks: [],
+  });
+  assert.equal(commands.customCommandsEnabled, false);
+  assert.deepEqual(commands.checks, []);
 });
 
-test('validation fault survives persisted outcome and actual Debug rendering in both languages', () => {
+test('review completion messages remain bilingual and describe the independent marker', () => {
+  assert.equal(
+    formatError('en', { code: 'reviewFinishInvalid' }),
+    errorMessages.reviewFinishInvalid[0],
+  );
+  assert.equal(
+    formatError('zh-CN', { code: 'reviewFinishInvalid' }),
+    errorMessages.reviewFinishInvalid[1],
+  );
+  assert.match(errorMessages.reviewCorrectionExhausted[0], /one correction/i);
+});
+
+test('invalid finish faults stay redacted and visible in both locales', () => {
   let fault;
   try {
-    validateReview(
-      review,
-      plan,
-      { ...submission, unresolved: ['Optional browser tests not run; Bearer private-token'] },
-      new Map([[command.id, command]]),
-      'current',
-      [],
-      false,
-    );
-    assert.fail('must reject');
+    validateReview({ ...review, completionMarker: false }, plan, false);
+    assert.fail('A finish review without the marker must be rejected.');
   } catch (error) {
-    fault = redactError(toAppError(error));
+    fault = redactError({
+      ...toAppError(error),
+      details: 'Review note: Bearer private-token',
+    });
   }
   const event = JSON.parse(
     JSON.stringify({
@@ -481,119 +244,9 @@ test('validation fault survives persisted outcome and actual Debug rendering in 
         createElement(ExecutionEvidenceItem, { event }),
       ),
     );
-    assert.match(html, /Optional browser tests not run/);
+    assert.match(html, locale === 'en' ? /standalone TASK_COMPLETE/ : /TASK_COMPLETE 行/);
     assert.match(html, /redacted/);
     assert.doesNotMatch(html, /private-token/);
-    assert.match(html, locale === 'en' ? /blocked by unresolved/ : /未解决事项阻止验收通过/);
     assert.match(html, /data-outcome="failed"/);
   }
-  assert.equal(formatError('en', { code: 'evidenceInvalid' }), errorMessages.evidenceInvalid[0]);
-  assert.ok(
-    String(
-      redactError({ code: 'evidenceInvalid', params: { blockers: 'x'.repeat(13000) } }).params
-        ?.blockers,
-    ).length <= 12000,
-  );
-});
-
-test('remaining acceptance diagnostics distinguish coverage, sources, latest citations and reading evidence', () => {
-  const commands = new Map([[command.id, command]]);
-  const rejects = (action: () => unknown, reason: string) =>
-    assert.throws(
-      action,
-      (error: unknown) =>
-        error instanceof OperationError &&
-        error.code === 'evidenceInvalid' &&
-        error.params?.reason === reason,
-    );
-  rejects(() => validateSubmission({ ...submission, evidence: [] }, plan, commands), 'coverage');
-  rejects(() => validateSubmission(submission, plan, new Map()), 'commandMissing');
-  rejects(
-    () =>
-      validateSubmission(submission, plan, new Map([[command.id, { ...command, planVersion: 0 }]])),
-    'commandPlan',
-  );
-  rejects(
-    () =>
-      validateReview(
-        review,
-        plan,
-        submission,
-        commands,
-        'current',
-        [{ ...command, id: 'additional', ok: false }],
-        false,
-      ),
-    'additionalCheck',
-  );
-  rejects(
-    () =>
-      validateReview(
-        { ...review, acceptance: [{ ...review.acceptance[0], commandIds: [] }] },
-        plan,
-        submission,
-        commands,
-        'current',
-        [],
-        false,
-      ),
-    'commandRequired',
-  );
-  rejects(
-    () =>
-      validateReview(
-        review,
-        plan,
-        { ...submission, evidence: [{ ...submission.evidence[0], commandIds: [] }] },
-        commands,
-        'current',
-        [],
-        false,
-      ),
-    'commandSource',
-  );
-  rejects(
-    () =>
-      validateReview(
-        review,
-        plan,
-        submission,
-        new Map([...commands, ['new', { ...command, id: 'new' }]]),
-        'current',
-        [],
-        false,
-      ),
-    'latestVerification',
-  );
-  const reading = validatePlan({
-    ...input,
-    criteria: [{ ...input.criteria[0], verification: 'reading', reason: 'Read artifact' }],
-  });
-  rejects(
-    () =>
-      validateReview(
-        { ...review, acceptance: [{ ...review.acceptance[0], evidence: ' ' }] },
-        reading,
-        submission,
-        commands,
-        'current',
-        [],
-        false,
-      ),
-    'readingRequired',
-  );
-  validateReview(
-    {
-      ...review,
-      verdict: 'changes_requested',
-      acceptance: [{ ...review.acceptance[0], passed: false }],
-      nextPlan: { ...input, revisionReason: 'Fix blockers' },
-    },
-    plan,
-    { ...submission, unresolved: ['Real blocker'] },
-    commands,
-    'current',
-    [],
-    false,
-  );
 });

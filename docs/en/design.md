@@ -17,13 +17,13 @@
 
 **Source version: 0.0.7 · Local release preparation; not publicly released.** Recorded November 24, 2026. See the [0.0.7 version notes](./release-notes-0.0.7.md) for changes, validation and the local artifact. Publication is handled separately by the maintainer; historical version records retain their original meaning.
 
-**There are currently 37 SVG/PNG pairs: 37 approved.** Scenes 1–7 record the original workbench and model selection, 8–11 task-page revisions, 12–13 planning and acceptance, 14–17 task chat and follow-up, 18–20 activity and compact-chat controls, 21–23 failure recovery, and 24–27 the native sidebar. Original artwork and historical review labels remain intact, and all content is illustrative. Current source implements model discovery, single-task execution, review rounds, chat and independent evidence; artifact integration has host support with UI integrated; parallel execution remains planned. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
+**There are currently 40 SVG/PNG pairs: 37 approved and scenes 38–40 pending explicit review.** Scenes 1–37 retain their original approvals and implementation records. New proposals cover provider/protocol settings, a compact task header with mutually exclusive context/results panels, and logs grouped by user request and then role. Backend adapters and request attribution are implemented, but these proposed UI controls and layouts are not integrated. Original artwork and historical review labels remain intact, and all content is illustrative. Published 0.0.1 retains its historical behavior. See [Usage](./usage.md) for current operations.
 
 Each scene is **1440 × 900**, uses a VS Code-style dark palette, and contains editable SVG text and vector elements. Early scenes use English labels; later revisions mainly use Simplified Chinese. Each group has explanations in both languages. The SVGs have no embedded images, scripts, external fonts, or external resources. The PNGs are rendered previews.
 
 ## Browse by version
 
-The [design archive index](../design/README.md) maps versions to scenes and counts: 0.0.1 → 1–5, 0.0.2 → 6–7, 0.0.3 → 8–17, 0.0.4 → 18–23, and 0.0.5 → 24–37. Each folder has paired SVG/PNG assets and a README. These folders describe development versions, not complete snapshots of each initial tag: scenes 8–17 followed the original `v0.0.3` tag, and the sidebar moves from earlier 0.0.4 candidate validation into the 0.0.5 source milestone. Historical artwork and tags remain unchanged.
+The [design archive index](../design/README.md) maps versions to scenes and counts: 0.0.1 → 1–5, 0.0.2 → 6–7, 0.0.3 → 8–17, 0.0.4 → 18–23, 0.0.5 → 24–37, and 0.0.7 → 38–40 (pending review). Each folder has paired SVG/PNG assets and a README. These folders describe development versions, not complete snapshots of each initial tag: scenes 8–17 followed the original `v0.0.3` tag, and the sidebar moves from earlier 0.0.4 candidate validation into the 0.0.5 source milestone. Historical artwork and tags remain unchanged.
 
 ## Design gallery
 
@@ -66,6 +66,9 @@ The [design archive index](../design/README.md) maps versions to scenes and coun
 | 35. Tool and command outcomes                  | [SVG](../design/v0.0.5/dual-mind-tool-results-proposal.svg)           | [PNG](../design/v0.0.5/dual-mind-tool-results-proposal.png)           |
 | 36. Repeated-error pause and continuation      | [SVG](../design/v0.0.5/dual-mind-tool-pause-proposal.svg)             | [PNG](../design/v0.0.5/dual-mind-tool-pause-proposal.png)             |
 | 37. Historical failures and acceptance         | [SVG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.svg)      | [PNG](../design/v0.0.5/dual-mind-acceptance-errors-proposal.png)      |
+| 38. Provider and protocol settings (pending)   | [SVG](../design/v0.0.7/dual-mind-model-provider-proposal.svg)         | [PNG](../design/v0.0.7/dual-mind-model-provider-proposal.png)         |
+| 39. Compact task header (pending)              | [SVG](../design/v0.0.7/dual-mind-compact-task-header-proposal.svg)    | [PNG](../design/v0.0.7/dual-mind-compact-task-header-proposal.png)    |
+| 40. Request-grouped logs (pending)             | [SVG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.svg)   | [PNG](../design/v0.0.7/dual-mind-request-grouped-logs-proposal.png)   |
 
 ## Historical descriptions of scenes 1–7
 
@@ -181,7 +184,7 @@ Below 900 CSS pixels, Worker and Reviewer stack, in that order. Connection setti
 
 ## Review and implementation gate
 
-The owner has approved the existing 37 designs. Future interface changes require an updated SVG proposal and explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
+The owner has approved scenes 1–37. Scenes 38–40 remain pending; their visual changes require explicit review before implementation, as described in the [contribution guide](../../CONTRIBUTING.md). Historical labels inside the artwork remain and do not describe current approval status. Running states and query results in the drawings remain examples. Built-in Reviewer definitions and saved task snapshots retain their behavior.
 
 See [Architecture](./architecture.md) for implemented module responsibilities and [Protocol](./protocol.md) for task association and configuration boundaries. Implemented settings/execution messages, role handoffs and file-access boundaries are documented there.
 
@@ -197,11 +200,11 @@ npm run docs:check
 npm run format:check
 ```
 
-Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair (currently 37), requires the original baseline scenes 1–7, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Updating designs or documentation does not indicate that a public VSIX has been rebuilt or replaced. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
+Inspect each rendered image at full size for clipping, missing characters, overlap, and alignment. The documentation checker discovers every SVG/PNG pair (currently 40), requires the original baseline scenes 1–7, and checks canvas size, accessible title/description, editable text, static-vector constraints, and matching PNG dimensions. Updating designs or documentation does not indicate that a public VSIX has been rebuilt or replaced. Rendering and visual inspection remain necessary to verify layout. CairoSVG is optional design tooling, not a runtime or standard build dependency.
 
 ## Execution interface in the development branch
 
-The actual settings categories are API Connections, Defaults for new tasks, Task execution, Reviewer Roles, Model context, and Saved artifacts. The activity-bar icon opens the complete native sidebar workbench; secondary task details initially collapse. Current detail uses scenes 14–17: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with public process cards in chat and original command details in evidence; scenes 18–20 add activity, icon-only sizing and minimization. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace. The original two-column, parallel-execution and apply-result controls remain historical designs; see [Usage](./usage.md) for current behavior and [task chat validation](./task-chat-validation.md) for actual coverage.
+The actual settings categories are API Connections, Defaults for new tasks, Task execution, Reviewer Roles, Model context, and Saved artifacts. The current connection form exposes OpenAI-compatible Chat Completions/Responses; Anthropic and Command Code backend adapters are not yet exposed through settings. Scenes 38–40 propose the pending provider controls, compact task header and request/role log accordions. No corresponding UI source is integrated. The activity-bar icon opens the complete native sidebar workbench; secondary task details initially collapse. Current detail otherwise retains scenes 14–20: compact model bars, user messages on the right and AI messages on the left, a persistent composer and independent evidence. The wide evidence panel is approximately 360 CSS pixels; below 1100 CSS pixels it becomes a drawer capped at 430 CSS pixels and the viewport width. Chat and evidence paginate independently, with public process cards in chat and original command details in evidence. Manual start, pause/continue/stop, read-only questions and continued modifications remain available. One task runs per workspace; see [Usage](./usage.md) for current behavior.
 
 ## Approved additions: November 22, 2026
 

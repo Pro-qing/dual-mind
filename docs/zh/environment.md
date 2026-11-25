@@ -126,7 +126,7 @@ node scripts/check-environment.cjs
 
 ## 执行资源限制
 
-任务命令在 Linux、macOS、Windows 上通过原生 shell 启动，不依赖用户级 systemd、cgroup v2 或用户 D-Bus 会话，不探测或强制设置内存／交换空间配额。命令超时默认为 180 秒、允许 10–900 秒，输出上限 2 MiB；取消时终止进程组。环境中仍须存在任务实际使用的程序。程序不存在、无执行权限或启动失败时记录结构化错误，供 Worker／Reviewer 修订处理。命令以当前操作系统用户身份运行，不构成文件系统或网络沙箱。macOS 和 Windows 已配置原生验证任务，仍需实际通过结果。
+任务命令在 Linux、macOS、Windows 上通过原生 shell 启动，不依赖用户级 systemd、cgroup v2 或用户 D-Bus 会话，不探测或强制设置内存／交换空间配额。命令超时默认为 180 秒、允许 10–900 秒，输出上限 2 MiB；取消时终止进程组。环境中仍须存在任务实际使用的程序。程序不存在、无执行权限或启动失败时记录结构化结果，供 Worker 修正及 Reviewer 检查。命令以当前操作系统用户身份运行，不构成文件系统或网络沙箱。macOS 和 Windows 已配置原生验证任务，仍需实际通过结果。
 
 初次候选版本复核使用 Ubuntu 24.04.5 amd64、Node.js 24.22.3、Git 2.43.0 和本机 VS Code 1.141.0。上表为现有工作流配置，不是 0.0.2／0.0.3 的远端 CI 成功记录；Ubuntu 20.04 的后续本地复验见[验证记录](./execution-cycle-validation.md)，最低 VS Code 1.100.0 及其他组合未在此次运行器修订中重新验证。
 
@@ -134,15 +134,15 @@ node scripts/check-environment.cjs
 
 ## 自动执行与无命令任务
 
-Reviewer 先规划，Worker 再按需准备项目依赖与运行命令，无命令任务仍可通过有依据的阅读审查完成。命令失败、未执行或停止未确认均保留真实记录，不能作为通过证据。开发验证进程可以由外部工具施加总资源预算，该预算不属于产品任务的运行前置条件。
+Reviewer 先规划，Worker 再按需准备项目依赖与运行命令；无命令任务仍可通过有依据的阅读审查完成。Reviewer 可读取命令失败等真实结果；Pair 式验收将其作为判断材料，而非宿主自动否决条件。开发验证进程可以由外部工具施加总资源预算，该预算不属于产品任务的运行前置条件。
 
 ## 持续会话的环境要求
 
-任务聊天、答疑和继续修改共用原生命令执行层。答疑允许 Reviewer 探查命令，不启动 Worker；继续修改复用已绑定目录，仍需相同分支与 HEAD。命令继续直接运行，不恢复 systemd 或固定内存要求。新增真实 UI 使用本地模拟模型和临时仓库；验证范围见[任务聊天验证](./task-chat-validation.md)。
+任务答疑由 Reviewer 以只读方式检查文件，不启动 Worker 命令；继续修改复用已绑定目录，仍需相同分支与 HEAD，必要命令由 Worker 执行。命令继续直接运行，不恢复 systemd 或固定内存要求。新增真实 UI 使用本地模拟模型和临时仓库；验证范围见[任务聊天验证](./task-chat-validation.md)。
 
 ## 原生 shell 命令
 
-两个角色现共用[通用 shell 执行层](./shell-execution.md)，自动继承环境，并允许 Reviewer 独立验证，无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
+Worker 使用[宿主 shell 执行层](./shell-execution.md)并自动继承环境；Reviewer 只能读取文件和已记录输出，不能发起命令。无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
 
 ## 故障恢复
 
@@ -156,4 +156,4 @@ Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追�
 
 ## 本机 Python
 
-任务准备及恢复会自动识别本机 Python 2.7／3 和常见项目环境，并把经过验证的调用路径与版本提供给 Worker、Reviewer。沿用 `run_command`，不随包携带或安装 Python，不改全局环境。发现顺序、预算与故障边界见[本机 Python 说明](./local-python.md)。
+任务准备及恢复会自动识别本机 Python 2.7／3 和常见项目环境，并将信息用于模型上下文。只有 Worker 可调用 `run_command`；Reviewer 可读取已记录结果但不能执行命令。Python 不随包携带或安装，也不修改全局环境。发现顺序、预算与故障边界见[本机 Python 说明](./local-python.md)。

@@ -18,7 +18,7 @@
 | [开发指南](./development.md)                       | nvm、构建命令、调试与测试                           |
 | [架构说明](./architecture.md)                      | 已实现工作台、存储边界、品牌资源及模块职责          |
 | [宿主／界面协议](./protocol.md)                    | 设置／模型查询、执行消息、角色交接及 Git 绑定       |
-| [界面设计](./design.md)                            | 37 组已审核 SVG／PNG                                |
+| [界面设计](./design.md)                            | 40 组 SVG／PNG：37 已审核、3 待审核                 |
 | [路线图](./roadmap.md)                             | 按版本记录进度、已实现执行及剩余能力                |
 | [打包与发布](./releasing.md)                       | 历史发布记录及后续 GitHub／Marketplace 版本更新流程 |
 | [许可说明](./licensing.md)                         | MIT 许可证及随包第三方声明                          |

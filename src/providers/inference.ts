@@ -7,14 +7,15 @@ import {
   waitForRetry,
 } from './retry';
 import { OperationError } from '../shared/errors';
-import type { Protocol } from '../shared/execution';
-import { modelsUrl } from './models';
+import type { Protocol, ProviderPreset } from '../shared/execution';
+import { inferenceBody, inferenceHeaders, inferenceUrl, toolResult } from './adapters/protocol';
 export interface Endpoint {
   contextWindowTokens?: number;
   baseUrl: string;
   key: string;
   model: string;
   protocol: Protocol;
+  provider?: ProviderPreset;
 }
 export interface ToolDefinition {
   name: string;
@@ -40,10 +41,24 @@ export class InferenceError extends OperationError {
   retryAfterMs?: number;
 }
 interface WireEvent {
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    input_tokens?: number;
+    output_tokens?: number;
+  };
   error?: unknown;
   type?: string;
-  delta?: string;
+  delta?: unknown;
+  index?: number;
+  message?: { usage?: { input_tokens?: number } };
+  content_block?: {
+    type?: string;
+    id?: string;
+    name?: string;
+    input?: unknown;
+    text?: string;
+  };
   choices?: {
     index: number;
     delta: {
@@ -137,10 +152,7 @@ export class Inference {
     timeoutMs: number,
   ): Promise<ModelTurn> {
     const chat = endpoint.protocol === 'chatCompletions';
-    const url = modelsUrl(endpoint.baseUrl).replace(
-      /\/models$/,
-      chat ? '/chat/completions' : '/responses',
-    );
+    const url = inferenceUrl(endpoint);
     const body = inferenceBody(endpoint, history, tools);
     const encoded = JSON.stringify(body);
     if (Buffer.byteLength(encoded) > this.limits.contextBytes) {
@@ -161,11 +173,7 @@ export class Inference {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${endpoint.key}`,
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
+        headers: inferenceHeaders(endpoint),
         body: encoded,
         redirect: 'manual',
         signal: controller.signal,
@@ -240,17 +248,30 @@ export class Inference {
               : 'inferenceIncomplete',
           );
         }
-        const inputTokens = chat ? event.usage?.prompt_tokens : event.response?.usage?.input_tokens;
-        const outputTokens = chat
-          ? event.usage?.completion_tokens
-          : event.response?.usage?.output_tokens;
-        if (
-          Number.isSafeInteger(inputTokens) &&
-          (inputTokens ?? 0) > 0 &&
-          Number.isSafeInteger(outputTokens) &&
-          (outputTokens ?? -1) >= 0
-        ) {
-          usage = { inputTokens: inputTokens!, outputTokens: outputTokens! };
+        if (endpoint.protocol === 'anthropic') {
+          const inputTokens = event.message?.usage?.input_tokens ?? event.usage?.input_tokens;
+          const outputTokens = event.usage?.output_tokens;
+          if (Number.isSafeInteger(inputTokens) && (inputTokens ?? 0) > 0) {
+            usage = { inputTokens: inputTokens!, outputTokens: usage?.outputTokens ?? 0 };
+          }
+          if (Number.isSafeInteger(outputTokens) && (outputTokens ?? -1) >= 0) {
+            usage = { inputTokens: usage?.inputTokens ?? 0, outputTokens: outputTokens! };
+          }
+        } else {
+          const inputTokens = chat
+            ? event.usage?.prompt_tokens
+            : event.response?.usage?.input_tokens;
+          const outputTokens = chat
+            ? event.usage?.completion_tokens
+            : event.response?.usage?.output_tokens;
+          if (
+            Number.isSafeInteger(inputTokens) &&
+            (inputTokens ?? 0) > 0 &&
+            Number.isSafeInteger(outputTokens) &&
+            (outputTokens ?? -1) >= 0
+          ) {
+            usage = { inputTokens: inputTokens!, outputTokens: outputTokens! };
+          }
         }
         if (chat) {
           if (!Array.isArray(event.choices)) {
@@ -311,7 +332,7 @@ export class Inference {
             }
             finished = true;
           }
-        } else {
+        } else if (endpoint.protocol === 'responses') {
           if (typeof event.type === 'string' && event.type.startsWith('response.')) {
             reportProgress();
           }
@@ -357,6 +378,75 @@ export class Inference {
               }
             }
             done = true;
+          }
+        } else {
+          reportProgress();
+          if (event.type === 'message_start') {
+            if (!event.message || !event.message.usage) {
+              throw invalid();
+            }
+          } else if (event.type === 'content_block_start') {
+            if (!Number.isSafeInteger(event.index) || event.index! < 0 || event.index! > 100) {
+              throw invalid();
+            }
+            const block = event.content_block;
+            if (!block || typeof block.type !== 'string') {
+              throw invalid();
+            }
+            if (block.type === 'text') {
+              if (typeof block.text !== 'string') {
+                throw invalid();
+              }
+              if (block.text) {
+                text += block.text;
+                delta(block.text);
+              }
+            } else if (block.type === 'tool_use') {
+              if (
+                typeof block.id !== 'string' ||
+                typeof block.name !== 'string' ||
+                calls.has(event.index!)
+              ) {
+                throw invalid();
+              }
+              calls.set(event.index!, { id: block.id, name: block.name, arguments: '' });
+            } else if (!['thinking', 'redacted_thinking'].includes(block.type)) {
+              throw invalid();
+            }
+          } else if (event.type === 'content_block_delta') {
+            const part = event.delta as Record<string, unknown> | undefined;
+            if (!part || typeof part.type !== 'string') {
+              throw invalid();
+            }
+            if (part.type === 'text_delta') {
+              if (typeof part.text !== 'string') {
+                throw invalid();
+              }
+              text += part.text;
+              delta(part.text);
+            } else if (part.type === 'input_json_delta') {
+              const call = calls.get(event.index ?? -1);
+              if (!call || typeof part.partial_json !== 'string') {
+                throw invalid();
+              }
+              call.arguments += part.partial_json;
+            } else if (!['thinking_delta', 'signature_delta'].includes(part.type)) {
+              throw invalid();
+            }
+          } else if (event.type === 'message_delta') {
+            const update = event.delta as Record<string, unknown> | undefined;
+            const stopReason = update?.stop_reason;
+            if (!['end_turn', 'tool_use', 'stop_sequence'].includes(String(stopReason))) {
+              throw new InferenceError('inferenceIncomplete');
+            }
+            finished = true;
+          } else if (event.type === 'message_stop') {
+            if (!finished) {
+              throw invalid();
+            }
+            done = true;
+          } else if (event.type !== 'ping' && event.type !== 'content_block_stop') {
+            throw invalid();
           }
         }
       };
@@ -412,6 +502,29 @@ export class Inference {
               : {}),
           },
         ];
+      } else if (endpoint.protocol === 'anthropic') {
+        output = [
+          {
+            role: 'assistant',
+            content: [
+              ...(text ? [{ type: 'text', text }] : []),
+              ...list.map((call) => {
+                let input: unknown;
+                try {
+                  input = JSON.parse(call.arguments || '{}');
+                } catch {
+                  input = null;
+                }
+                return {
+                  type: 'tool_use',
+                  id: call.id,
+                  name: call.name,
+                  input: input && typeof input === 'object' && !Array.isArray(input) ? input : {},
+                };
+              }),
+            ],
+          },
+        ];
       }
       return { text, calls: list, output, ...(usage ? { usage } : {}) };
     } catch (error) {
@@ -435,36 +548,9 @@ export class Inference {
     }
   }
 }
-export function toolResult(
-  protocol: Protocol,
-  call: ToolCall,
-  result: unknown,
-): Record<string, unknown> {
-  const text = JSON.stringify(result);
-  return protocol === 'responses'
-    ? { type: 'function_call_output', call_id: call.id, output: text }
-    : { role: 'tool', tool_call_id: call.id, content: text };
-}
+export { inferenceBody, toolResult };
 
 /** Use the exact same envelope for estimation and transport. */
-export function inferenceBody(endpoint: Endpoint, history: History, tools: ToolDefinition[]) {
-  const chat = endpoint.protocol === 'chatCompletions';
-  return {
-    model: endpoint.model,
-    stream: true,
-    ...(chat
-      ? {
-          messages: history,
-          tools: tools.map((fn) => ({ type: 'function', function: { ...fn, strict: false } })),
-        }
-      : {
-          input: history,
-          store: false,
-          include: ['reasoning.encrypted_content'],
-          tools: tools.map((fn) => ({ type: 'function', ...fn, strict: false })),
-        }),
-  };
-}
 export function inferenceBytes(
   endpoint: Endpoint,
   history: History,

@@ -87,31 +87,31 @@ test('conversation pagination spans runs, preserves stable IDs and recovers proc
   assert.equal((await recovered.pending(taskId))[0].fault?.code, 'executionInterrupted');
 });
 
-test('answering permits exploration but not source tools or task acceptance', () => {
+test('answering and reviewer are read-only while Worker retains source tools', () => {
   const tools = agentTools('answering');
   assert.ok(tools.some((t) => t.name === 'submit_answer'));
-  assert.equal(
-    validateTool(
-      {
-        id: 'explore',
-        name: 'run_command',
-        arguments: JSON.stringify({
-          name: 'Inspect',
-          command: 'git status',
-          purpose: 'explore',
-          criterionIds: [],
-        }),
-      },
-      tools,
-    ).purpose,
-    'explore',
-  );
-  for (const name of ['write_file', 'delete_file', 'run_check', 'finish_work', 'submit_review']) {
+  const reviewerTools = agentTools('reviewer');
+  assert.ok(reviewerTools.some((tool) => tool.name === 'submit_review'));
+  for (const name of [
+    'run_command',
+    'write_file',
+    'delete_file',
+    'run_check',
+    'finish_work',
+    'submit_review',
+  ]) {
     assert.throws(
       () => validateTool({ id: 'call', name, arguments: '{}' }, tools),
       (e: unknown) => e instanceof OperationError && e.code === 'toolNotAllowed',
     );
   }
+  for (const name of ['run_command', 'write_file', 'delete_file', 'run_check', 'finish_work']) {
+    assert.throws(
+      () => validateTool({ id: 'call', name, arguments: '{}' }, reviewerTools),
+      (e: unknown) => e instanceof OperationError && e.code === 'toolNotAllowed',
+    );
+  }
+  assert.ok(agentTools('worker').some((tool) => tool.name === 'write_file'));
   assert.throws(() =>
     validateTool(
       { id: 'call', name: 'submit_answer', arguments: '{"answer":"done"}' },
@@ -286,7 +286,7 @@ test('evidence totals count grouped records beyond pagination and do not count s
   });
 });
 
-test('current acceptance blockers do not inherit failures from an older run with the same plan version', async (t) => {
+test('command failures remain review evidence rather than acceptance blockers', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'dualmind-blockers-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const f = fixture(),
@@ -357,5 +357,5 @@ test('current acceptance blockers do not inherit failures from an older run with
   }
   assert.equal((await records.evidence(taskId)).summary?.errors, 1);
   assert.equal((await records.evidence(taskId)).summary?.blockers, 0);
-  assert.equal((await records.evidence(taskId, old.id)).summary?.blockers, 1);
+  assert.equal((await records.evidence(taskId, old.id)).summary?.blockers, 0);
 });

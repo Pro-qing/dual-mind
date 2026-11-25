@@ -102,6 +102,8 @@ Settings → **API Connections** manages a name, HTTP(S) Base URL, and an option
 3. Click **Test & fetch models**. **Model list accessible** confirms access to the list endpoint only; it does not verify inference or chat compatibility.
 4. Search or choose an ID, or enter a custom ID, then **Save connection**. **Refresh models** never changes the current model value.
 
+The current settings UI exposes OpenAI-compatible Chat Completions and Responses. Anthropic Messages and Command Code compatibility adapters are implemented in source, but their provider controls are not available until scenes 38–40 receive explicit design approval and the UI is integrated. See the [proposal](./review-workbench-proposal.md).
+
 Opening settings or a selector makes no request. Lists remain separate per connection and are cached only while the workbench is mounted. Queries show loading, success with count/time, an empty list, or a localized error. Manual IDs remain usable when listing fails or is unsupported. Save an edited Base URL before querying; successful URL/key changes or deletion invalidate the old list. Cancelling key replacement leaves the old key and list intact.
 
 Settings → **Defaults for new tasks** has its own entry in the settings category selector. Configure the Worker and Reviewer bindings here and click **Save defaults**. Changing categories discards unsaved edits; reloading restores the category and saved values. The connection’s own default model remains on API Connections.
@@ -132,25 +134,25 @@ Ordinary forms keep their values when changing the language selector. If role in
 
 The development branch executes tasks in dedicated worktrees or directly on a selected local branch with streaming, checks/review rounds and pause/continue/stop. Automatic editor-context collection and parallel execution remain unavailable. Host result integration is implemented, but its page controls are integrated. Examples remain isolated read-only content.
 
-The [design archive](./design.md) contains 37 pairs: 37 approved. The drawings remain illustrative; current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
+The [design archive](./design.md) contains 40 pairs: 37 approved and three pending review. The pending scenes describe provider controls and compact task/log layouts that are not yet integrated. Current source supports single-task execution while parallel execution remains planned. See the [roadmap](./roadmap.md) for the remaining work. If the workbench command is missing after an update, confirm `Pro-qing.dual-mind` is installed and enabled in that VS Code instance and reload its window.
 
 ## Executing tasks (development source)
 
 Open the workbench from the **DualMind activity-bar icon** and create a task. Creation opens its detail page in the pending state. For a new task, **Start** begins the first model request and execution.
 
-1. Configure Worker and Reviewer connections, keys and models, selecting Chat Completions or Responses as appropriate. Models must support streaming and tool calls.
+1. In the current settings UI, configure Worker and Reviewer with OpenAI-compatible Chat Completions or Responses. Anthropic Messages and Command Code adapters exist in source but are not selectable through the UI pending approval of [scenes 38–40](./review-workbench-proposal.md). Models must support streaming and tool calls; the Command Code adapter filters discovered models by declared endpoint support.
 2. Open a trusted single-folder Git repository with a committed named branch. Direct mode requires a clean directory; managed mode permits source changes and does not copy them. Select a managed worktree, the current branch or an existing local branch.
 3. Describe the requirements and press Start. **Reviewer first reads relevant project context, decomposes the request and issues an executable plan with acceptance criteria.** Initial planning does not consume an execution round.
 4. **Worker implements that plan**, prepares project dependencies as needed, changes files and selects concrete verification commands. No preparation/check configuration is required. Worker does not automatically install system toolchains.
-5. Worker submits artifacts, actual execution evidence and outstanding issues. **Reviewer inspects actual files and differences and accepts each criterion.** Approval completes the task. Rejection must include the next executable plan, which Worker automatically follows until approval, the round limit or a stop request.
+5. Worker submits artifacts, actual execution evidence and outstanding issues. **Reviewer inspects actual files, differences and recorded check output, then returns a Pair-style pass/fail judgment.** Check failures and missing criterion citations inform Reviewer but are not automatic host vetoes. Reviewer is read-only and cannot run commands or edit files. Finishing requires pass, confidence ≥ 0.8, no pending feedback, unchanged artifacts and `TASK_COMPLETE` on its own line in the final Reviewer response. Rejection must include the next executable plan, which Worker automatically follows until completion, the round limit or a stop request.
 
-Task detail shows the current plan version, steps, criteria, submission and verdict; history retains each plan and actual command records. Results include exit status, output and evidence IDs. Changed artifacts need fresh verification; failed or stale evidence cannot pass. Documentation-only work may use reading review with reasons and concrete evidence. Acceptance does not commit, merge or push.
+Task detail shows the current plan version, steps, criteria, submission and verdict; history retains each plan and actual command records. Results include exit status, output and evidence IDs. Reviewer can assess failed or unreferenced evidence together with the current artifacts; the host independently guards changes made during review and does not turn command status into an acceptance gate. Documentation-only work may use reading review with reasons and concrete evidence. Acceptance does not commit, merge or push.
 
 Pause takes effect at an operation boundary. Chat messages can be submitted while running or paused; Reviewer handles them at role handoffs, and sending does not automatically resume a manual pause. Continue resumes; Stop cancels requests and commands. Each round is one Worker implementation plus Reviewer acceptance. Exhausted rounds retain outstanding work. Reload marks unfinished runs interrupted; restarting creates a new run and plan. Active/paused tasks and referenced critical connection settings remain locked. Deleting an active task first stops it and preserves Git artifacts.
 
 ### Advanced settings: additional custom commands
 
-**Settings → Task execution** explains the default collaboration. Expand **Advanced settings** and enable **additional custom commands** to impose extra preparation or validation: preparation runs after planning and before Worker; every additional check runs after every submission and must pass. Worker can still perform other relevant validation.
+**Settings → Task execution** explains the default collaboration. Expand **Advanced settings** and enable **additional custom commands** to add project-specific preparation or checks: preparation runs after planning and before Worker; configured checks run after every submission and their results are shown to Reviewer. Pair-style acceptance leaves the result as Reviewer input rather than an automatic pass/fail gate. Worker can still perform other relevant validation.
 
 Each command has a name, executable, arguments entered one per line and a 10–900 second timeout, default 180. For `npm run check`, enter program `npm` and argument lines `run` and `check`. The runner passes executable and arguments separately without implicit shell parsing. Disabling the switch retains saved values. Legacy nonempty configurations default enabled; empty ones default disabled. Settings changes affect subsequent runs.
 
@@ -162,7 +164,7 @@ New tasks default to **Use a DualMind dedicated branch**. Choose **Use the curre
 
 Every start/restart in direct mode requires a clean directory, including staged, unstaged and non-ignored untracked files. Commit or otherwise handle previous results yourself before restarting. Branches occupied by another worktree, ignored-file collisions and target submodules block switching. Once preparation has registered a directory, the strategy is locked; create a new task to change it. Old tasks retain dedicated mode.
 
-Direct execution changes your project files. Stop, completion and deletion do not undo changes or switch back. **Show current project files** focuses Explorer; preview uses the execution's fixed branch/HEAD and never switches branches. Each direct start/restart records a fresh baseline from the target HEAD. Chat continuation validates and reuses the existing binding and uncommitted artifacts without resetting the baseline. A branch/HEAD change invalidates further access to that run; use a new execution after handling changes. Dedicated runs keep their existing baseline and retained worktree. Reviewer remains read-only in either mode. These changes are not in the published 0.0.1 artifact.
+Direct execution changes your project files. Stop, completion and deletion do not undo changes or switch back. **Show current project files** focuses Explorer; preview uses the execution's fixed branch/HEAD and never switches branches. Each direct start/restart records a fresh baseline from the target HEAD. Chat continuation validates and reuses the existing binding and uncommitted artifacts without resetting the baseline. A branch/HEAD change invalidates further access to that run; use a new execution after handling changes. Dedicated runs keep their existing baseline and retained worktree. Reviewer is read-only and cannot run commands; Worker alone receives command and mutation tools. These changes are not in the published 0.0.1 artifact.
 
 The manual worktree cleanup instructions in the [protocol guide](./protocol.md#internal-git-workspace-service) apply only to managed mode; never use them to remove the user’s directly opened project.
 
@@ -183,7 +185,7 @@ Continuation supports managed worktrees, the current branch and a selected branc
 
 ## Native shell commands
 
-Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
+Worker uses the [host-managed shell execution layer](./shell-execution.md), with automatic environment inheritance. Reviewer has read-only file and recorded-output tools and cannot invoke commands. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
 
 ## Task-based branch names and compact chat controls
 
@@ -209,7 +211,7 @@ Managed task creation selects a base, defaulting to the current branch at prepar
 
 Deletion defaults to records only, with explicit preserve/cleanup opt-in. Active tasks stop before a refreshed cleanup confirmation. Cleaned tasks retain read-only chat/evidence and show follow-up/restore actions instead of the composer. Restoration opens a new pending task without starting it. After a timeout, inspect the saved state and reuse the operation ID for retry.
 
-Tool failures, skipped/rejected calls and unknown results have separate labels. Three failures without progress pause for feedback and continuation. Historical errors and current acceptance blockers are separate; see [tool errors](./tool-errors.md).
+Tool failures, skipped/rejected calls and unknown results have separate labels. Repeated failures without progress pause for feedback and continuation. Historical errors remain distinct from Reviewer judgment; check failures are not counted as automatic acceptance blockers. See [tool errors](./tool-errors.md).
 
 ## Bundled command-line tools
 
@@ -217,7 +219,7 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 
 ## Local Python
 
-Preparation and recovery identify local Python 2.7/3 and common project environments, supplying verified invocation paths and versions to Worker and Reviewer. Execution retains `run_command`, without bundling/installing Python or changing global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
+Preparation and recovery identify local Python 2.7/3 and common project environments for model context. Worker alone can execute commands through `run_command`; Reviewer can inspect recorded outcomes but cannot run them. DualMind does not bundle/install Python or change global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
 
 ## Continued execution and acceptance diagnostics
 

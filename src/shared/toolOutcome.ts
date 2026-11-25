@@ -18,7 +18,7 @@ export interface ToolBudget {
   failures?: Record<string, { key: string; count: number; operationId: string }>;
 }
 export interface ToolPause {
-  reason: 'repeatedToolFailure' | 'toolBatchRejected';
+  reason: 'repeatedToolFailure' | 'toolBatchRejected' | 'reviewCorrectionExhausted';
   budgetKey: string;
   tool: string;
   operationId: string;

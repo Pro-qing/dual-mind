@@ -1,4 +1,4 @@
-import { OperationError, type EvidenceFailureReason } from '../shared/errors';
+import { OperationError } from '../shared/errors';
 import type {
   Agent,
   PlanInput,
@@ -55,29 +55,6 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
         ['id'],
       ),
     },
-    {
-      name: 'run_command',
-      description:
-        'Execute a task-related command in the host-selected shell. Each call is independent; combine activation and work in this call. Wait for foreground completion; surviving background children are stopped and the command fails. Prepare project dependencies as needed; do not install user or system toolchains. Verification must reference current command criteria. cwd is relative to the task, defaults to dot. Timeout defaults to 180 seconds. Commands run as the user, without an OS sandbox.',
-      parameters: object(
-        {
-          name: { ...nonempty, maxLength: 200 },
-          command: nonempty,
-          cwd: { ...nonempty, maxLength: 2048 },
-          purpose: {
-            type: 'string',
-            enum:
-              phase === 'planning' || phase === 'answering'
-                ? ['explore']
-                : ['prepare', 'verify', 'explore'],
-          },
-          criterionIds: array(id, 40),
-          timeoutSeconds: { type: 'integer', minimum: 10, maximum: 900 },
-        },
-        ['name', 'command', 'purpose', 'criterionIds'],
-      ),
-    },
-
     {
       name: 'list_files',
       description: 'List readable task files, with pagination.',
@@ -154,21 +131,57 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
       {
         name: 'submit_review',
         description:
-          'Accept actual artifacts against every criterion, or reject and issue the next executable plan. Retain existing criterion IDs and verification methods. Never approve missing, failed or stale command evidence.',
+          'Review the actual artifacts and evidence. Use pass + finish only when the whole task is complete and confidence is at least 0.8. Use pass + continue for a correct step with more work; use fail + continue when changes are needed. Continue requires a complete nextPlan. Add the standalone TASK_COMPLETE line after the tool call only when finishing.',
         parameters: object(
           {
-            verdict: { type: 'string', enum: ['approve', 'changes_requested'] },
+            verdict: { type: 'string', enum: ['pass', 'fail'] },
+            risk: { type: 'string', enum: ['low', 'medium', 'high'] },
+            confidence: { type: 'number', minimum: 0, maximum: 1 },
+            issues: array(string, 40),
+            evidence: array(nonempty, 80),
+            reasoning: nonempty,
             summary: nonempty,
-            acceptance: array(object({ ...evidence, passed: { type: 'boolean' } }), 40, 1),
+            nextStep: object(
+              {
+                action: { type: 'string', enum: ['continue', 'finish'] },
+                instructions: string,
+              },
+              ['action', 'instructions'],
+            ),
             nextPlan: plan,
           },
-          ['verdict', 'summary', 'acceptance'],
+          [
+            'verdict',
+            'risk',
+            'confidence',
+            'issues',
+            'evidence',
+            'reasoning',
+            'summary',
+            'nextStep',
+          ],
         ),
       },
     ];
   }
   return [
     ...read,
+    {
+      name: 'run_command',
+      description:
+        'Execute a task-related command in the host-selected shell. Each call is independent; combine activation and work in this call. Wait for foreground completion; surviving background children are stopped and the command fails. Prepare project dependencies as needed; do not install user or system toolchains. Verification must reference current command criteria. cwd is relative to the task, defaults to dot. Timeout defaults to 180 seconds. Commands run as the user, without an OS sandbox.',
+      parameters: object(
+        {
+          name: { ...nonempty, maxLength: 200 },
+          command: nonempty,
+          cwd: { ...nonempty, maxLength: 2048 },
+          purpose: { type: 'string', enum: ['prepare', 'verify', 'explore'] },
+          criterionIds: array(id, 40),
+          timeoutSeconds: { type: 'integer', minimum: 10, maximum: 900 },
+        },
+        ['name', 'command', 'purpose', 'criterionIds'],
+      ),
+    },
     {
       name: 'write_file',
       description: 'Atomically write a UTF-8 task file.',
@@ -194,7 +207,7 @@ export function agentTools(phase: AgentPhase): ToolDefinition[] {
       parameters: object({
         summary: nonempty,
         completedSteps: array(nonempty),
-        evidence: array(object(evidence), 40, 1),
+        evidence: array(object(evidence), 40),
         unresolved: array(nonempty),
       }),
     },
@@ -306,6 +319,14 @@ function valid(value: unknown, s: Shape): boolean {
       value <= (s.maximum ?? Number.MAX_SAFE_INTEGER)
     );
   }
+  if (s.type === 'number') {
+    return (
+      typeof value === 'number' &&
+      Number.isFinite(value) &&
+      value >= (s.minimum ?? -Number.MAX_VALUE) &&
+      value <= (s.maximum ?? Number.MAX_VALUE)
+    );
+  }
   if (s.type === 'boolean') {
     return typeof value === 'boolean';
   }
@@ -370,163 +391,49 @@ export function validatePlan(input: PlanInput, previous?: TaskPlan): TaskPlan {
   }
   return { ...structuredClone(input), version: (previous?.version ?? 0) + 1 };
 }
-function covers(plan: TaskPlan, evidence: { criterionId: string }[]) {
-  return (
-    evidence.length === plan.criteria.length &&
-    new Set(evidence.map((e) => e.criterionId)).size === evidence.length &&
-    plan.criteria.every((c) => evidence.some((e) => e.criterionId === c.id))
-  );
-}
 export function validateSubmission(
   submission: WorkSubmission,
-  plan: TaskPlan,
-  commands: Map<string, CommandEvidence>,
+  _plan: TaskPlan,
+  _commands: Map<string, CommandEvidence>,
 ) {
-  if (!covers(plan, submission.evidence)) {
-    throw new OperationError('evidenceInvalid', { reason: 'coverage' });
-  }
-  for (const e of submission.evidence) {
-    for (const id of e.commandIds) {
-      const c = commands.get(id);
-      if (!c || c.planVersion !== plan.version) {
-        throw new OperationError('evidenceInvalid', {
-          reason: c ? 'commandPlan' : 'commandMissing',
-          criterionId: e.criterionId,
-          commandId: id,
-          expected: plan.version,
-          actual: c?.planVersion ?? 'missing',
-        });
-      }
-    }
+  if (!Array.isArray(submission.evidence) || submission.evidence.length > 40) {
+    throw new OperationError('evidenceInvalid');
   }
 }
-export function validateReview(
-  review: ReviewResult,
-  plan: TaskPlan,
-  submission: WorkSubmission,
-  commands: Map<string, CommandEvidence>,
-  revision: string,
-  additional: CommandEvidence[],
-  feedback: boolean,
-) {
-  if (!covers(plan, review.acceptance)) {
+export function validateReview(review: ReviewResult, plan: TaskPlan, feedback: boolean) {
+  if (
+    !['pass', 'fail'].includes(review.verdict) ||
+    !['low', 'medium', 'high'].includes(review.risk ?? '') ||
+    !Number.isFinite(review.confidence) ||
+    review.confidence! < 0 ||
+    review.confidence! > 1 ||
+    !Array.isArray(review.issues) ||
+    !Array.isArray(review.evidence) ||
+    typeof review.reasoning !== 'string' ||
+    !review.summary.trim() ||
+    !review.nextStep ||
+    !['continue', 'finish'].includes(review.nextStep.action) ||
+    typeof review.nextStep.instructions !== 'string'
+  ) {
     throw new OperationError('reviewIncomplete');
   }
-  if (review.verdict === 'changes_requested') {
+  if (review.verdict === 'fail' && review.nextStep.action !== 'continue') {
+    throw new OperationError('reviewIncomplete');
+  }
+  if (review.nextStep.action === 'continue') {
     if (!review.nextPlan) {
       throw new OperationError('reviewIncomplete');
     }
     validatePlan(review.nextPlan, plan);
-  }
-  if (
-    review.verdict === 'approve' &&
-    (review.nextPlan || review.acceptance.some((e) => !e.passed))
+  } else if (
+    review.verdict !== 'pass' ||
+    review.nextPlan ||
+    review.confidence! < 0.8 ||
+    review.completionMarker !== true
   ) {
-    throw new OperationError('reviewIncomplete');
+    throw new OperationError('reviewFinishInvalid');
   }
-  if (review.verdict === 'approve' && feedback) {
+  if (review.nextStep.action === 'finish' && feedback) {
     throw new OperationError('feedbackPending');
-  }
-  const success = (c: CommandEvidence | undefined) =>
-    c &&
-    c.ok &&
-    c.exitCode === 0 &&
-    !c.reason &&
-    !c.fault &&
-    c.planVersion === plan.version &&
-    c.before === revision &&
-    c.after === revision;
-  const reject = (
-    reason: EvidenceFailureReason,
-    params: Record<string, string | number> = {},
-  ): never => {
-    throw new OperationError('evidenceInvalid', { reason, ...params });
-  };
-  const checkCommand = (c: CommandEvidence | undefined, commandId: string, criterionId: string) => {
-    const context = { commandId, criterionId };
-    if (!c) {
-      return reject('commandMissing', context);
-    }
-    if (!c.ok || c.exitCode !== 0 || c.reason || c.fault) {
-      return reject('commandFailed', context);
-    }
-    if (c.planVersion !== plan.version) {
-      return reject('commandPlan', { ...context, expected: plan.version, actual: c.planVersion });
-    }
-    if (c.before !== revision || c.after !== revision) {
-      return reject('commandRevision', {
-        ...context,
-        expected: revision,
-        actual: `${c.before} → ${c.after}`,
-      });
-    }
-  };
-  if (review.verdict === 'approve') {
-    if (submission.unresolved.length) {
-      reject('unresolved', { blockers: submission.unresolved.join('\n') });
-    }
-    if (submission.revision !== revision) {
-      reject('submissionRevision', { expected: revision, actual: submission.revision });
-    }
-    for (const c of additional) {
-      if (!success(c)) {
-        reject('additionalCheck', { commandId: c.id });
-      }
-    }
-  }
-  for (const criterion of plan.criteria) {
-    const e = review.acceptance.find((e) => e.criterionId === criterion.id)!;
-    if (!e.passed) {
-      continue;
-    }
-    if (submission.revision !== revision) {
-      reject('submissionRevision', {
-        criterionId: criterion.id,
-        expected: revision,
-        actual: submission.revision,
-      });
-    }
-    const work = submission.evidence.find((e) => e.criterionId === criterion.id)!;
-    if (criterion.verification === 'command') {
-      if (!e.commandIds.length) {
-        reject('commandRequired', { criterionId: criterion.id });
-      }
-      for (const id of e.commandIds) {
-        const c = commands.get(id);
-        checkCommand(c, id, criterion.id);
-        const context = { criterionId: criterion.id, commandId: id };
-        if (
-          !work?.commandIds.includes(id) &&
-          !(c?.agent === 'reviewer' && c.phase === 'reviewer')
-        ) {
-          reject('commandSource', context);
-        }
-        if (c!.purpose !== 'verify') {
-          reject('commandPurpose', { ...context, actual: c!.purpose });
-        }
-        if (!c!.criterionIds.includes(criterion.id)) {
-          reject('commandCriterion', context);
-        }
-      }
-    }
-    if (criterion.verification === 'command') {
-      const latest = [...commands.values()]
-        .filter(
-          (c) =>
-            c.planVersion === plan.version &&
-            c.purpose === 'verify' &&
-            c.criterionIds.includes(criterion.id),
-        )
-        .at(-1);
-      if (!latest || !success(latest) || !e.commandIds.includes(latest.id)) {
-        reject('latestVerification', {
-          criterionId: criterion.id,
-          commandId: latest?.id ?? 'missing',
-        });
-      }
-    }
-    if (criterion.verification === 'reading' && !e.evidence.trim()) {
-      reject('readingRequired', { criterionId: criterion.id });
-    }
   }
 }

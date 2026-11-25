@@ -251,6 +251,7 @@ export class RunRecords {
               text: event.text,
               runId: event.runId,
               requestId: event.requestId,
+              userRequestId: event.userRequestId,
               sequence: event.sequence,
               round: event.round,
             };
@@ -266,6 +267,7 @@ export class RunRecords {
             kind: event.agent ? detail.type : 'legacy',
             text: event.text,
             runId: event.runId,
+            userRequestId: event.userRequestId,
             sequence: event.sequence,
             round: event.round,
             detail,
@@ -279,6 +281,7 @@ export class RunRecords {
             kind: event.kind === 'error' ? 'error' : 'legacy',
             text: event.text,
             runId: event.runId,
+            userRequestId: event.userRequestId,
             sequence: event.sequence,
             fault: event.fault,
           });
@@ -348,25 +351,19 @@ export class RunRecords {
         grouped.set(key, structuredClone(event));
       }
     }
-    const currentRun = this.runs.find(
-      (run) => run.taskId === taskId && (runId ? run.id === runId : run.kind !== 'conversation'),
-    );
     const summary = {
       records: grouped.size,
       errors: [...grouped.values()].filter((event) =>
         event.tool
           ? failedOutcome(event.tool)
-          : !['repeatedToolFailure', 'toolBatchRejected'].includes(event.fault?.code ?? '') &&
+          : !['repeatedToolFailure', 'toolBatchRejected', 'reviewCorrectionExhausted'].includes(
+              event.fault?.code ?? '',
+            ) &&
             (event.kind === 'error' ||
               Boolean(event.fault) ||
               (event.detail?.type === 'command' && !event.detail.command.ok)),
       ).length,
-      blockers: acceptanceBlockers(
-        currentRun,
-        [...grouped.values()]
-          .filter((event) => event.runId === currentRun?.id)
-          .flatMap((event) => (event.detail?.type === 'command' ? [event.detail.command] : [])),
-      ).length,
+      blockers: acceptanceBlockers().length,
     };
     const ordered = [...grouped.values()]
       .sort((a, b) => eventCursor(a).localeCompare(eventCursor(b)))

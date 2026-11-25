@@ -68,9 +68,6 @@ async function setup(
     python?: PythonDiscovery;
     badArguments?: 'once' | 'always' | 'json';
     streamSecret?: string;
-    reviewerCommands?: boolean;
-    reviewerFailure?: boolean;
-    reviewerMutation?: boolean;
     failure?: {
       agent: 'worker' | 'reviewer';
       phase?: 'planning' | 'answering' | 'reviewer';
@@ -106,8 +103,6 @@ async function setup(
   await git.checked(['add', 'file.txt'], repo);
   await git.checked(['commit', '-m', 'fixture'], repo);
   const f = fixture();
-  let explored = false;
-  const verifiedRounds = new Set<number>();
   let workerCalls = 0,
     reviewerCalls = 0;
   const captured: { agent: string; body: Record<string, unknown> }[] = [];
@@ -276,7 +271,9 @@ async function setup(
         (options.approve ||
           options.readingOnly ||
           options.fixedInitially ||
-          (handoff?.round ?? 0) > 1);
+          (handoff?.round ?? 0) > 1) &&
+        !options.backgroundCommand &&
+        !handoff?.submission?.unresolved?.length;
       const preparing = options.autonomous && options.flip && count === 1;
       const workerStep =
         count -
@@ -302,146 +299,119 @@ async function setup(
         agent === 'worker' &&
         options.badArguments &&
         (options.badArguments === 'always' || count === 1);
-      const probeNow = options.reviewerCommands && agent === 'reviewer' && planning && !explored;
-      const verifyNow =
-        options.reviewerCommands &&
-        agent === 'reviewer' &&
-        !planning &&
-        !answering &&
-        !verifiedRounds.has(handoff.round);
-      if (probeNow) {
-        explored = true;
-      }
-      if (verifyNow) {
-        verifiedRounds.add(handoff.round);
-      }
-      const call =
-        probeNow || verifyNow
+      const call = invalidArguments
+        ? {
+            name: 'run_command',
+            arguments:
+              options.badArguments === 'json'
+                ? '{"secret":"must-not-log"'
+                : JSON.stringify({
+                    name: 'invalid',
+                    command: [17, 'must-not-log'],
+                    purpose: 'explore',
+                    criterionIds: [],
+                  }),
+          }
+        : answering && !JSON.stringify(userHandoff?.messages).includes('modification')
           ? {
-              name: 'run_command',
+              name: 'submit_answer',
               arguments: JSON.stringify({
-                name: probeNow ? 'Reviewer explore' : 'Reviewer verify',
-                command: nodeCommand(
-                  probeNow
-                    ? 'console.log(process.cwd())'
-                    : options.reviewerMutation
-                      ? 'require("node:fs").writeFileSync("file.txt","reviewer-change")'
-                      : options.reviewerFailure
-                        ? 'process.exit(9)'
-                        : 'if(require("node:fs").readFileSync("file.txt","utf8")!=="fixed")process.exit(1)',
-                ),
-                purpose: probeNow ? 'explore' : 'verify',
-                criterionIds: probeNow ? [] : ['artifact'],
+                answer: 'Read-only answer about the current artifact.',
               }),
             }
-          : invalidArguments
+          : options.badReviewer && agent === 'reviewer'
             ? {
-                name: 'run_command',
-                arguments:
-                  options.badArguments === 'json'
-                    ? '{"secret":"must-not-log"'
-                    : JSON.stringify({
-                        name: 'invalid',
-                        command: [17, 'must-not-log'],
-                        purpose: 'explore',
+                name: 'write_file',
+                arguments: '{"path":"file.txt","content":"reviewer-write"}',
+              }
+            : options.badCheck && agent === 'worker'
+              ? { name: 'run_check', arguments: '{"id":"check","program":"injected"}' }
+              : planning
+                ? { name: 'submit_plan', arguments: JSON.stringify(plan) }
+                : preparing && agent === 'worker'
+                  ? {
+                      name: 'run_command',
+                      arguments: JSON.stringify({
+                        name: 'Prepare dependencies',
+                        command: options.realCommands
+                          ? nodeCommand('process.stdout.write("ready")')
+                          : 'prepare-test-double',
+                        purpose: 'prepare',
                         criterionIds: [],
                       }),
-              }
-            : answering && !JSON.stringify(userHandoff?.messages).includes('modification')
-              ? {
-                  name: 'submit_answer',
-                  arguments: JSON.stringify({
-                    answer: 'Read-only answer about the current artifact.',
-                  }),
-                }
-              : options.badReviewer && agent === 'reviewer'
-                ? {
-                    name: 'write_file',
-                    arguments: '{"path":"file.txt","content":"reviewer-write"}',
-                  }
-                : options.badCheck && agent === 'worker'
-                  ? { name: 'run_check', arguments: '{"id":"check","program":"injected"}' }
-                  : planning
-                    ? { name: 'submit_plan', arguments: JSON.stringify(plan) }
-                    : preparing && agent === 'worker'
+                    }
+                  : agent === 'worker'
+                    ? step === 0
                       ? {
-                          name: 'run_command',
+                          name: 'write_file',
                           arguments: JSON.stringify({
-                            name: 'Prepare dependencies',
-                            command: options.realCommands
-                              ? nodeCommand('process.stdout.write("ready")')
-                              : 'prepare-test-double',
-                            purpose: 'prepare',
-                            criterionIds: [],
+                            path: 'file.txt',
+                            content:
+                              workerStep === 1 && !options.readingOnly && !options.fixedInitially
+                                ? 'bad'
+                                : 'fixed',
                           }),
                         }
-                      : agent === 'worker'
-                        ? step === 0
-                          ? {
-                              name: 'write_file',
-                              arguments: JSON.stringify({
-                                path: 'file.txt',
-                                content:
-                                  workerStep === 1 &&
-                                  !options.readingOnly &&
-                                  !options.fixedInitially
-                                    ? 'bad'
-                                    : 'fixed',
-                              }),
-                            }
-                          : options.autonomous && step === 1
-                            ? {
-                                name: 'run_command',
-                                arguments: JSON.stringify({
-                                  name: 'Verify artifact',
-                                  command: options.realCommands
-                                    ? nodeCommand(
-                                        options.backgroundCommand
-                                          ? 'const c=require("node:child_process").spawn(process.execPath,["-e","setInterval(()=>{},1000)"],{stdio:"ignore"}); c.unref()'
-                                          : 'if(require("node:fs").readFileSync("file.txt","utf8")!=="fixed")process.exit(1)',
-                                      )
-                                    : 'test-double',
-                                  purpose: 'verify',
-                                  criterionIds: ['artifact'],
-                                }),
-                              }
-                            : {
-                                name: 'finish_work',
-                                arguments: JSON.stringify({
-                                  summary: 'Inspect the updated artifact.',
-                                  completedSteps: ['Changed file.txt'],
-                                  evidence: [
-                                    {
-                                      criterionId: 'artifact',
-                                      commandIds,
-                                      evidence: 'Read file.txt and the recorded result',
-                                    },
-                                  ],
-                                  unresolved: options.unresolvedSubmission
-                                    ? ['Required check failed; test-secret-worker']
-                                    : [],
-                                }),
-                              }
-                        : {
-                            name: 'submit_review',
+                      : options.autonomous && step === 1
+                        ? {
+                            name: 'run_command',
                             arguments: JSON.stringify({
-                              verdict: approve ? 'approve' : 'changes_requested',
-                              summary: approve ? 'Verified.' : 'Fix the failing check.',
-                              acceptance: [
+                              name: 'Verify artifact',
+                              command: options.realCommands
+                                ? nodeCommand(
+                                    options.backgroundCommand
+                                      ? 'const c=require("node:child_process").spawn(process.execPath,["-e","setInterval(()=>{},1000)"],{stdio:"ignore"}); c.unref()'
+                                      : 'if(require("node:fs").readFileSync("file.txt","utf8")!=="fixed")process.exit(1)',
+                                  )
+                                : 'test-double',
+                              purpose: 'verify',
+                              criterionIds: ['artifact'],
+                            }),
+                          }
+                        : {
+                            name: 'finish_work',
+                            arguments: JSON.stringify({
+                              summary: 'Inspect the updated artifact.',
+                              completedSteps: ['Changed file.txt'],
+                              evidence: [
                                 {
                                   criterionId: 'artifact',
-                                  commandIds:
-                                    options.reviewerCommands && commandIds.length
-                                      ? commandIds
-                                      : (handoff?.submission?.evidence?.[0]?.commandIds ?? []),
-                                  evidence:
-                                    'Inspected actual file.txt and supplied command evidence',
-                                  passed: approve,
+                                  commandIds,
+                                  evidence: 'Read file.txt and the recorded result',
                                 },
                               ],
-                              ...(approve ? {} : { nextPlan: plan }),
+                              unresolved: options.unresolvedSubmission
+                                ? ['Required check failed; test-secret-worker']
+                                : [],
                             }),
-                          };
+                          }
+                    : {
+                        name: 'submit_review',
+                        arguments: JSON.stringify({
+                          verdict: approve ? 'pass' : 'fail',
+                          risk: approve ? 'low' : 'medium',
+                          confidence: approve ? 0.94 : 0.82,
+                          issues: approve ? [] : ['The submitted work still needs changes.'],
+                          evidence: [
+                            'Inspected actual file.txt and the recorded command evidence',
+                            ...(handoff?.commands ?? []).map(
+                              (command: { id: string }) =>
+                                `Command ${command.id} recorded as verification evidence`,
+                            ),
+                          ],
+                          reasoning: approve
+                            ? 'The current artifacts satisfy the requested outcome.'
+                            : 'The current artifacts or unresolved work need another iteration.',
+                          summary: approve ? 'Verified.' : 'Fix the failing check.',
+                          nextStep: {
+                            action: approve ? 'finish' : 'continue',
+                            instructions: approve
+                              ? 'No further changes are required.'
+                              : 'Address the review findings.',
+                          },
+                          ...(approve ? {} : { nextPlan: plan }),
+                        }),
+                      };
       const id = `${agent}-${count}`;
       let batch =
         (options.badCheck && agent === 'worker') || invalidArguments
@@ -520,7 +490,7 @@ async function setup(
       const publicText =
         options.contextOverflow?.large && agent === 'worker' && count === 1
           ? 'public investigation '.repeat(1500)
-          : `${agent} public output`;
+          : `${agent} public output${agent === 'reviewer' && call.name === 'submit_review' && approve ? '\nTASK_COMPLETE' : ''}`;
       const send = () => {
         response.setHeader('Content-Type', 'text/event-stream');
         if (options.streamSecret) {
@@ -824,11 +794,17 @@ for (const flip of [false, true]) {
     await h.service.request({ kind: 'stop', runId: h.service.snapshot().runs[0].id });
   });
 }
-test('failed mandatory checks cannot be approved and round limit is enforced', async (t) => {
+test('Reviewer can finish despite failed host checks when its Pair-style judgment passes', async (t) => {
   const h = await setup(t, { approve: true });
   await h.service.request({ kind: 'start', taskId: h.task.id });
   await waitUntil(() => terminalStatuses.includes(h.service.snapshot().runs[0].status));
-  assert.equal(h.service.snapshot().runs[0].status, 'roundLimit');
+  assert.equal(h.service.snapshot().runs[0].status, 'completed');
+  assert.equal(h.service.snapshot().runs[0].review?.verdict, 'pass');
+  assert.ok(
+    (await h.records.history(h.service.snapshot().runs[0].id)).some(
+      (event) => event.kind === 'check' && event.fault?.code === 'commandFailed',
+    ),
+  );
 });
 test('pauses at operation boundaries, locks inputs, accepts feedback and stops without consuming late output', async (t) => {
   const h = await setup(t, { slow: true });
@@ -1257,14 +1233,17 @@ for (const flip of [false, true]) {
     await waitUntil(() => ctx.records.runs[0].status === 'completed');
     const current = ctx.records.runs[0];
     assert.notEqual(current.id, oldRun.id);
-    const accepted = current.review!.acceptance.flatMap((e) => e.commandIds);
-    assert.ok(accepted.length > 0);
-    assert.ok(accepted.every((id) => !oldCommands.includes(id)));
     const commands = (await ctx.records.history(current.id)).flatMap((e) =>
       e.detail?.type === 'command' ? [e.detail.command] : [],
     );
+    assert.ok(commands.some((command) => command.ok && command.before === command.after));
     assert.ok(
-      accepted.every((id) => commands.some((c) => c.id === id && c.ok && c.before === c.after)),
+      current.review!.evidence?.some((item) =>
+        commands.some((command) => item.includes(command.id)),
+      ),
+    );
+    assert.ok(
+      current.review!.evidence?.every((item) => oldCommands.every((id) => !item.includes(id))),
     );
   });
 }
@@ -1306,6 +1285,66 @@ test('messages arriving during final review are answered before completion and s
   await waitUntil(() => ctx.records.runs[0].status === 'completed');
   assert.equal((await ctx.records.pending(ctx.task.id)).length, 0);
   assert.ok((await ctx.records.messages(ctx.task.id)).some((m) => m.kind === 'answer'));
+});
+
+test('queued questions are processed one at a time and retain their request groups', async (t) => {
+  const ctx = await setup(t, { readingOnly: true, holdReview: true });
+  await ctx.service.request({ kind: 'start', taskId: ctx.task.id });
+  await waitUntil(ctx.hasRequest);
+  const requestIds: string[] = [randomUUID(), randomUUID()];
+  await Promise.all(
+    requestIds.map((messageId) =>
+      ctx.service.request({
+        kind: 'message.send',
+        taskId: ctx.task.id,
+        messageId,
+        text: 'Explain the result',
+      }),
+    ),
+  );
+  ctx.release();
+  await waitUntil(() => ctx.records.runs[0].status === 'completed');
+
+  const answeringRequests = ctx.captured.filter((request) =>
+    (request.body.tools as { name?: string; function?: { name: string } }[]).some(
+      (tool) => (tool.name || tool.function?.name) === 'submit_answer',
+    ),
+  );
+  const handledIds = answeringRequests.map((request) => {
+    const messages = (request.body.messages || request.body.input) as Record<string, unknown>[];
+    const handoffs = messages.flatMap((message) => {
+      if (message.role !== 'user') {
+        return [];
+      }
+      try {
+        const value = JSON.parse(String(message.content)) as {
+          handoff?: string;
+          messages?: { id: string }[];
+        };
+        return value.handoff === 'user_messages' ? [value] : [];
+      } catch {
+        return [];
+      }
+    });
+    const handoff = handoffs[handoffs.length - 1];
+    assert.ok(handoff?.messages);
+    assert.equal(handoff.messages.length, 1);
+    return handoff.messages[0].id;
+  });
+  assert.deepEqual(handledIds, requestIds);
+
+  const answers = (await ctx.records.messages(ctx.task.id)).filter(
+    (message) => message.kind === 'answer',
+  );
+  assert.deepEqual(
+    answers.map((message) => message.userRequestId),
+    requestIds,
+  );
+  assert.ok(
+    (await ctx.records.history(ctx.records.runs[0].id)).filter((event) =>
+      requestIds.includes(event.userRequestId ?? ''),
+    ).length > 0,
+  );
 });
 
 for (const flip of [false, true]) {
@@ -1350,77 +1389,6 @@ test('pure reading needs no language configuration and records only shell metada
   assert.equal(h.records.runs[0].status, 'completed');
   assert.ok(h.records.runs[0].environment?.shell.program);
   assert.ok(!('env' in h.records.runs[0].environment!));
-});
-
-for (const flip of [false, true]) {
-  test(`Reviewer independently explores and verifies through real shell commands (flip=${flip})`, async (t) => {
-    const h = await setup(t, {
-      flip,
-      autonomous: true,
-      approve: true,
-      fixedInitially: true,
-      realCommands: true,
-      reviewerCommands: true,
-    });
-    await h.service.request({ kind: 'start', taskId: h.task.id });
-    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
-    const run = h.records.runs[0];
-    assert.equal(run.status, 'completed', run.error);
-    const commands = (await h.records.history(run.id)).flatMap((event) =>
-      event.detail?.type === 'command' ? [event.detail.command] : [],
-    );
-    const probe = commands.find((command) => command.phase === 'planning')!;
-    const verify = commands.find((command) => command.phase === 'reviewer')!;
-    assert.equal(probe.agent, 'reviewer');
-    assert.equal(probe.planVersion, 0);
-    assert.equal(probe.purpose, 'explore');
-    assert.equal(verify.agent, 'reviewer');
-    assert.equal(verify.ok, true);
-    assert.equal(verify.exitCode, 0);
-    assert.ok(verify.command);
-    assert.equal(verify.before, verify.after);
-    assert.ok(run.review!.acceptance[0].commandIds.includes(verify.id));
-    assert.ok(!run.submission!.evidence[0].commandIds.includes(verify.id));
-    const events = await h.records.history(run.id);
-    assert.ok(events.some((event) => event.kind === 'check' && event.agent === 'reviewer'));
-  });
-  test(`Reviewer failed verification blocks approval of earlier Worker success (flip=${flip})`, async (t) => {
-    const h = await setup(t, {
-      flip,
-      autonomous: true,
-      approve: true,
-      fixedInitially: true,
-      realCommands: true,
-      reviewerCommands: true,
-      reviewerFailure: true,
-    });
-    await h.service.request({ kind: 'start', taskId: h.task.id });
-    await waitUntil(() => terminalStatuses.includes(h.records.runs[0].status));
-    assert.equal(h.records.runs[0].status, 'roundLimit');
-    assert.equal(h.records.runs[0].review?.verdict, 'changes_requested');
-  });
-}
-test('Reviewer source changes retain artifacts and require human continuation', async (t) => {
-  const h = await setup(t, {
-    autonomous: true,
-    approve: true,
-    fixedInitially: true,
-    realCommands: true,
-    reviewerCommands: true,
-    reviewerMutation: true,
-  });
-  await h.service.request({ kind: 'start', taskId: h.task.id });
-  await waitUntil(() => h.records.runs[0].status === 'paused');
-  assert.equal(
-    await readFile(join(h.records.runs[0].directory!, 'file.txt'), 'utf8'),
-    'reviewer-change',
-  );
-  assert.ok(
-    (await h.records.history(h.records.runs[0].id)).some(
-      (event) => event.fault?.code === 'reviewChanged',
-    ),
-  );
-  await h.service.request({ kind: 'stop', runId: h.records.runs[0].id });
 });
 
 for (const flip of [false, true]) {
@@ -2403,17 +2371,17 @@ for (const flip of [false, true]) {
     const run = h.records.runs[0];
     assert.equal(run.status, 'roundLimit');
     const saved = (await h.records.recovery(run.id).load())!;
-    const refused = saved.operations.find(
-      (op) => op.name === 'submit_review' && op.status === 'failed',
+    assert.equal(run.review?.verdict, 'fail');
+    assert.equal(run.review?.nextStep?.action, 'continue');
+    assert.ok(
+      !saved.operations.some((op) => op.name === 'submit_review' && op.status === 'failed'),
     );
-    assert.equal(refused?.outcome?.fault?.params?.reason, 'unresolved');
-    assert.match(String(refused?.outcome?.fault?.params?.blockers), /Required check failed/);
     assert.ok(!JSON.stringify(saved).includes('test-secret-worker'));
     const feedback = h.captured
       .filter((r) => r.agent === 'reviewer')
       .map((r) => JSON.stringify(r.body))
       .join('\n');
-    assert.match(feedback, /Completion is blocked by unresolved items/);
+    assert.match(feedback, /Required check failed/);
     assert.ok(!feedback.includes('test-secret-worker'));
   });
   test(`background launch cannot supply successful verification (flip=${flip})`, async (t) => {

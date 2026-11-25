@@ -18,7 +18,7 @@
 | [Development](./development.md)                         | nvm, build commands, debugging, and tests                                               |
 | [Architecture](./architecture.md)                       | Implemented workbench, storage boundaries, branding assets, and module responsibilities |
 | [Host/UI protocol](./protocol.md)                       | Settings/model queries, execution messages, role handoffs and Git bindings              |
-| [UI design](./design.md)                                | 37 SVG/PNG scenes: 37 approved                                                          |
+| [UI design](./design.md)                                | 40 SVG/PNG pairs: 37 approved, 3 pending                                                |
 | [Roadmap](./roadmap.md)                                 | Versioned progress, implemented execution and remaining capabilities                    |
 | [Packaging and releases](./releasing.md)                | Publication history and the workflow for future GitHub / Marketplace versions           |
 | [Licensing](./licensing.md)                             | MIT license and bundled third-party notices                                             |

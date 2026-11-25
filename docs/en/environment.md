@@ -126,7 +126,7 @@ The checker requires Git 2.25+ on PATH and prints its version, including during 
 
 ## Execution resource enforcement
 
-Task commands launch through native shells on Linux, macOS and Windows, without user systemd, cgroup v2 or a user D-Bus session. The extension neither probes nor enforces memory/swap quotas. Commands default to a 180-second timeout (10–900 allowed), with a 2 MiB output cap and process-group cancellation. Programs actually used by a task must be installed. Missing executables, permission errors and launch failures are recorded as structured errors for Worker/Reviewer revision. Commands run as the current OS user and are not filesystem or network sandboxes. Native macOS and Windows jobs are configured; actual passing results are still required.
+Task commands launch through native shells on Linux, macOS and Windows, without user systemd, cgroup v2 or a user D-Bus session. The extension neither probes nor enforces memory/swap quotas. Commands default to a 180-second timeout (10–900 allowed), with a 2 MiB output cap and process-group cancellation. Programs actually used by a task must be installed. Missing executables, permission errors and launch failures are recorded as structured results for Worker correction and Reviewer inspection. Commands run as the current OS user and are not filesystem or network sandboxes. Native macOS and Windows jobs are configured; actual passing results are still required.
 
 The initial candidate audit used Ubuntu 24.04.5 amd64, Node.js 24.22.3, Git 2.43.0 and local VS Code 1.141.0. The table describes the configured workflow, not successful remote CI for 0.0.2/0.0.3. See the [validation record](./execution-cycle-validation.md) for subsequent local Ubuntu 20.04 testing; minimum VS Code 1.100.0 and other matrix combinations were not revalidated for this runner revision.
 
@@ -134,15 +134,15 @@ Execution regression no longer needs a user systemd session. Real command tests 
 
 ## Automatic execution and command-free tasks
 
-Reviewer plans first; Worker prepares dependencies and runs commands as needed. Command-free tasks can still complete through documented reading acceptance. Failed, unexecuted or unconfirmed-stop commands retain actual records and cannot certify success. External tools may bound the overall development verification process; those budgets are not product task prerequisites.
+Reviewer plans first; Worker prepares dependencies and runs commands as needed. Command-free tasks can still complete through documented reading acceptance. Reviewer reads recorded command outcomes, including failures; Pair-style acceptance treats them as review inputs rather than automatic host vetoes. External tools may bound the overall development verification process; those budgets are not product task prerequisites.
 
 ## Continuing conversation environment
 
-Chat and continuation use the same native command layer. Question replies may use Reviewer exploration commands without starting Worker; continuation reuses the bound directory and requires the same branch and HEAD. Commands still run directly without reinstating systemd or fixed memory requirements. Added real UI cases use local model simulators and disposable repositories; see [task chat validation](./task-chat-validation.md).
+Chat questions use read-only Reviewer inspection and do not start Worker commands. Continued changes reuse the bound directory and require the same branch and HEAD; Worker runs any necessary commands. Commands still run directly without reinstating systemd or fixed memory requirements. Added real UI cases use local model simulators and disposable repositories; see [task chat validation](./task-chat-validation.md).
 
 ## Native shell commands
 
-Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
+Worker uses the [host-managed shell execution layer](./shell-execution.md), with automatic environment inheritance. Reviewer has read-only file and recorded-output tools and cannot invoke commands. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
 
 ## Failure recovery
 
@@ -156,4 +156,4 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 
 ## Local Python
 
-Preparation and recovery identify local Python 2.7/3 and common project environments, supplying verified invocation paths and versions to Worker and Reviewer. Execution retains `run_command`, without bundling/installing Python or changing global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
+Preparation and recovery identify local Python 2.7/3 and common project environments for model context. Worker alone can invoke `run_command`; Reviewer can inspect recorded outcomes but cannot run commands. Python is not bundled or installed, and global environments are unchanged. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.

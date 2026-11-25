@@ -41,6 +41,80 @@ test('performs a real authenticated GET, sends no task data, validates and dedup
     await server.close();
   }
 });
+test('Anthropic model discovery uses versioned auth and follows its after_id cursor', async () => {
+  const requests: string[] = [];
+  const server = await modelServer((req, res) => {
+    requests.push(String(req.url));
+    assert.equal(req.headers['x-api-key'], key);
+    assert.equal(req.headers.authorization, undefined);
+    assert.equal(req.headers['anthropic-version'], '2023-06-01');
+    res.setHeader('Content-Type', 'application/json');
+    if (req.url === '/v1/models?limit=100') {
+      res.end(JSON.stringify({ data: [{ id: 'claude-a' }], has_more: true, last_id: 'claude-a' }));
+    } else {
+      assert.equal(req.url, '/v1/models?limit=100&after_id=claude-a');
+      res.end(JSON.stringify({ data: [{ id: 'claude-b' }], has_more: false, last_id: 'claude-b' }));
+    }
+  });
+  try {
+    const result = await fetchModels(
+      { baseUrl: `${server.url}/v1`, key, protocol: 'anthropic' },
+      signal(),
+    );
+    assert.deepEqual(result.models, ['claude-a', 'claude-b']);
+    assert.equal(requests.length, 2);
+  } finally {
+    await server.close();
+  }
+});
+test('Command Code discovery filters strictly by supported endpoint metadata', async () => {
+  const server = await modelServer((req, res) => {
+    assert.equal(req.url, '/provider/v1/models');
+    assert.equal(req.headers.authorization, `Bearer ${key}`);
+    res.setHeader('Content-Type', 'application/json');
+    res.end(
+      JSON.stringify({
+        data: [
+          { id: 'chat-only', supported_endpoints: ['/v1/chat/completions'] },
+          { id: 'responses-only', supported_endpoints: ['responses'] },
+          { id: 'anthropic-only', supported_endpoints: ['messages'] },
+          { id: 'multiple', supported_endpoints: ['chat_completions', '/v1/responses'] },
+        ],
+      }),
+    );
+  });
+  try {
+    const result = await fetchModels(
+      {
+        baseUrl: `${server.url}/provider/v1`,
+        key,
+        provider: 'commandCode',
+        protocol: 'responses',
+      },
+      signal(),
+    );
+    assert.deepEqual(result.models, ['responses-only', 'multiple']);
+  } finally {
+    await server.close();
+  }
+});
+test('Command Code discovery rejects model rows without endpoint capabilities', async () => {
+  const server = await modelServer((_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ data: [{ id: 'uncertain-model' }] }));
+  });
+  try {
+    await assert.rejects(
+      fetchModels(
+        { baseUrl: server.url, key, provider: 'commandCode', protocol: 'chatCompletions' },
+        signal(),
+      ),
+      { code: 'modelsInvalidResponse' },
+    );
+  } finally {
+    await server.close();
+  }
+});
 test('empty success differs from malformed JSON and invalid model entries', async () => {
   for (const [body, valid] of [
     [{ data: [] }, true],

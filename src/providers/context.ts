@@ -35,17 +35,47 @@ export const contextDigest = (value: ContextSummary) =>
   createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const system = (item: Record<string, unknown>) =>
   item.role === 'system' || item.role === 'developer';
-const resultId = (item: Record<string, unknown>) =>
-  item.role === 'tool'
-    ? item.tool_call_id
-    : item.type === 'function_call_output'
-      ? item.call_id
-      : undefined;
+const resultIds = (item: Record<string, unknown>): string[] => {
+  if (item.role === 'tool' && typeof item.tool_call_id === 'string') {
+    return [item.tool_call_id];
+  }
+  if (item.type === 'function_call_output' && typeof item.call_id === 'string') {
+    return [item.call_id];
+  }
+  if (Array.isArray(item.content)) {
+    return item.content.flatMap((part) =>
+      part &&
+      typeof part === 'object' &&
+      'type' in part &&
+      part.type === 'tool_result' &&
+      'tool_use_id' in part &&
+      typeof part.tool_use_id === 'string'
+        ? [part.tool_use_id]
+        : [],
+    );
+  }
+  return [];
+};
 const calls = (item: Record<string, unknown>): string[] => {
   if (item.type === 'function_call') {
     return typeof item.call_id === 'string' ? [item.call_id] : [];
   }
-  return Array.isArray(item.tool_calls) ? item.tool_calls.map((call) => String(call.id)) : [];
+  if (Array.isArray(item.tool_calls)) {
+    return item.tool_calls.map((call) => String(call.id));
+  }
+  if (Array.isArray(item.content)) {
+    return item.content.flatMap((part) =>
+      part &&
+      typeof part === 'object' &&
+      'type' in part &&
+      part.type === 'tool_use' &&
+      'id' in part &&
+      typeof part.id === 'string'
+        ? [part.id]
+        : [],
+    );
+  }
+  return [];
 };
 
 /** Boundaries cover the entire assistant batch, including Responses reasoning items. */
@@ -67,11 +97,13 @@ export function contextGroups(history: History, protocol: Protocol): History[] {
     if (system(item)) {
       continue;
     }
-    const id = resultId(item);
+    const ids = resultIds(item);
     const ownCalls = calls(item);
-    if (id !== undefined) {
-      if (typeof id !== 'string' || !pending.delete(id)) {
-        throw new OperationError('contextCompaction');
+    if (ids.length) {
+      for (const id of ids) {
+        if (typeof id !== 'string' || !pending.delete(id)) {
+          throw new OperationError('contextCompaction');
+        }
       }
       group.push(item);
       if (!pending.size) {
@@ -84,7 +116,7 @@ export function contextGroups(history: History, protocol: Protocol): History[] {
       if (
         protocol !== 'responses' ||
         !ownCalls.length ||
-        group.some((entry) => resultId(entry) !== undefined)
+        group.some((entry) => resultIds(entry).length > 0)
       ) {
         throw new OperationError('contextCompaction');
       }

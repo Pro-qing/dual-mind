@@ -1,6 +1,7 @@
 import type { AppError } from './errors';
 import type {
   Protocol,
+  ProviderPreset,
   ExecutionAction,
   ExecutionReply,
   ExecutionUpdate,
@@ -36,6 +37,7 @@ export interface AgentBindings {
 export interface ConnectionRecord {
   /** Optional known context windows, indexed by model ID; absent means an estimated 32K window. */
   contextWindows?: Record<string, number>;
+  provider?: ProviderPreset;
   protocol?: Protocol;
   id: string;
   name: string;

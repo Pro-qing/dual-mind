@@ -148,7 +148,7 @@ Real UI verification configures both model protocols and real additional command
 
 ## Dual-agent cycle validation
 
-Local model fixtures cover Reviewer-first planning, autonomous Worker commands, revised plans after rejection, reading-only acceptance and legacy custom configuration. Contract tests cover nested tool arguments, stable criteria, forged/stale/failed evidence, feedback and newer failures superseding older success. Real command runner tests execute by default; reading acceptance remains independently covered.
+Local model fixtures cover Reviewer-first planning, Worker-only commands, revised plans after rejection, read-only Reviewer inspection and legacy configuration. Contract tests cover Pair-style review structure, confidence and completion-marker rules, read-only Reviewer tool access, and failed evidence as review input rather than a host acceptance veto. Real command-runner and reading-review cases remain independently covered.
 
 See the [validation record](./execution-cycle-validation.md) for actual environments, passes and unverified scenarios.
 
@@ -158,7 +158,7 @@ See the [development log](./development-log.md) and [task chat validation](./tas
 
 ## Native shell commands
 
-Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
+Worker uses the [host-managed shell execution layer](./shell-execution.md), with automatic environment inheritance. Reviewer has read-only file and recorded-output tools and cannot invoke commands. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
 
 Recovery tests use scripted endpoints, forced exits of isolated child processes and recreated execution services, modifying only temporary repositories. Before recovery UI approval, real UI regression covers existing controls only, not the proposed button. See [recovery behavior](./execution-recovery.md).
 

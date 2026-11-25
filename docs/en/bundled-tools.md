@@ -6,7 +6,7 @@ DualMind 0.0.6 includes offline Linux x64 copies of `rg` 16.0.0, `fd` 10.5.2 and
 
 ## Use in tasks
 
-Worker and Reviewer continue using `run_command`. After capturing the login environment, the host appends validated tool directories to that run's PATH. System commands have priority. A failed login probe applies the same procedure to the host environment snapshot. User terminals, shell profiles and the global process environment are unchanged; task execution never downloads or installs tools.
+Worker uses `run_command`; Reviewer cannot execute commands. After capturing the login environment, the host appends validated tool directories to the Worker run's PATH. System commands have priority. A failed login probe applies the same procedure to the host environment snapshot. User terminals, shell profiles and the global process environment are unchanged; task execution never downloads or installs tools.
 
 An explicitly empty PATH retains its current-directory entry. An absent PATH starts with standard Linux system directories. An existing system command is never automatically retried with a bundled version, even if it is old or fails. Each command still starts a new shell from the run snapshot; explicit PATH changes within a command retain normal shell semantics.
 

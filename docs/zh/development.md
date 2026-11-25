@@ -148,7 +148,7 @@ VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 
 ## 双 AI 循环验证
 
-本地模拟服务覆盖 Reviewer 首先规划、Worker 自主命令、未通过后的下一轮方案、纯阅读验收和旧自定义配置。契约测试覆盖嵌套工具参数、验收项 ID、伪造／过期／失败证据、反馈及最新失败覆盖旧成功。真实命令运行器默认接受同一套测试，阅读验收保持独立覆盖。
+本地模拟服务覆盖 Reviewer 首先规划、仅 Worker 可执行命令、未通过后的下一轮方案、Reviewer 只读检查和旧配置。契约测试覆盖 Pair 式结论结构、信心及完成标记规则、Reviewer 工具只读权限，以及失败证据作为判断材料而非宿主自动否决。真实命令运行与阅读审查仍分别覆盖。
 
 实际环境、通过项与未覆盖项见[验证记录](./execution-cycle-validation.md)。
 
@@ -158,7 +158,7 @@ VSCODE_TEST_EXECUTABLE=/usr/share/code/code npm run test:ui
 
 ## 原生 shell 命令
 
-两个角色现共用[通用 shell 执行层](./shell-execution.md)，自动继承环境，并允许 Reviewer 独立验证，无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
+Worker 使用[宿主 shell 执行层](./shell-execution.md)并自动继承环境；Reviewer 只能读取文件和已记录输出，不能发起命令。无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
 
 恢复测试包含模拟端点、独立子进程强制退出及重新创建执行服务；只修改临时仓库。恢复界面审核前，真实 UI 回归仅验证原有布局与交互，不能计为新按钮已通过验证。见[恢复机制](./execution-recovery.md)。
 

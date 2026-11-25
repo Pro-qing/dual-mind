@@ -12,13 +12,13 @@ Results carry call, host operation and request IDs, structured faults, linked co
 
 ## Acceptance diagnostics
 
-`evidenceInvalid` retains compatibility with old records. New errors add a typed `reason` and, when relevant, `criterionId`, `commandId` and expected/actual versions. Reasons distinguish coverage, unresolved blockers, stale submissions, additional checks, missing/failed/stale commands, incorrect source/purpose/criterion links, latest verification and missing reading explanations. Tool feedback, recovery records and Debug use the same redacted diagnostic; unknown reasons fall back to the legacy generic message.
+`evidenceInvalid` and criterion/command-specific reasons remain readable for historical records. Current Pair-style review does not make criterion coverage, command-ID references or successful command status automatic acceptance gates. Structured tool faults still include a typed reason and relevant operation identifiers; feedback, recovery records and Debug use the same redacted diagnostic.
 
-`unresolved` contains only issues that block completion. Put scope notes and omitted optional checks in `summary` or `evidence`; failed or missing required checks remain blockers. No blocker is automatically cleared. A failed `submit_review` marked “executed” means the host processed and refused the submission, not that acceptance passed.
+Worker may use `unresolved` to report blockers for Reviewer consideration; scope notes and omitted optional checks belong in `summary` or `evidence`. The host does not convert this list into automatic acceptance blockers. A failed `submit_review` marked “executed” means the host processed and refused that malformed or protocol-invalid submission, not that acceptance passed.
 
 ## Batches and permissions
 
-Invalid arguments, unknown/unavailable tools, or invalid final-tool order reject the entire batch before execution, returning diagnostics and available tools. Transport still rejects incomplete streams and missing/duplicate call IDs. After the first ordinary runtime or command failure, remaining calls, including final tools, are marked not executed with the failed operation as cause. Completed operations and file changes are not rolled back. Independent host checks still collect every configured check result.
+Invalid arguments, unknown/unavailable tools, or invalid final-tool order reject the entire batch before execution, returning diagnostics and available tools. Transport still rejects incomplete streams and missing/duplicate call IDs. After the first ordinary runtime or command failure, remaining calls, including final tools, are marked not executed with the failed operation as cause. Completed operations and file changes are not rolled back. Reviewer receives only read-only inspection and recorded-output tools; Worker alone receives command and mutation tools. Independent host checks still collect every configured check result.
 
 Missing files, invalid paths, ordinary permission errors, launch failures, nonzero exits, and timeouts/output limits with confirmed termination remain correctable. Revoked trust, changed bindings, persistence failure, unconfirmed process shutdown, and explicit stopping interrupt advancement. Started operations without reliable results remain unknown, never falsely described as having no effects. Cancelled and stale-generation responses cannot advance a new run.
 
@@ -32,7 +32,7 @@ Compound commands retain native shell semantics: no injected `set -e` or pipefai
 
 ## Acceptance and UI
 
-Acceptance checks the current plan, criteria, file fingerprint, additional checks and newest evidence. Historical exploration failures are not permanent blockers; failed, skipped, unknown or stale verification cannot prove success. Worker may honestly submit failures and outstanding work in a later request for Reviewer to plan repairs.
+Reviewer judges current artifacts together with the plan, command/check outcomes and Worker evidence. The host validates review structure and finish protocol, prevents acceptance while feedback is pending or artifacts change during review, and otherwise does not impose criterion-coverage or successful-command gates. Failed, skipped, unknown or stale results remain visible for the Reviewer to assess. Worker may report failures and outstanding work for Reviewer to plan repairs.
 
 Evidence associates tool wrappers and command results by host operation, counting a failure once. Skipped calls show their cause without posing as executed failures. Historical failures and current acceptance blockers are separate; zero errors or a finished tool call do not imply acceptance. Pause reasons remain visible in narrow views and with evidence minimized.
 

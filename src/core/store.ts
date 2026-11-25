@@ -157,7 +157,17 @@ function connectionInput(value: unknown): Omit<ConnectionRecord, 'id'> {
   } catch {
     throw new StoreError('invalidUrl');
   }
-  if (v.protocol !== undefined && v.protocol !== 'chatCompletions' && v.protocol !== 'responses') {
+  if (
+    v.protocol !== undefined &&
+    !['chatCompletions', 'responses', 'anthropic'].includes(String(v.protocol))
+  ) {
+    throw new StoreError('invalidMessage');
+  }
+  if (
+    v.provider !== undefined &&
+    v.provider !== 'openaiCompatible' &&
+    v.provider !== 'commandCode'
+  ) {
     throw new StoreError('invalidMessage');
   }
   let contextWindows: Record<string, number> | undefined;
@@ -185,9 +195,10 @@ function connectionInput(value: unknown): Omit<ConnectionRecord, 'id'> {
   }
   return {
     ...(contextWindows === undefined ? {} : { contextWindows }),
+    ...(v.provider === undefined ? {} : { provider: v.provider }),
     ...(v.protocol === undefined
       ? {}
-      : { protocol: v.protocol as 'chatCompletions' | 'responses' }),
+      : { protocol: v.protocol as 'chatCompletions' | 'responses' | 'anthropic' }),
     name: string(v.name, true, 200, true),
     baseUrl,
     defaultModel: string(v.defaultModel, false, 500, true),
@@ -384,7 +395,12 @@ export class LocalStore {
     }
   }
   /** Read credentials briefly under the store lock; network work runs outside it. */
-  async connectionForQuery(connectionId: string): Promise<{ baseUrl: string; key?: string }> {
+  async connectionForQuery(connectionId: string): Promise<{
+    baseUrl: string;
+    key?: string;
+    protocol?: ConnectionRecord['protocol'];
+    provider?: ConnectionRecord['provider'];
+  }> {
     return this.serialize(async () => {
       const { global } = this.read();
       const connection = global.connections.find((c) => c.id === connectionId);
@@ -394,6 +410,8 @@ export class LocalStore {
       return {
         baseUrl: connection.baseUrl,
         key: await this.ports.secrets.get(secretKey(connectionId)),
+        protocol: connection.protocol,
+        provider: connection.provider,
       };
     });
   }
@@ -418,6 +436,7 @@ export class LocalStore {
               ? c.contextWindows[binding.model]
               : undefined,
           key,
+          provider: c.provider || 'openaiCompatible',
           protocol: c.protocol || ('chatCompletions' as const),
         };
       };
@@ -597,7 +616,12 @@ export class LocalStore {
             ? global.connections.map((c) => (c.id === action.id ? item : c))
             : [...global.connections, item];
           await this.ports.global.update(globalStorageKey, global);
-          if (previous && previous.baseUrl !== item.baseUrl) {
+          if (
+            previous &&
+            (previous.baseUrl !== item.baseUrl ||
+              previous.protocol !== item.protocol ||
+              previous.provider !== item.provider)
+          ) {
             this.ports.onConnectionChanged?.(item.id);
           }
           break;

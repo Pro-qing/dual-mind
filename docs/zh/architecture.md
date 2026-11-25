@@ -28,7 +28,7 @@ src/workbench.ts   Webview 资源、CSP、消息传输与宿主输入框
 src/core/         带校验的本地任务／配置存储
 src/shared/       消息类型、双语界面文案和 Reviewer 定义
 src/providers/    模型列表及流式推理适配
-src/execution/    执行状态机、受限命令和分页事件记录
+src/execution/    模块化执行状态机、角色轮次、恢复与记录（见 README）
 src/git/          任务 worktree 服务及角色文件访问边界
 src/editor/       上下文读取和结果应用占位
 webview/src/      React 工作台、设置、表单、通信与自适应样式
@@ -36,7 +36,7 @@ resources/        随包 PNG 图标及归档品牌原图
 scripts/          构建、检查、本地测试和真实 Webview 验证
 tests/local/     存储与 React 交互测试
 tests/            VS Code 扩展宿主测试
-docs/design/v*/  按开发版本归档的 37 组 SVG／PNG（37 已审核）
+docs/design/v*/  按开发版本归档的 40 组 SVG／PNG（37 已审核、3 待审核）
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          兼容性 CI 和协作模板
@@ -70,7 +70,7 @@ Webview 只允许读取其构建目录，脚本使用 nonce CSP，禁止直接�
 
 ## 连接验证与模型查询
 
-当前开发分支按[场景 6–7](./design.md)实现使用 Bearer 认证的 OpenAI 兼容端点。`src/providers/models.ts` 在已保存的 API 基础路径后追加 `/models`，保留网关路径前缀。本功能不包含 Azure 专用认证或推理协议。
+当前设置界面按[场景 6–7](./design.md)提供使用 Bearer 认证的 OpenAI 兼容端点，并开放 Chat Completions／Responses。源码适配器也支持 Anthropic Messages 和 Command Code 兼容 API，但场景 38–40 的设置控件待审核，暂不能从界面选择。`src/providers/adapters/` 集中处理协议映射，`src/providers/models.ts` 保留网关路径并处理提供商专属模型发现。本功能不包含 Azure 专用认证。
 
 用户明确发起查询 → 宿主在存储锁内读取连接元信息和密钥 → `ModelQueries` 在锁外执行网络请求 → 宿主返回校验后的 ID 和时间 → React 展示候选列表或手动输入。Webview 保留禁止直接联网的 CSP；查询不发送任务需求、角色指令或工作区内容。
 
@@ -82,9 +82,9 @@ Webview 只允许读取其构建目录，脚本使用 nonce CSP，禁止直接�
 
 ## 开发分支的任务执行
 
-宿主执行服务按工作区维护一个活动执行，不依赖 Webview 是否打开。服务固定任务／模型／角色／命令配置快照，调用 Git 任务目录服务，先由 Reviewer 规划，再驱动 Worker 自主实施与验证 → 附加检查 → Reviewer 验收或下发下一轮方案的循环。开始、暂停、继续、停止、重新执行和暂停时反馈独立于本地设置保存。完成要求验收项证据有效、附加检查成功、Reviewer 通过且成果指纹保持一致。
+宿主执行服务按工作区维护一个活动执行，不依赖 Webview 是否打开。服务固定任务／模型／角色／命令配置快照，调用 Git 任务目录服务，先由 Reviewer 规划，再驱动 Worker 实施／验证与 Reviewer 验收。Pair 式审查包含 pass／fail、风险、信心、问题、证据和下一步。宿主校验结论结构及完成协议，包括信心 ≥ 0.8、无待处理反馈、审查期间成果未变和独立一行 `TASK_COMPLETE`；验收项覆盖率与命令 ID 是 Reviewer 判断材料，不是自动门槛。开始、暂停、继续、停止、重新执行和暂停时反馈独立于本地设置保存。
 
-`src/providers/inference.ts` 分别适配流式 Chat Completions 和 Responses，保持独立角色历史与整批工具参数校验。文件写入仍只提供给 Worker；两个角色通过 `LocalCommands` 执行 shell 命令，Reviewer 在规划／答疑时探查，验收时可准备依赖、构建和测试。旧预设保持字面参数。shell 选择、每次运行的登录环境捕获和进程清理分别实现，见[通用 shell 执行](./shell-execution.md)。
+`src/providers/inference.ts` 适配流式 Chat Completions、Responses 和 Anthropic Messages，并保持独立角色历史与整批工具参数校验；Command Code 使用兼容协议并按能力元数据筛选模型。Reviewer 在规划、答疑和审查阶段只获得文件／记录读取工具；只有 Worker 获得修改和 shell 命令工具。旧命令预设保持字面参数。shell 选择、每次运行的登录环境捕获和进程清理分别实现，见[通用 shell 执行](./shell-execution.md)。
 
 执行摘要和命令配置使用独立工作区存储，公开事件日志保存在仓库之外，每次分页读取 80 条，UI 流式更新以 100 毫秒批量推送。宿主重启将未完成执行标记中断，不重放工具操作。API 凭据只存在于 SecretStorage 和活动宿主内存中，不进入历史、交接及命令输出。活动栏唯一视图 `dualMind.tasks` 使用 `WebviewViewProvider` 承载完整工作台；执行服务由宿主持有，视图销毁只释放页面通信和监听器。
 
@@ -102,7 +102,7 @@ Worker 交接当前成果和测试证据；Reviewer 返回审查结论、问题�
 
 ## Git 任务工作目录基础（开发分支）
 
-专用分支模式下，`src/git/` 为首次执行提供按需调用的宿主服务：每个任务一个 `dualmind/<规范化任务名>-<任务短ID>` 分支，以及位于扩展工作区存储目录、源仓库之外的独立 worktree。`ExecutionService` 在首次模型请求前调用 `TaskWorkspaces.prepare()`；`Workbench.prepareTaskWorkspace()` 保留为宿主集成包装接口。打开设置、查询模型或保存任务不会准备任务目录。
+专用分支模式下，`src/git/` 为首次执行提供按需调用的宿主服务：每个任务一个 `dualmind/<规范化任务名>-<任务短ID>` 分支，以及位于扩展工作区存储目录、源仓库之外的独立 worktree。执行门面 `ExecutionService` 在首次模型请求前通过运行时调用 `TaskWorkspaces.prepare()`；`Workbench.prepareTaskWorkspace()` 保留为宿主集成包装接口。打开设置、查询模型或保存任务不会准备任务目录。`src/execution/README.md` 记录执行服务拆分后的模块边界。
 
 专用分支首次准备要求 Git 2.25+、已信任且在仓库根目录打开的单文件夹工作区、有名称的分支、有效提交，可选的本地基点分支；源目录未提交修改保留且不复制。拒绝裸仓库、子模块、分离 HEAD 和多文件夹工作区；可将已有 linked worktree 作为源目录。首次准备固定基准提交，不复制被忽略文件或生成文件。已准备任务可在源分支变化或变脏后复用，保留任务文件。Git 准备服务不会切换源目录分支，也不自动提交、stash、fetch、合并、推送或安装依赖；后续 Worker 可按方案准备项目依赖。
 
@@ -110,7 +110,7 @@ Worker 交接当前成果和测试证据；Reviewer 返回审查结论、问题�
 
 宿主为 Worker 或 Reviewer 绑定文件接口。双方可列出／读取普通文件、查看状态及相对基准的已跟踪文件差异；新未跟踪文件通过状态、列表和读取接口查看。只有 Worker 获得 `writeFile`，可创建普通子目录。每次访问重新检查任务是否存在、工作区信任、仓库绑定和 worktree 归属。拒绝绝对路径、目录穿越、符号链接、硬链接文件和 Git 元数据访问。Git 不经过 shell，禁用钩子、外部 diff、textconv、内容过滤器和文件监视程序；不会下载或物化 LFS／过滤器生成内容。单个命令超时 20 秒、输出上限 2 MiB，单个文件读写上限 2 MiB；超过限制返回错误，不将截断内容作为审查证据。
 
-这是工具接口权限边界，不是操作系统沙箱：能够直接访问文件系统的外部进程或用户仍可修改 worktree。Reviewer 通过独立命令能力探查和验证，文件写入／删除工具仍仅提供给 Worker；独立执行服务维护角色历史，[上下文约定](./protocol.md#角色交接边界)继续适用。
+这是工具接口权限边界，不是操作系统沙箱：能够直接访问文件系统的外部进程或用户仍可修改 worktree。Reviewer 在规划、答疑和审查阶段均只取得文件与已记录输出的读取工具；只有 Worker 获得源文件修改和命令执行工具。执行服务维护隔离的角色历史，[上下文约定](./protocol.md#角色交接边界)继续适用。
 
 ## 任务 Git 策略
 
@@ -120,11 +120,11 @@ Worker 交接当前成果和测试证据；Reviewer 返回审查结论、问题�
 
 ## Reviewer 规划与验收循环
 
-执行服务按 preparing → planning → worker → checking（有附加检查时）→ reviewer 组织阶段。Reviewer 首先读取任务相关上下文，通过 submit_plan 输出需求理解、目标、步骤和验收项；Worker 接收方案而非 Reviewer 私有历史，通过文件工具与 run_command 落实方案，finish_work 只提交验收。Reviewer 的 submit_review 必须覆盖全部验收项，拒绝时携带完整 nextPlan；宿主为新方案递增版本，保存方案、交接和验收事件。角色快照保持兼容，各阶段系统指令明确规划、实施、验收职责。
+执行服务按 preparing → planning → worker → checking（有附加检查时）→ reviewer 组织阶段。Reviewer 首先读取任务相关上下文，通过 submit_plan 输出需求理解、目标、步骤和验收项；Worker 接收方案而非 Reviewer 私有历史，通过文件工具与 run_command 落实方案，finish_work 只提交成果。`submit_review` 返回 Pair 式 `pass`／`fail`、风险、信心、问题、证据、理由和下一步；失败／继续必须携带完整 `nextPlan`。宿主校验结论结构和结束协议，但不把逐项覆盖率或成功命令 ID 作为自动验收门槛。角色快照保持兼容，各阶段系统指令明确规划、实施、验收职责。
 
-方案由模型基于需求和相关文件形成，没有按语言或项目类型套用固定命令的自动检测器。Reviewer 保持文件只读；Worker 运行项目级依赖准备、探查和验证，不能通过角色交接获得 Reviewer 的完整会话或私有协议条目。用户反馈在 Reviewer 阶段处理，未处理的反馈阻止验收通过。
+方案由模型基于需求和相关文件形成，没有按语言或项目类型套用固定命令的自动检测器。Reviewer 保持文件只读，通过记录证据读取 Worker 命令／检查结果。Worker 运行项目级依赖准备、探查和验证，不能通过角色交接获得 Reviewer 的完整会话或私有协议条目。用户反馈在 Reviewer 阶段处理，未处理的反馈阻止结束任务。
 
-宿主记录命令真实参数、任务内相对目录、方案版本、轮次、退出状态、执行前后成果指纹及输出。完整脱敏输出写入分页事件，模型通过 read_command_output 分页读取，避免截断内容冒充完整证据。只有当前方案与成果版本一致、实际成功且关联对应验收项的验证记录才可通过；同项较新的失败使旧成功不能继续作为完成依据。附加自定义检查在每轮提交后必跑，旧配置默认启用。关闭时仍保存配置内容。
+宿主记录命令真实参数、任务内相对目录、方案版本、轮次、退出状态、执行前后成果指纹及输出。完整脱敏输出写入分页事件，模型通过 read_command_output 分页读取，避免截断内容冒充完整证据。附加自定义检查在每轮提交后运行，但其结果由 Reviewer 判断，不作为宿主强制通过／拒绝条件；旧配置默认启用，关闭时仍保存配置内容。宿主仍拒绝审查期间成果变更、待处理反馈、结构无效的结论，以及缺少 `pass`、信心 ≥ 0.8 或最终独立一行 `TASK_COMPLETE` 的完成请求。
 
 阅读审查必须有无需命令的原因和明确依据。无命令任务可独立完成。命令不依赖 systemd/cgroup，也不设置内存或交换空间配额；目录解析拒绝绝对路径、穿越和符号链接；外部进程仍以当前用户权限运行，目录检查不是操作系统沙箱。每阶段不设模型／工具累计调用次数上限，命令与错误继续受输出、日志和脱敏限制。方案修改保留验收 ID 及验证方式，避免在修订中静默降低验收要求。
 
@@ -134,7 +134,7 @@ Worker 交接当前成果和测试证据；Reviewer 返回审查结论、问题�
 
 `RunRecords` 将用户消息和 Reviewer 答复追加保存到工作区扩展存储的 `conversations/<taskId>.jsonl`。状态更新复用消息 ID；同一 ID、不同内容拒绝。同一任务的方案、成果、审查和系统错误从原始运行 JSONL 兼容投影，旧文件不迁移，缺少角色的旧结论作为系统记录展示。聊天分页与证据分页独立，稳定 ID 去重；同一命令及流式请求的输出块在证据读取时合并。
 
-`ExecutionService` 在活动任务的交接点读取待处理消息。`answering` 阶段允许 Reviewer 的读取工具、探查用途的 `run_command`、`submit_answer` 和 `submit_plan`；不提供写入、删除或验收工具。答疑使用 `kind: conversation` 和终态 `answered`，保持之前执行的验收状态；收到修改方案才转为 `kind: execution`。同一活动批次不重置轮次；空闲后的继续修改创建关联的新运行，并重新获得验证证据。
+`ExecutionService` 在活动任务的交接点逐条处理待处理消息。每条用户消息有稳定 `userRequestId`，传递到对应答复、模型文本、事件和活动状态，供界面分别归组。`answering` 阶段允许 Reviewer 的读取工具、`submit_answer` 和 `submit_plan`，不提供命令、写入、删除或审查工具。答疑使用 `kind: conversation` 和终态 `answered`，保持之前执行的审查结论；收到修改方案才转为 `kind: execution`。同一活动批次不重置轮次；空闲后的继续修改创建关联的新运行，并重新获得验证证据。
 
 后续执行通过 `TaskWorkspaces.binding(taskId, previous.git)` 校验并复用目录，不调用会要求干净目录或切分支的 `prepare`。上一轮命令输出可以供 Reviewer 阅读，但不会导入当前有效证据集合。停止后的消息不自动启动；重载把处理中消息恢复为待处理并标记中断。消息、错误、答复与执行记录在写入和传输前脱敏。
 
@@ -142,7 +142,7 @@ Worker 交接当前成果和测试证据；Reviewer 返回审查结论、问题�
 
 ## 原生 shell 命令
 
-两个角色现共用[通用 shell 执行层](./shell-execution.md)，自动继承环境，并允许 Reviewer 独立验证，无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
+Worker 使用[宿主 shell 执行层](./shell-execution.md)并自动继承环境；Reviewer 只能读取文件和已记录输出，不能发起命令。无需语言专用设置。已配置 macOS 和 Windows 原生 CI，须观察到实际通过后才能标记为已验证。历史验证报告保留当时范围。
 
 ## 活动元数据与兼容分支命名
 
@@ -177,4 +177,4 @@ Linux x64 的 `rg`、`fd`、`jq` 随 VSIX 离线提供；系统优先，仅追�
 
 ## 本机 Python
 
-任务准备及恢复会自动识别本机 Python 2.7／3 和常见项目环境，并把经过验证的调用路径与版本提供给 Worker、Reviewer。沿用 `run_command`，不随包携带或安装 Python，不改全局环境。发现顺序、预算与故障边界见[本机 Python 说明](./local-python.md)。
+任务准备及恢复会自动识别本机 Python 2.7／3 和常见项目环境，并将信息用于模型上下文。只有 Worker 可通过 `run_command` 执行命令；Reviewer 可读取已记录结果但不能发起命令。Python 不随包携带或安装，也不修改全局环境。发现顺序、预算与故障边界见[本机 Python 说明](./local-python.md)。

@@ -17,7 +17,8 @@ export interface TaskGitWorkspace {
   phase: 'preparing' | 'ready';
 }
 
-export type Protocol = 'chatCompletions' | 'responses';
+export type Protocol = 'chatCompletions' | 'responses' | 'anthropic';
+export type ProviderPreset = 'openaiCompatible' | 'commandCode';
 export type Agent = 'worker' | 'reviewer';
 export type RunStatus =
   | 'recovering'
@@ -96,11 +97,18 @@ export interface WorkSubmission {
   revision: string;
 }
 export interface ReviewResult {
-  verdict: 'approve' | 'changes_requested';
+  verdict: 'pass' | 'fail' | 'approve' | 'changes_requested';
+  risk?: 'low' | 'medium' | 'high';
+  confidence?: number;
+  issues?: string[];
+  evidence?: string[];
+  reasoning?: string;
   summary: string;
   acceptance: (CriterionEvidence & { passed: boolean })[];
+  nextStep?: { action: 'continue' | 'finish'; instructions: string };
   nextPlan?: PlanInput;
   planVersion: number;
+  completionMarker?: boolean;
 }
 export interface CommandEvidence {
   stdout?: string;
@@ -180,6 +188,7 @@ export interface RunEvent {
   taskId: string;
   agent?: Agent;
   requestId?: string;
+  userRequestId?: string;
   sequence: number;
   kind:
     'text' | 'tool' | 'check' | 'review' | 'feedback' | 'state' | 'error' | 'plan' | 'submission';
@@ -191,6 +200,7 @@ export interface RunEvent {
 }
 export interface TaskMessage {
   requestId?: string;
+  userRequestId?: string;
   round?: number;
   id: string;
   taskId: string;
@@ -223,6 +233,7 @@ export interface ExecutionActivity {
   retry?: { attempt: number; delayMs: number; retryAt?: string; requesting?: boolean };
   startedAt: string;
   requestId?: string;
+  userRequestId?: string;
   tool?: string;
   commandId?: string;
   label?: string;

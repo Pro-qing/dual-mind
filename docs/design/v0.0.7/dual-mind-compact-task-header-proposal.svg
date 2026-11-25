@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">DualMind — compact task header and exclusive context/results panels / 紧凑任务栏与互斥面板提案</title>
+  <desc id="description">Static task-detail proposal. The task title and task actions share a compact row. Context usage and task results are peer controls; only one section expands at a time.</desc>
+  <defs>
+    <style>
+      text { font-family: Inter, "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+      .muted { fill: #8793a4; }
+      .small { font-size: 12px; }
+      .body { font-size: 14px; fill: #dce3ed; }
+      .label { font-size: 13px; fill: #dce3ed; }
+      .title { font-size: 20px; font-weight: 750; fill: #f2f5fa; }
+      .line { stroke: #394555; stroke-width: 1; }
+      .card { fill: #202a38; stroke: #3a4656; stroke-width: 1; }
+      .pressed { fill: #263d5c; stroke: #4e8bd2; stroke-width: 1.2; }
+    </style>
+  </defs>
+  <rect width="1440" height="900" fill="#171e28"/>
+  <rect width="58" height="900" fill="#202734"/>
+  <rect x="14" y="18" width="30" height="30" rx="8" fill="#4b88db"/>
+  <text x="29" y="39" fill="#fff" font-size="13" font-weight="800" text-anchor="middle">D</text>
+  <rect x="8" y="78" width="42" height="42" rx="8" fill="#343f50"/>
+  <text x="29" y="105" fill="#e9edf4" font-size="18" text-anchor="middle">▦</text>
+  <rect x="58" y="0" width="230" height="900" fill="#1d2531"/>
+  <text x="82" y="43" font-size="13" font-weight="700" fill="#e3e8ef">DUALMIND · TASKS</text>
+  <text x="82" y="86" class="small muted">TASKS / 任务</text>
+  <rect x="72" y="107" width="202" height="58" rx="7" fill="#29384b"/>
+  <rect x="72" y="107" width="3" height="58" rx="2" fill="#4e8bd2"/>
+  <text x="88" y="132" class="label" font-weight="700">Fix auth handoff</text>
+  <text x="88" y="151" class="small muted">Worker · in review</text>
+  <text x="88" y="201" class="label">Update setup guide</text>
+  <text x="88" y="222" class="small muted">Reviewer · completed</text>
+  <text x="88" y="271" class="label">Add provider adapters</text>
+  <text x="88" y="292" class="small muted">Draft</text>
+  <line x1="72" y1="330" x2="270" y2="330" class="line"/>
+  <text x="82" y="363" class="small muted">Workspaces stay isolated.</text>
+
+  <rect x="288" y="0" width="1152" height="50" fill="#202a38"/>
+  <text x="312" y="31" class="small muted">Workbench / Tasks / Fix auth handoff</text>
+  <text x="1418" y="31" class="small muted" text-anchor="end">Static proposal · 示意界面</text>
+
+  <rect x="310" y="66" width="1110" height="54" rx="8" fill="#202a38" stroke="#394555"/>
+  <text x="330" y="100" class="title">Fix auth handoff</text>
+  <rect x="926" y="77" width="73" height="32" rx="6" fill="#354151"/>
+  <text x="962" y="98" class="small" fill="#e4eaf2" text-anchor="middle">Edit</text>
+  <rect x="1008" y="77" width="83" height="32" rx="6" fill="#26384e" stroke="#4b6e96"/>
+  <text x="1049" y="98" class="small" fill="#d9e9fa" text-anchor="middle">Pause</text>
+  <rect x="1100" y="77" width="73" height="32" rx="6" fill="#354151"/>
+  <text x="1136" y="98" class="small" fill="#e4eaf2" text-anchor="middle">Stop</text>
+  <rect x="1182" y="77" width="218" height="32" rx="6" fill="#26384e"/>
+  <text x="1291" y="98" class="small" fill="#c5d0df" text-anchor="middle">⋯  Task actions / 任务选项</text>
+
+  <rect x="310" y="130" width="1110" height="48" rx="7" fill="#1d2632"/>
+  <text x="330" y="151" class="small muted">Details / 详情</text>
+  <text x="330" y="169" class="small" fill="#d3dbe6">Worker: Gateway / model-x</text>
+  <text x="600" y="169" class="small" fill="#d3dbe6">Reviewer: Claude / model-y</text>
+  <text x="900" y="169" class="small" fill="#d3dbe6">Git: managed worktree</text>
+  <text x="1378" y="160" class="small muted" text-anchor="end">Round 2 / 4</text>
+
+  <rect x="310" y="192" width="545" height="58" rx="8" class="pressed"/>
+  <circle cx="336" cy="221" r="10" fill="#5b9cea"/>
+  <path d="M336 215v7l5 3" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+  <text x="356" y="217" class="label" font-weight="700">Context usage / 上下文用量</text>
+  <text x="356" y="237" class="small" fill="#a9c8ed">Worker 11.2k / 32k · Reviewer 6.8k / 32k</text>
+  <text x="832" y="226" class="small" fill="#91bdf0" text-anchor="end">Expanded ↑</text>
+
+  <rect x="865" y="192" width="555" height="58" rx="8" fill="#202a38" stroke="#3a4656"/>
+  <rect x="888" y="211" width="18" height="18" rx="4" fill="#344155"/>
+  <path d="M892 216h10v8h-10zM894 213h6" fill="none" stroke="#b7c2d1" stroke-width="1.3"/>
+  <text x="920" y="217" class="label" font-weight="700">Task results / 任务成果</text>
+  <text x="920" y="237" class="small muted">3 records · 1 latest review / 3 条记录</text>
+  <text x="1394" y="226" class="small muted" text-anchor="end">Open ↓</text>
+
+  <rect x="310" y="262" width="1110" height="108" rx="8" fill="#202a38" stroke="#3a4656"/>
+  <text x="332" y="290" class="label" font-weight="700">Context budget</text>
+  <text x="1396" y="290" class="small muted" text-anchor="end">Only one panel can be expanded at a time / 同时只展开一项</text>
+  <text x="332" y="322" class="small" fill="#dce3ed">Worker</text>
+  <rect x="397" y="312" width="396" height="9" rx="5" fill="#394555"/>
+  <rect x="397" y="312" width="139" height="9" rx="5" fill="#4f91dc"/>
+  <text x="810" y="322" class="small muted">11.2k / 32k · 35%</text>
+  <text x="970" y="322" class="small" fill="#dce3ed">Reviewer</text>
+  <rect x="1040" y="312" width="220" height="9" rx="5" fill="#394555"/>
+  <rect x="1040" y="312" width="47" height="9" rx="5" fill="#7c9fc8"/>
+  <text x="1276" y="322" class="small muted">6.8k / 32k · 21%</text>
+  <text x="332" y="350" class="small muted">选择“任务成果”时，此区域收起并在原位显示成果内容。</text>
+
+  <rect x="310" y="384" width="1110" height="426" rx="8" fill="#1c2531" stroke="#344151"/>
+  <text x="332" y="414" class="small muted">CONVERSATION / 对话</text>
+  <rect x="350" y="438" width="682" height="72" rx="9" fill="#2a3545"/>
+  <text x="372" y="463" class="small" fill="#aebaca">Reviewer · Plan</text>
+  <text x="372" y="487" class="body">Inspect the authentication adapter and preserve each role's request context.</text>
+  <rect x="696" y="527" width="690" height="65" rx="9" fill="#28466b"/>
+  <text x="718" y="552" class="small" fill="#b8d3f3">You · Follow-up</text>
+  <text x="718" y="577" class="body">Keep the execution records grouped under my original request.</text>
+  <rect x="350" y="610" width="682" height="91" rx="9" fill="#2a3545"/>
+  <text x="372" y="636" class="small" fill="#aebaca">Worker · Current step</text>
+  <text x="372" y="662" class="body">The user request ID is retained in each event and tool activity.</text>
+  <text x="372" y="684" class="small muted">Read-only review · command outcomes available as evidence</text>
+  <rect x="330" y="737" width="1070" height="52" rx="8" fill="#151c25" stroke="#3a4656"/>
+  <text x="350" y="768" class="small muted">Send a follow-up or ask a question…</text>
+  <rect x="1320" y="747" width="62" height="32" rx="6" fill="#3478d4"/>
+  <text x="1351" y="768" class="small" fill="#fff" text-anchor="middle">Send</text>
+  <text x="24" y="882" font-size="10" fill="#9ca8b7">STATIC PROPOSAL · 示意界面 · One exclusive expansion state shown</text>
+  <text x="1416" y="882" font-size="10" fill="#8b96a4" text-anchor="end">1440 × 900 · Approval precedes UI integration</text>
+</svg>

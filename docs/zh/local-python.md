@@ -2,7 +2,7 @@
 
 [English](../en/local-python.md) · [使用说明](./usage.md) · [命令执行](./shell-execution.md)
 
-DualMind 使用本机已有的 Python 2.7／3 和项目依赖环境，不随包携带、下载或安装 Python。Worker、Reviewer 继续通过 `run_command` 执行脚本、读取文件和处理信息；解释器选择没有新增设置页面。
+DualMind 使用本机已有的 Python 2.7／3 和项目依赖环境，不随包携带、下载或安装 Python。Worker 通过 `run_command` 执行脚本和信息处理；Reviewer 可读取文件及已记录结果，但不能执行命令。发现的环境摘要可供两个角色作为模型上下文；没有新增解释器选择页面。
 
 ## 准备时自动发现
 

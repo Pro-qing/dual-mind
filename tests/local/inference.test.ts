@@ -123,6 +123,82 @@ for (const protocol of ['chatCompletions', 'responses'] as const) {
     }
   });
 }
+test('Anthropic Messages streams text and tool input, uses native history and reports usage', async () => {
+  let received = '';
+  const server = await modelServer((req, res) => {
+    assert.equal(req.method, 'POST');
+    assert.equal(req.url, '/gateway/v1/messages');
+    assert.equal(req.headers['x-api-key'], 'test-key');
+    assert.equal(req.headers['anthropic-version'], '2023-06-01');
+    req.on('data', (chunk) => {
+      received += String(chunk);
+    });
+    req.on('end', () =>
+      send(res, [
+        { type: 'message_start', message: { usage: { input_tokens: 17 } } },
+        { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+        { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'Hello' } },
+        { type: 'content_block_stop', index: 0 },
+        {
+          type: 'content_block_start',
+          index: 1,
+          content_block: { type: 'tool_use', id: 'call1', name: 'read_file', input: {} },
+        },
+        {
+          type: 'content_block_delta',
+          index: 1,
+          delta: { type: 'input_json_delta', partial_json: '{"path":"file.txt"}' },
+        },
+        { type: 'content_block_stop', index: 1 },
+        { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+        { type: 'message_stop' },
+      ]),
+    );
+  });
+  try {
+    let text = '';
+    const turn = await new Inference().turn(
+      {
+        baseUrl: `${server.url}/gateway/v1`,
+        key: 'test-key',
+        model: 'fixture',
+        protocol: 'anthropic',
+      },
+      [
+        { role: 'system', content: 'Private role instructions' },
+        { role: 'user', content: 'Inspect a file' },
+      ],
+      definitions,
+      new AbortController().signal,
+      (delta) => {
+        text += delta;
+      },
+    );
+    assert.equal(text, 'Hello');
+    assert.deepEqual(turn.usage, { inputTokens: 17, outputTokens: 5 });
+    assert.deepEqual(turn.calls, [
+      { id: 'call1', name: 'read_file', arguments: '{"path":"file.txt"}' },
+    ]);
+    const body = JSON.parse(received);
+    assert.equal(body.system, 'Private role instructions');
+    assert.equal(body.messages[0].content, 'Inspect a file');
+    assert.equal(body.tools[0].input_schema.properties.path.type, 'string');
+    const result = toolResult('anthropic', turn.calls[0], { content: 'file' });
+    assert.deepEqual(result, {
+      role: 'user',
+      content: [{ type: 'tool_result', tool_use_id: 'call1', content: '{"content":"file"}' }],
+    });
+    const assistantContent = turn.output[0].content as Record<string, unknown>[];
+    assert.deepEqual(assistantContent[1], {
+      type: 'tool_use',
+      id: 'call1',
+      name: 'read_file',
+      input: { path: 'file.txt' },
+    });
+  } finally {
+    await server.close();
+  }
+});
 test('inference rejects redirects and malformed/incomplete streams', async () => {
   for (const scenario of ['redirect', 'invalid', 'incomplete']) {
     const server = await modelServer((_req, res) => {

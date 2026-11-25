@@ -22,6 +22,14 @@ export const errorMessages = {
     'Three consecutive tool batches were rejected. No tools in those batches ran. Add feedback or adjust the model before continuing.',
     '连续三批工具调用被拒绝，这些批次均未执行。请补充反馈或调整模型后继续。',
   ],
+  reviewFinishInvalid: [
+    'A finish verdict requires pass, confidence of at least 0.8, and a standalone TASK_COMPLETE line. Correct the structured review.',
+    '完成验收须满足 pass、置信度不低于 0.8，并单独输出 TASK_COMPLETE 行。请修正结构化验收结论。',
+  ],
+  reviewCorrectionExhausted: [
+    'The structured review remained invalid after one correction. The task is paused for human guidance.',
+    '结构化验收在一次纠正后仍无效，任务已暂停等待人工指导。',
+  ],
   toolCallLimit: [
     'This phase reached its 200 tool-call budget. Saved work and evidence were retained.',
     '此阶段达到 200 次工具调用预算，已有修改与证据已保留。',
@@ -134,8 +142,8 @@ export const errorMessages = {
     '验收证据缺失、失败、已过期，或不属于当前方案及成果版本。',
   ],
   reviewIncomplete: [
-    'Review must cover every criterion. Rejection requires the next executable plan; approval requires all criteria to pass.',
-    '验收须覆盖全部验收项；未通过须给出下一轮执行方案，通过须满足全部条件。',
+    'Review needs a valid verdict, risk, confidence, findings, summary and next step. Continue requires a new executable plan.',
+    '验收须包含有效结论、风险、置信度、问题、摘要和下一步；继续处理时须给出新的可执行方案。',
   ],
   feedbackPending: [
     'New user feedback requires an updated Reviewer plan before approval.',

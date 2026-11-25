@@ -43,6 +43,8 @@ export interface RecoveryState {
   turn: number;
   corrections: number;
   requestId?: string;
+  userRequestId?: string;
+  returningUserRequestId?: string;
   accepted?: { phase: AgentPhase; value: Record<string, unknown>; id: string };
   handling: string[];
   feedback: string[];
@@ -73,6 +75,7 @@ export interface RecoveryOperation {
     | 'skipped'
     | 'cancelled';
   requestId?: string;
+  userRequestId?: string;
   nextAttempt?: number;
   args?: unknown;
   result?: unknown;

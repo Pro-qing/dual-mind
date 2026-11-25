@@ -62,7 +62,7 @@ test('ordinary tool faults remain correctable while lost ownership and unknown c
   ] as const) {
     assert.equal(fatalToolFault({ code }), true);
   }
-  assert.deepEqual(acceptanceBlockers(undefined, []), []);
+  assert.deepEqual(acceptanceBlockers(), []);
 });
 
 test('implicit read defaults and explicit equivalent arguments share a failure identity', () => {

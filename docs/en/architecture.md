@@ -28,7 +28,7 @@ src/workbench.ts   Webview resources, CSP, message transport and host prompts
 src/core/         Validated local task/configuration store
 src/shared/       Message types, bilingual UI strings and Reviewer definitions
 src/providers/    Model discovery and streaming inference adapters
-src/execution/    Run state machine, bounded commands and paged event records
+src/execution/    Modular run state machine, role turns, recovery and records (see README)
 src/git/          Task worktree service and role-scoped file access
 src/editor/       Reserved for context collection and result application
 webview/src/      React workbench, settings, forms, bridge and responsive styles
@@ -36,7 +36,7 @@ resources/        Packaged PNG icon and archived branding source
 scripts/          Build, checks, local tests and actual Webview verification
 tests/local/     Store and React interaction tests
 tests/            VS Code extension-host tests
-docs/design/v*/  37 SVG/PNG pairs by development version (37 approved)
+docs/design/v*/  40 SVG/PNG pairs by development version (37 approved, 3 pending)
 docs/en/          English documentation
 docs/zh/          中文文档
 .github/          Compatibility CI and collaboration templates
@@ -70,7 +70,7 @@ Home and task detail share the native sidebar workbench; task selection opens de
 
 ## Connection verification and model discovery
 
-The development branch implements [scenes 6–7](./design.md) for OpenAI-compatible endpoints using Bearer authentication. `src/providers/models.ts` appends `/models` to the saved API path, retaining gateway prefixes. Azure-specific authentication and inference protocols are outside this feature.
+The current settings UI implements [scenes 6–7](./design.md) for OpenAI-compatible endpoints using Bearer authentication and exposes Chat Completions/Responses. Source adapters also support Anthropic Messages and Command Code's compatibility API, but their settings controls are pending approval of scenes 38–40; they are not currently selectable through the UI. `src/providers/adapters/` centralizes protocol mapping, while `src/providers/models.ts` preserves gateway prefixes and provider-specific discovery. Azure-specific authentication remains outside this feature.
 
 A user requests a query → the host reads saved metadata and its secret under the store lock → `ModelQueries` performs network work outside that lock → the host returns validated IDs and a timestamp → React displays suggestions or manual input. The Webview keeps its no-direct-network CSP. Queries send no task requirements, role instructions, or workspace content.
 
@@ -82,9 +82,9 @@ Discovery establishes access to the model-list endpoint only. Unsupported endpoi
 
 ## Execution in the development branch
 
-The host execution service owns one active run per workspace, independently of the Webview lifetime. It snapshots task/model/role/command configuration, uses the Git task workspace service, obtains a Reviewer plan, runs enabled preparation and drives Reviewer plan → Worker implementation/verification → additional checks → Reviewer acceptance rounds. Start, pause, continue, stop, restart and paused feedback are separate operations from local settings persistence. Approval requires valid evidence for all criteria, successful additional checks and an unchanged artifact fingerprint.
+The host execution service owns one active run per workspace, independently of the Webview lifetime. It snapshots task/model/role/command configuration, uses the Git task workspace service, obtains a Reviewer plan and drives Reviewer plan → Worker implementation/verification → Reviewer acceptance rounds. Pair-style review uses pass/fail, risk, confidence, issues, evidence and next steps. The host validates review structure and finish protocol, including confidence ≥ 0.8, no pending feedback, unchanged artifact fingerprints and a standalone `TASK_COMPLETE` marker; criterion coverage and command IDs are Reviewer inputs, not automatic gates. Start, pause, continue, stop, restart and paused feedback are separate operations from local settings persistence.
 
-`src/providers/inference.ts` adapts streaming Chat Completions and Responses with independent role histories and validated tool batches. File writes remain Worker-only. Both roles use shell commands through `LocalCommands`; Reviewer explores during planning/answering and can prepare dependencies, build and test during acceptance. Saved presets retain literal argv. Shell selection, per-run login environment capture and process cleanup are separate modules; see [Shell execution](./shell-execution.md).
+`src/providers/inference.ts` adapts streaming Chat Completions, Responses and Anthropic Messages with independent role histories and validated tool batches. Command Code uses the compatibility protocol with capability-aware model discovery. Reviewer planning, answering and review receive read-only file/record tools; only Worker receives mutating and shell-command tools. Saved command presets retain literal argv. Shell selection, per-run login environment capture and process cleanup are separate modules; see [Shell execution](./shell-execution.md).
 
 Run summaries/configuration use independent workspace storage; public event history is journaled outside the repository and paged in groups of 80. Streaming UI updates are batched at 100 ms. Host restarts mark unfinished runs interrupted and never replay tool calls. API credentials remain in SecretStorage and active host memory. Histories, handoffs and command output must not expose them. The activity bar has one `dualMind.tasks` view backed by `WebviewViewProvider`. The host owns execution; disposing a view releases only page messaging and listeners.
 
@@ -110,7 +110,7 @@ A separate `dualMind.git.workspaces.v1` host record holds the task/repository id
 
 The host binds a Worker or Reviewer file interface. Both can list/read regular files, inspect status and read tracked differences from the baseline; new untracked files are visible through status/list/read. Only Worker receives `writeFile`, including creation of ordinary subdirectories. Each access checks the task still exists, workspace trust, repository binding and worktree ownership. Absolute paths, traversal, symbolic links, hard-linked files and Git metadata are rejected. Git is invoked without a shell and with hooks, external diff, textconv, content filters and filesystem monitors disabled. LFS/filter-generated content is not downloaded or materialized by this service. Commands have a 20-second timeout and 2 MiB output limit; individual file reads/writes are limited to 2 MiB. Exceeding limits returns an error, not truncated evidence.
 
-File tools enforce a role boundary; shell execution is not an OS sandbox. Reviewer can independently run verification commands, while source implementation stays with Worker. The execution service keeps private role histories separate. See [role handoffs](./protocol.md#role-handoffs).
+File tools enforce a role boundary; shell execution is not an OS sandbox. Reviewer has read-only file and recorded-output tools in planning, answering and review. Only Worker receives source mutation and command execution tools. The execution service keeps private role histories separate. See [role handoffs](./protocol.md#role-handoffs).
 
 ## Task Git strategies
 
@@ -120,11 +120,11 @@ Run summaries retain a complete Git binding (strategy, repository/common directo
 
 ## Reviewer planning and acceptance loop
 
-The execution service uses preparing → planning → worker → checking (when additional checks exist) → reviewer phases. Reviewer reads task-related context and submits requirements, objectives, steps and criteria through submit_plan. Worker receives the plan, not Reviewer private history, implements it using file tools and run_command, and submits artifacts with finish_work. submit_review must cover every criterion; rejection includes a complete nextPlan. The host versions plans and persists plan, submission and review events. Existing role snapshots remain compatible; phase instructions define planning, implementation and acceptance responsibilities.
+The execution service uses preparing → planning → worker → checking (when additional checks exist) → reviewer phases. Reviewer reads task-related context and submits requirements, objectives, steps and criteria through submit_plan. Worker receives the plan, not Reviewer private history, implements it using file tools and run_command, and submits artifacts with finish_work. `submit_review` returns Pair-style `pass`/`fail`, risk, confidence, issues, evidence, reasoning and a next step; failure/continuation requires a complete next plan. The host validates the review structure and finish protocol, but does not require criterion coverage or successful command IDs as automatic acceptance gates. Existing role snapshots remain compatible; phase instructions define planning, implementation and acceptance responsibilities.
 
-Models derive plans from requirements and relevant files; there is no language/project-type command detector. Reviewer keeps read-only file access. Worker handles project dependency preparation, inspection and verification, without obtaining Reviewer private conversation or protocol items. Reviewer handles user feedback; unhandled feedback blocks approval.
+Models derive plans from requirements and relevant files; there is no language/project-type command detector. Reviewer keeps read-only file access and receives Worker command/check outcomes through recorded evidence. Worker handles project dependency preparation, inspection and verification, without obtaining Reviewer private conversation or protocol items. Reviewer handles user feedback; unhandled feedback blocks finishing.
 
-The host records actual command arguments, relative task directory, plan version, round, exit status, before/after artifact fingerprints and output. Full redacted output is stored in paged events; models read it using read_command_output pagination, so a shortened excerpt is not represented as complete evidence. Only genuine successful verification for the current plan/artifact version and criterion can pass. A newer failure for a criterion prevents reuse of its older success. Enabled additional custom checks are mandatory after every submission; legacy nonempty configurations stay enabled and disabled values are retained.
+The host records actual command arguments, relative task directory, plan version, round, exit status, before/after artifact fingerprints and output. Full redacted output is stored in paged events; models read it using read_command_output pagination, so a shortened excerpt is not represented as complete evidence. Enabled additional custom checks run after every submission, but their outcomes are Reviewer inputs, not host-imposed pass/fail gates; legacy nonempty configurations stay enabled and disabled values are retained. The host still rejects artifact changes during review, pending feedback, malformed reviews, and finish responses without pass, confidence ≥ 0.8 and a standalone final `TASK_COMPLETE` marker.
 
 Reading review requires a reason for no command and concrete findings. Command-free tasks can complete independently. Commands require no systemd/cgroup probe and receive no memory or swap quota from the extension. Directory resolution rejects absolute paths, traversal and symlinks, but commands run with the user's permissions and this is not an OS sandbox. Phases have no cumulative model/tool call limit; command and error evidence retains output, history and redaction limits. Revisions retain acceptance IDs and verification methods to avoid silently weakening acceptance.
 
@@ -134,7 +134,7 @@ Cancellation, timeout, output overflow and parent exit all trigger process clean
 
 `RunRecords` appends user messages and Reviewer replies to `conversations/<taskId>.jsonl` in workspace extension storage. Updates reuse message IDs; conflicting content under an existing ID is rejected. Plans, submissions, reviews and system errors are projected from original run JSONL files without migration. Legacy conclusions lacking role information appear as system records. Conversation and evidence pagination are independent and deduplicate stable IDs; command and streaming-request chunks are grouped when reading evidence.
 
-`ExecutionService` reads pending messages at active-task handoffs. The `answering` phase exposes Reviewer read tools, exploratory `run_command`, `submit_answer` and `submit_plan`, with no write/delete or acceptance tool. Question processing uses `kind: conversation` and terminal `answered`, preserving the prior execution verdict; a modification plan promotes it to `kind: execution`. Active batches retain their round budget; idle continuation creates a linked run and must obtain new verification evidence.
+`ExecutionService` reads pending messages at active-task handoffs, one message per turn. Each user message has a stable `userRequestId` propagated to its answer, model text, events and activities so the UI can present separate request groups. The `answering` phase exposes Reviewer read tools, `submit_answer` and `submit_plan`, with no command, write/delete or review tool. Question processing uses `kind: conversation` and terminal `answered`, preserving the prior execution verdict; a modification plan promotes it to `kind: execution`. Active batches retain their round budget; idle continuation creates a linked run and must obtain new verification evidence.
 
 Continuation uses `TaskWorkspaces.binding(taskId, previous.git)` to validate and reuse artifacts instead of `prepare`, which can require cleanliness or switch branches. Previous command output is readable by Reviewer but is not imported into the current valid evidence map. Stopped messages are not automatically launched; reload recovers processing messages as pending with an interruption marker. Messages, errors, answers and execution records are redacted before persistence and transport.
 
@@ -142,7 +142,7 @@ Continuation uses `TaskWorkspaces.binding(taskId, previous.git)` to validate and
 
 ## Native shell commands
 
-Both roles now use the [shared shell execution layer](./shell-execution.md), with automatic environment inheritance and independent Reviewer verification. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
+Worker uses the [host-managed shell execution layer](./shell-execution.md), with automatic environment inheritance. Reviewer has read-only file and recorded-output tools and cannot invoke commands. No language-specific setup setting is required. macOS and Windows native CI is configured; passing results must be observed before those platforms are called validated. Historical validation reports retain their original scope.
 
 ## Activity metadata and compatible branch naming
 
@@ -177,4 +177,4 @@ Linux x64 `rg`, `fd` and `jq` are included offline in the VSIX. System commands 
 
 ## Local Python
 
-Preparation and recovery identify local Python 2.7/3 and common project environments, supplying verified invocation paths and versions to Worker and Reviewer. Execution retains `run_command`, without bundling/installing Python or changing global environments. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
+Preparation and recovery identify local Python 2.7/3 and common project environments for model context. Worker alone can execute commands through `run_command`; Reviewer can inspect recorded outcomes but cannot run them. Python is not bundled or installed, and global environments are unchanged. See [local Python](./local-python.md) for discovery order, budgets and failure behavior.
